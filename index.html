@@ -376,13 +376,13 @@
 <script>
 /* ═══════════════════════════════════════════════════════════════════
    [BEHAVIOR] Where each difficulty button goes.
-   Set a URL (e.g. 'play.html?level=easy') once that game page exists.
-   null = not built yet; the button shows a "coming soon" notice instead.
+   play.html?puzzle=<key> opens a puzzle; the keys are the names in
+   puzzles.js. null = no puzzle yet; the button shows "coming soon".
 ═══════════════════════════════════════════════════════════════════ */
 const DIFFICULTY_LINKS = {
   easy:   null,
-  medium: null,
-  hard:   null,
+  medium: 'play.html?puzzle=test-puzzle-2',
+  hard:   'play.html?puzzle=test-puzzle-1',
 };
 
 const popup   = document.getElementById('rules-popup');

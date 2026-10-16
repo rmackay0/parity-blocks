@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  PARITY BLOCKS: GAME PAGE
+  ═══════════════════════════════════════════════════════════════════════
+
+  Opened from the splash screen as play.html?puzzle=<puzzle-key>. The
+  puzzles themselves (board size, blocked cells, pieces) live in
+  puzzles.js, shared with the sandbox.
+
+  Layout, top to bottom: back button, available pieces, board, Reflect /
+  Rotate buttons.
+
+  How to play on this page:
+    • Drag a piece from the top onto the board.
+    • Tap a piece (on the board or at the top) to select it, then use
+      Reflect / Rotate. Keyboard: R = rotate, F = reflect, Esc = deselect.
+    • Drag a placed piece off the board (or back up to the top) to remove it.
+
+  EDIT GUIDE: search this file for these tags:
+    [FONTS]  [COLORS]  [POSITIONING]  [CONTENT]  [BEHAVIOR]
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parity Blocks</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+
+<!-- [FONTS] Same font as the splash screen's buttons -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geo&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* [FONTS] */
+    --font-display: 'Geo', 'Segoe UI', sans-serif;
+    --button-size:  1.5rem;
+
+    /* [COLORS] (same palette as the splash screen) */
+    --color-bg:           #241f1c;   /* page background */
+    --color-text:         #e8ddd0;
+    --color-text-dim:     #a3937f;
+    --color-accent:       #d99a4e;   /* hint outline, headings */
+    --color-board-bg:     #1c1714;   /* frame around the grid */
+    --color-cell:         #443830;   /* an open grid square */
+    --color-cell-border:  #4d3f36;
+    --color-valid:        #6fae5a;   /* drop preview: fits */
+    --color-valid-bg:     #3c5638;
+    --color-invalid:      #c25a5a;   /* drop preview: doesn't fit; odd row/column */
+    --color-invalid-bg:   #5a3838;
+    --color-blocked-x:    #e05252;   /* the X on a blocked square */
+    --color-select:       #f2c48a;   /* ring around a selected piece at the top */
+    --color-reflect:      #7d5a78;   /* Reflect button */
+    --color-rotate:       #4f8a8b;   /* Rotate button */
+    --color-button-text:  #ffffff;
+    --color-panel:        #332a25;   /* "Solved!" popup */
+    --color-overlay:      rgba(0, 0, 0, 0.6);
+
+    /* [POSITIONING] Sizes and spacing */
+    --page-gap:        14px;   /* space between pieces, board and buttons */
+    --tray-cell:       20px;   /* square size of the pieces at the top */
+    --tray-gap:        10px;   /* space between pieces at the top */
+    --board-max-cell:  84px;   /* largest a board square gets on big screens */
+    --board-gap:       4px;    /* gap between board squares */
+    --board-pad:       12px;   /* frame thickness around the board */
+    --button-width:    170px;  /* each of Reflect / Rotate */
+    --button-height:   56px;
+    --button-radius:   14px;
+  }
+  @media (max-width: 480px) {
+    :root { --tray-cell: 13px; --tray-gap: 6px; --button-width: 140px; }
+    .tray { padding: 0 0 0 44px; }   /* only clear the back button on the left */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    overflow: hidden;              /* whole game fits on screen; no scrolling */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* [POSITIONING] Main column: pieces, board, buttons, all centered. */
+  .game {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--page-gap);
+    padding: 16px 16px 24px;
+  }
+
+  /* [POSITIONING] Back-to-menu button, top-left corner */
+  .back-btn {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--color-cell-border);
+    background: var(--color-panel);
+    color: var(--color-text);
+    font-size: 1.6rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    z-index: 10;
+  }
+
+  /* ── Available pieces (top) ── */
+  .tray {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--tray-gap);
+    max-width: 640px;
+    padding: 0 48px;               /* keeps clear of the back button */
+  }
+  .tray-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 10px;
+    cursor: grab;
+    touch-action: none;
+    transition: background 0.15s;
+  }
+  .tray-slot:hover { background: rgba(255, 255, 255, 0.05); }
+  .tray-slot.selected { box-shadow: 0 0 0 2px var(--color-select); }
+  .tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
+
+  /* ── Board ── */
+  .board-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #board-outer {
+    position: relative;
+    background: var(--color-board-bg);
+    border-radius: 14px;
+    padding: var(--board-pad);
+    box-shadow: 0 0 28px rgba(0, 0, 0, 0.5);
+    touch-action: none;
+  }
+  #board { display: grid; }
+  .board-cell {
+    background: var(--color-cell);
+    border: 1px solid var(--color-cell-border);
+    border-radius: 4px;
+  }
+  .board-cell.blocked {
+    position: relative;
+    background: var(--color-bg);
+    border-style: dashed;
+  }
+  .board-cell.blocked::after {
+    content: '\2715';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-blocked-x);
+    font-family: sans-serif;
+    font-size: 1.4em;
+    font-weight: 700;
+  }
+  .board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid); }
+  .board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid); }
+  /* Every piece placed but this row/column has an odd count */
+  .board-cell.parity-odd { box-shadow: inset 0 0 0 3px var(--color-invalid); }
+
+  #pieces-layer, #hint-overlay {
+    position: absolute;
+    inset: var(--board-pad);
+    pointer-events: none;
+  }
+  #hint-overlay { z-index: 5; }
+
+  .placed-piece { position: absolute; }
+  .placed-piece .blk { pointer-events: auto; cursor: grab; touch-action: none; }
+  .piece-svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)); }
+  .placed-piece.selected .piece-svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 3px rgba(255,255,255,0.85));
+  }
+  .placed-piece.invalid .piece-svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 4px rgba(220,70,70,0.95)) drop-shadow(0 0 4px rgba(220,70,70,0.95));
+  }
+  .ghost { position: absolute; pointer-events: none; opacity: 0.75; z-index: 50; }
+
+  /* [CONTENT] Puzzle hint caption (only some puzzles have one) */
+  .hint-caption {
+    flex: 0 0 auto;
+    max-width: 520px;
+    text-align: center;
+    color: var(--color-accent);
+    font-size: 1.1rem;
+  }
+
+  /* ── Reflect (left) / Rotate (right) ── */
+  .controls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 16px;
+    position: relative;
+    z-index: 60;     /* stays clickable even if a piece hangs off the board over it */
+  }
+  .controls button {
+    width: var(--button-width);
+    height: var(--button-height);
+    border: none;
+    border-radius: var(--button-radius);
+    font-family: var(--font-display);
+    font-size: var(--button-size);
+    letter-spacing: 0.04em;
+    color: var(--color-button-text);
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+    transition: transform 0.1s, box-shadow 0.1s, filter 0.15s, opacity 0.15s;
+  }
+  .controls button:not(:disabled):hover  { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
+  .controls button:not(:disabled):active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+  .controls button:disabled { opacity: 0.4; cursor: default; }
+  #reflect-btn { background: var(--color-reflect); }
+  #rotate-btn  { background: var(--color-rotate); }
+
+  /* ── Popups ── */
+  .popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--color-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 100;
+  }
+  .popup-backdrop[hidden] { display: none; }
+  .popup {
+    width: 100%;
+    max-width: 340px;
+    background: var(--color-panel);
+    border: 1px solid var(--color-cell-border);
+    border-radius: 16px;
+    padding: 26px 24px 22px;
+    text-align: center;
+  }
+  .popup h2 { color: var(--color-accent); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
+  .popup p  { font-size: 1.2rem; margin-bottom: 18px; }
+  .popup-buttons { display: flex; gap: 10px; }
+  .popup-buttons a, .popup-buttons button {
+    flex: 1;
+    height: 46px;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--color-button-text);
+    background: var(--color-rotate);
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .popup-buttons .secondary { background: var(--color-cell-border); }
+</style>
+</head>
+<body>
+
+<a class="back-btn" href="index.html" aria-label="Back to menu">&lsaquo;</a>
+
+<main class="game">
+  <div class="tray" id="tray" aria-label="Available pieces"></div>
+
+  <div class="board-wrap" id="board-wrap">
+    <div id="board-outer">
+      <div id="board"></div>
+      <div id="pieces-layer"></div>
+      <div id="hint-overlay"></div>
+    </div>
+  </div>
+
+  <p class="hint-caption" id="hint-caption" hidden></p>
+
+  <!-- [CONTENT] Button labels -->
+  <div class="controls">
+    <button type="button" id="reflect-btn" disabled>Reflect</button>
+    <button type="button" id="rotate-btn" disabled>Rotate</button>
+  </div>
+</main>
+
+<!-- [CONTENT] Shown when the puzzle is solved -->
+<div class="popup-backdrop" id="solved-popup" hidden>
+  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="solved-title">
+    <h2 id="solved-title">Solved!</h2>
+    <p id="solved-time"></p>
+    <div class="popup-buttons">
+      <a href="index.html">Menu</a>
+      <button type="button" class="secondary" id="solved-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- [CONTENT] Shown if the link points at a puzzle that doesn't exist -->
+<div class="popup-backdrop" id="missing-popup" hidden>
+  <div class="popup" role="dialog" aria-modal="true">
+    <h2>Puzzle not found</h2>
+    <p>This puzzle link isn't valid.</p>
+    <div class="popup-buttons"><a href="index.html">Back to menu</a></div>
+  </div>
+</div>
+
+<script src="puzzles.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   SETUP
+   The puzzle comes from the URL: play.html?puzzle=test-puzzle-1
+═══════════════════════════════════════════════════════════════════ */
+const puzzleKey = new URLSearchParams(location.search).get('puzzle');
+const puzzle = PUZZLES[puzzleKey];
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const boardWrapEl   = document.getElementById('board-wrap');
+const boardEl       = document.getElementById('board');
+const piecesLayerEl = document.getElementById('pieces-layer');
+const trayEl        = document.getElementById('tray');
+const reflectBtn    = document.getElementById('reflect-btn');
+const rotateBtn     = document.getElementById('rotate-btn');
+
+function cssPx(name){
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
+}
+
+let CELL = 48;   // board square size, recomputed by fitBoard() to fill the space
+let GAP = 4;
+
+// Each piece's current orientation in the tray, keyed by name. Rotating a
+// tray piece changes it here; it's the orientation the piece is placed in.
+const trayCells = {};
+let placedPieces = [];        // {id, name, color, cells, row, col}
+let invalidIds = new Set();   // pieces overlapping, off-grid, or on a blocked square
+let selection = null;         // {kind:'board', id} | {kind:'tray', name} | null
+let placedIdCounter = 1;
+let solved = false;
+const startTime = Date.now();
+
+/* ═══════════════════════════════════════════════════════════════════
+   GEOMETRY
+═══════════════════════════════════════════════════════════════════ */
+function normalize(cells){
+  const minR = Math.min(...cells.map(c=>c[0]));
+  const minC = Math.min(...cells.map(c=>c[1]));
+  return cells.map(([r,c])=>[r-minR, c-minC]);
+}
+function bounds(cells){
+  return { rows: Math.max(...cells.map(c=>c[0]))+1, cols: Math.max(...cells.map(c=>c[1]))+1 };
+}
+function rotateCells(cells){
+  const {rows} = bounds(cells);
+  return normalize(cells.map(([r,c])=>[c, rows-1-r]));
+}
+function reflectCells(cells){
+  const {cols} = bounds(cells);
+  return normalize(cells.map(([r,c])=>[r, cols-1-c]));
+}
+function hasCellAt(cells, r, c){ return cells.some(([cr,cc])=>cr===r && cc===c); }
+
+function isBlocked(r, c){ return puzzle.blocked.some(([br,bc])=>br===r && bc===c); }
+function isVisiblyBlocked(r, c){
+  if(!isBlocked(r, c)) return false;
+  return !(puzzle.hiddenBlocked || []).some(([hr,hc])=>hr===r && hc===c);
+}
+function inBounds(r, c){ return r>=0 && c>=0 && r<puzzle.rows && c<puzzle.cols; }
+
+function occupiedExcept(excludeId){
+  const set = new Set();
+  placedPieces.forEach(p=>{
+    if(p.id === excludeId) return;
+    p.cells.forEach(([r,c])=>set.add((p.row+r)+','+(p.col+c)));
+  });
+  return set;
+}
+function fits(cells, row, col, excludeId){
+  const occ = occupiedExcept(excludeId);
+  return cells.every(([r,c])=>{
+    const rr = row+r, cc = col+c;
+    return inBounds(rr, cc) && !isBlocked(rr, cc) && !occ.has(rr+','+cc);
+  });
+}
+function completelyOffBoard(cells, row, col){
+  return cells.every(([r,c])=>!inBounds(row+r, col+c));
+}
+// Rechecked for every piece after each change, so moving one piece off
+// another clears the red state on both.
+function recomputeValidity(){
+  invalidIds = new Set(placedPieces.filter(p=>!fits(p.cells, p.row, p.col, p.id)).map(p=>p.id));
+}
+
+function pxPos(i){ return i*(CELL+GAP); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PIECE DRAWING
+   A piece is one SVG: a single fill, thin divider lines between its own
+   squares, and one traced outline (no per-square borders, which showed
+   hairline seams on high-DPI screens). Same approach as the sandbox.
+═══════════════════════════════════════════════════════════════════ */
+function buildPieceRects(cells, size, gap){
+  const rects = [];
+  cells.forEach(([r,c])=>{
+    const x = c*(size+gap), y = r*(size+gap);
+    rects.push([x, y, x+size, y+size]);
+    if(hasCellAt(cells, r, c+1)) rects.push([x+size, y, x+size+gap, y+size]);
+    if(hasCellAt(cells, r+1, c)) rects.push([x, y+size, x+size, y+size+gap]);
+    if(hasCellAt(cells, r, c+1) && hasCellAt(cells, r+1, c) && hasCellAt(cells, r+1, c+1)){
+      rects.push([x+size, y+size, x+size+gap, y+size+gap]);
+    }
+  });
+  return rects;
+}
+function buildFillPath(cells, size, gap){
+  return buildPieceRects(cells, size, gap).map(([x0,y0,x1,y1])=>`M${x0},${y0} H${x1} V${y1} H${x0} Z`).join(' ');
+}
+function buildOutlinePath(cells, size, gap){
+  const rects = buildPieceRects(cells, size, gap);
+  const xsSet = new Set(), ysSet = new Set();
+  rects.forEach(([x0,y0,x1,y1])=>{ xsSet.add(x0); xsSet.add(x1); ysSet.add(y0); ysSet.add(y1); });
+  const xs = [...xsSet].sort((a,b)=>a-b), ys = [...ysSet].sort((a,b)=>a-b);
+  const nx = xs.length-1, ny = ys.length-1;
+  const occ = Array.from({length:ny}, (_,iy)=>Array.from({length:nx}, (_,ix)=>{
+    const cx = (xs[ix]+xs[ix+1])/2, cy = (ys[iy]+ys[iy+1])/2;
+    return rects.some(([x0,y0,x1,y1])=>cx>x0 && cx<x1 && cy>y0 && cy<y1);
+  }));
+  const occAt = (iy,ix)=>iy>=0 && iy<ny && ix>=0 && ix<nx && occ[iy][ix];
+  const next = new Map(), key = (x,y)=>x+','+y;
+  for(let iy=0; iy<ny; iy++) for(let ix=0; ix<nx; ix++){
+    if(!occ[iy][ix]) continue;
+    const x0=xs[ix], x1=xs[ix+1], y0=ys[iy], y1=ys[iy+1];
+    if(!occAt(iy-1,ix)) next.set(key(x0,y0), [x1,y0]);
+    if(!occAt(iy,ix+1)) next.set(key(x1,y0), [x1,y1]);
+    if(!occAt(iy+1,ix)) next.set(key(x1,y1), [x0,y1]);
+    if(!occAt(iy,ix-1)) next.set(key(x0,y1), [x0,y0]);
+  }
+  const visited = new Set(), loops = [];
+  for(const startKey of next.keys()){
+    if(visited.has(startKey)) continue;
+    const pts = [];
+    let cur = startKey, guard = 0;
+    do {
+      visited.add(cur);
+      pts.push(cur.split(',').map(Number));
+      const n = next.get(cur);
+      if(!n) break;
+      cur = key(n[0], n[1]);
+    } while(cur !== startKey && ++guard < 10000);
+    if(pts.length >= 3) loops.push(pts);
+  }
+  return loops.map(pts=>{
+    const n = pts.length;
+    const kept = pts.filter((p,i)=>{
+      const a = pts[(i-1+n)%n], b = pts[(i+1)%n];
+      return (p[0]-a[0])*(b[1]-p[1]) - (p[1]-a[1])*(b[0]-p[0]) !== 0;
+    });
+    return 'M'+kept.map(p=>p.join(',')).join('L')+'Z';
+  }).join(' ');
+}
+function buildDividers(cells, size, gap){
+  const segs = [];
+  cells.forEach(([r,c])=>{
+    const x = c*(size+gap), y = r*(size+gap);
+    if(hasCellAt(cells, r, c+1)) segs.push(`M${x+size+gap/2},${y} V${y+size}`);
+    if(hasCellAt(cells, r+1, c)) segs.push(`M${x},${y+size+gap/2} H${x+size}`);
+  });
+  return segs.join(' ');
+}
+function svgPath(d, attrs){
+  const p = document.createElementNS(SVG_NS, 'path');
+  p.setAttribute('d', d);
+  Object.entries(attrs).forEach(([k,v])=>p.setAttribute(k, v));
+  return p;
+}
+function buildPieceShape(cells, color, size, gap){
+  const {rows, cols} = bounds(cells);
+  const w = cols*size + (cols-1)*gap, h = rows*size + (rows-1)*gap;
+  const box = document.createElement('div');
+  box.style.position = 'relative';
+  box.style.width = w + 'px';
+  box.style.height = h + 'px';
+
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.classList.add('piece-svg');
+  svg.style.position = 'absolute';
+  svg.style.overflow = 'visible';
+  svg.appendChild(svgPath(buildFillPath(cells, size, gap), { fill: color }));
+  const dividers = buildDividers(cells, size, gap);
+  if(dividers) svg.appendChild(svgPath(dividers, { fill:'none', stroke:'rgba(0,0,0,0.25)', 'stroke-width':'1.5' }));
+  svg.appendChild(svgPath(buildOutlinePath(cells, size, gap), { fill:'none', stroke:'rgba(0,0,0,0.45)', 'stroke-width':'2', 'stroke-linejoin':'round' }));
+  box.appendChild(svg);
+
+  // Invisible per-square hit areas, so a drag knows which square was grabbed
+  cells.forEach(([r,c])=>{
+    const blk = document.createElement('div');
+    blk.className = 'blk';
+    blk.dataset.dr = r;
+    blk.dataset.dc = c;
+    Object.assign(blk.style, {
+      position:'absolute', left: c*(size+gap)+'px', top: r*(size+gap)+'px',
+      width: size+'px', height: size+'px'
+    });
+    box.appendChild(blk);
+  });
+  return box;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD
+═══════════════════════════════════════════════════════════════════ */
+// Make the board as large as the space between the pieces and the buttons
+// allows, capped at --board-max-cell per square.
+function fitBoard(){
+  GAP = cssPx('--board-gap');
+  const pad = cssPx('--board-pad');
+  const availW = Math.min(boardWrapEl.clientWidth, window.innerWidth - 32) - 2*pad;
+  const availH = boardWrapEl.clientHeight - 2*pad;
+  const byW = (availW - (puzzle.cols-1)*GAP) / puzzle.cols;
+  const byH = (availH - (puzzle.rows-1)*GAP) / puzzle.rows;
+  CELL = Math.max(20, Math.floor(Math.min(byW, byH, cssPx('--board-max-cell'))));
+}
+
+function setupBoard(){
+  fitBoard();
+  boardEl.style.gridTemplateColumns = `repeat(${puzzle.cols}, ${CELL}px)`;
+  boardEl.style.gridTemplateRows = `repeat(${puzzle.rows}, ${CELL}px)`;
+  boardEl.style.gap = GAP + 'px';
+  boardEl.style.fontSize = (CELL/40) + 'rem';   // scales the blocked-square X
+  boardEl.innerHTML = '';
+  for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++){
+    const cell = document.createElement('div');
+    cell.className = 'board-cell' + (isVisiblyBlocked(r,c) ? ' blocked' : '');
+    cell.dataset.r = r;
+    cell.dataset.c = c;
+    boardEl.appendChild(cell);
+  }
+  renderHint();
+}
+
+// Optional dashed outline around a region (puzzle #2). Its caption is set
+// once at start, before the board measures how much room it has.
+function renderHint(){
+  const overlay = document.getElementById('hint-overlay');
+  overlay.innerHTML = '';
+  if(!puzzle.hintOutline || !puzzle.hintOutline.length) return;
+  const minR = Math.min(...puzzle.hintOutline.map(c=>c[0]));
+  const minC = Math.min(...puzzle.hintOutline.map(c=>c[1]));
+  const rel = puzzle.hintOutline.map(([r,c])=>[r-minR, c-minC]);
+  const {rows, cols} = bounds(rel);
+  const w = cols*CELL + (cols-1)*GAP, h = rows*CELL + (rows-1)*GAP;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  Object.assign(svg.style, { position:'absolute', left: pxPos(minC)+'px', top: pxPos(minR)+'px', overflow:'visible' });
+  svg.appendChild(svgPath(buildOutlinePath(rel, CELL, GAP), {
+    fill:'none', stroke:'var(--color-accent)', 'stroke-width':'3', 'stroke-dasharray':'7 5', 'stroke-linejoin':'round'
+  }));
+  overlay.appendChild(svg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDERING
+═══════════════════════════════════════════════════════════════════ */
+function renderTray(){
+  const size = cssPx('--tray-cell');
+  const used = new Set(placedPieces.map(p=>p.name));
+  trayEl.innerHTML = '';
+  puzzle.pieces.forEach(def=>{
+    const cells = trayCells[def.name];
+    // Every slot is a square big enough for the piece in any orientation,
+    // so rotating doesn't make the row jump around.
+    const longest = Math.max(...Object.values(bounds(cells)));
+    const slotPx = longest*size + (longest-1)*2;
+    const slot = document.createElement('div');
+    slot.className = 'tray-slot'
+      + (used.has(def.name) ? ' used' : '')
+      + (selection && selection.kind==='tray' && selection.name===def.name ? ' selected' : '');
+    slot.style.width = slot.style.height = (slotPx + 12) + 'px';
+    slot.dataset.name = def.name;
+    slot.appendChild(buildPieceShape(cells, def.color, size, 2));
+    slot.addEventListener('pointerdown', e=>onPiecePointerDown(e, {kind:'tray', name:def.name}));
+    trayEl.appendChild(slot);
+  });
+}
+
+function renderBoardPieces(){
+  piecesLayerEl.querySelectorAll('.placed-piece').forEach(el=>el.remove());
+  placedPieces.forEach(p=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'placed-piece'
+      + (selection && selection.kind==='board' && selection.id===p.id ? ' selected' : '')
+      + (invalidIds.has(p.id) ? ' invalid' : '');
+    wrap.style.left = pxPos(p.col) + 'px';
+    wrap.style.top = pxPos(p.row) + 'px';
+    wrap.dataset.id = p.id;
+    wrap.appendChild(buildPieceShape(p.cells, p.color, CELL, GAP));
+    wrap.addEventListener('pointerdown', e=>onPiecePointerDown(e, {kind:'board', id:p.id}));
+    piecesLayerEl.appendChild(wrap);
+  });
+}
+
+function renderAll(){
+  recomputeValidity();
+  renderTray();
+  renderBoardPieces();
+  reflectBtn.disabled = rotateBtn.disabled = !selection;
+  checkSolved();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SELECT / ROTATE / REFLECT
+═══════════════════════════════════════════════════════════════════ */
+function select(sel){ selection = sel; renderAll(); }
+
+function transformSelection(fn){
+  if(!selection) return;
+  if(selection.kind === 'tray'){
+    trayCells[selection.name] = fn(trayCells[selection.name]);
+  } else {
+    const p = placedPieces.find(pp=>pp.id===selection.id);
+    if(!p) return;
+    p.cells = fn(p.cells);   // turns in place; goes red if it no longer fits
+  }
+  renderAll();
+}
+reflectBtn.addEventListener('click', ()=>transformSelection(reflectCells));
+rotateBtn.addEventListener('click', ()=>transformSelection(rotateCells));
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='r' || e.key==='R') transformSelection(rotateCells);
+  else if(e.key==='f' || e.key==='F' || e.key==='t' || e.key==='T') transformSelection(reflectCells);
+  else if(e.key==='Escape') select(null);
+});
+
+// Tapping empty space clears the selection (but not taps on the buttons)
+document.addEventListener('pointerdown', e=>{
+  if(e.target.closest('.tray-slot, .placed-piece, .controls, .popup')) return;
+  if(selection) select(null);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   DRAG
+   A press only becomes a drag once the pointer moves a few pixels; a
+   press-and-release without moving is a tap, which selects the piece.
+═══════════════════════════════════════════════════════════════════ */
+const DRAG_THRESHOLD = 5;
+let press = null;   // {source, startX, startY, grabDR, grabDC, dragging, ghost, cells, color, name}
+
+function onPiecePointerDown(e, source){
+  if(e.button !== undefined && e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  let cells, color, name, grabDR, grabDC;
+  if(source.kind === 'tray'){
+    const def = puzzle.pieces.find(d=>d.name===source.name);
+    cells = trayCells[def.name]; color = def.color; name = def.name;
+    const b = bounds(cells);
+    grabDR = Math.floor((b.rows-1)/2);
+    grabDC = Math.floor((b.cols-1)/2);
+  } else {
+    const p = placedPieces.find(pp=>pp.id===source.id);
+    cells = p.cells; color = p.color; name = p.name;
+    const blk = e.target.closest('.blk');
+    grabDR = blk ? +blk.dataset.dr : 0;
+    grabDC = blk ? +blk.dataset.dc : 0;
+  }
+  press = { source, startX:e.clientX, startY:e.clientY, grabDR, grabDC, cells, color, name, dragging:false, ghost:null };
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+}
+
+function beginDrag(){
+  press.dragging = true;
+  press.ghost = document.createElement('div');
+  press.ghost.className = 'ghost';
+  press.ghost.appendChild(buildPieceShape(press.cells, press.color, CELL, GAP));
+  piecesLayerEl.appendChild(press.ghost);
+  if(press.source.kind === 'board'){
+    const el = piecesLayerEl.querySelector(`.placed-piece[data-id="${press.source.id}"]`);
+    if(el) el.style.visibility = 'hidden';
+  }
+}
+
+// Where the piece would land for this pointer position (snapped to the grid)
+function landingSpot(clientX, clientY, grab){
+  const rect = boardEl.getBoundingClientRect();
+  const col = Math.floor((clientX - rect.left) / (CELL+GAP));
+  const row = Math.floor((clientY - rect.top) / (CELL+GAP));
+  return { row: row - grab.grabDR, col: col - grab.grabDC };
+}
+
+function clearHighlights(){
+  boardEl.querySelectorAll('.hl-valid, .hl-invalid').forEach(el=>el.classList.remove('hl-valid','hl-invalid'));
+}
+
+function overTray(clientX, clientY){
+  const r = trayEl.getBoundingClientRect();
+  return clientX>=r.left && clientX<=r.right && clientY>=r.top && clientY<=r.bottom;
+}
+
+function onPointerMove(e){
+  if(!press) return;
+  if(!press.dragging){
+    if(Math.hypot(e.clientX-press.startX, e.clientY-press.startY) < DRAG_THRESHOLD) return;
+    beginDrag();
+  }
+  // Ghost follows the pointer smoothly; the highlighted squares show where
+  // it will snap to.
+  const rect = boardEl.getBoundingClientRect();
+  press.ghost.style.left = (e.clientX - rect.left - press.grabDC*(CELL+GAP) - CELL/2) + 'px';
+  press.ghost.style.top  = (e.clientY - rect.top  - press.grabDR*(CELL+GAP) - CELL/2) + 'px';
+
+  clearHighlights();
+  if(overTray(e.clientX, e.clientY)) return;
+  const {row, col} = landingSpot(e.clientX, e.clientY, press);
+  const excludeId = press.source.kind==='board' ? press.source.id : null;
+  const ok = fits(press.cells, row, col, excludeId);
+  press.cells.forEach(([r,c])=>{
+    const el = boardEl.querySelector(`.board-cell[data-r="${row+r}"][data-c="${col+c}"]`);
+    if(el) el.classList.add(ok ? 'hl-valid' : 'hl-invalid');
+  });
+}
+
+function onPointerUp(e){
+  if(!press) return;
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerUp);
+  const p = press;
+  press = null;
+  clearHighlights();
+
+  if(!p.dragging){
+    // A tap: select it (tap a selected piece again to deselect)
+    const same = selection && selection.kind===p.source.kind &&
+      (p.source.kind==='tray' ? selection.name===p.source.name : selection.id===p.source.id);
+    select(same ? null : p.source);
+    return;
+  }
+  p.ghost.remove();
+
+  const {row, col} = landingSpot(e.clientX, e.clientY, p);
+  const offBoard = e.type==='pointercancel' || overTray(e.clientX, e.clientY) || completelyOffBoard(p.cells, row, col);
+
+  if(p.source.kind === 'tray'){
+    if(!offBoard){
+      const id = 'p' + (placedIdCounter++);
+      placedPieces.push({ id, name:p.name, color:p.color, cells:p.cells.map(c=>c.slice()), row, col });
+      selection = {kind:'board', id};
+    }
+  } else {
+    const piece = placedPieces.find(pp=>pp.id===p.source.id);
+    if(offBoard){
+      // Dragged off the board: it goes back to the top, in its current turn
+      placedPieces = placedPieces.filter(pp=>pp.id!==piece.id);
+      trayCells[piece.name] = piece.cells;
+      selection = null;
+    } else {
+      piece.row = row;
+      piece.col = col;
+      selection = {kind:'board', id:piece.id};
+    }
+  }
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   WIN CHECK
+   Solved = every piece placed, none overlapping/off-grid/on a blocked
+   square, and every row and column has an even number of filled squares.
+   Once all pieces are down but some row/column is odd, those are outlined
+   in red.
+═══════════════════════════════════════════════════════════════════ */
+function formatElapsed(ms){
+  const s = Math.max(0, Math.floor(ms/1000));
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+
+function checkSolved(){
+  boardEl.querySelectorAll('.parity-odd').forEach(el=>el.classList.remove('parity-odd'));
+  if(solved) return;
+  if(placedPieces.length !== puzzle.pieces.length || invalidIds.size) return;
+
+  const filled = new Set();
+  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>filled.add((p.row+r)+','+(p.col+c))));
+  const oddRows = [], oddCols = [];
+  for(let r=0; r<puzzle.rows; r++){
+    let n = 0;
+    for(let c=0; c<puzzle.cols; c++) if(filled.has(r+','+c)) n++;
+    if(n % 2) oddRows.push(r);
+  }
+  for(let c=0; c<puzzle.cols; c++){
+    let n = 0;
+    for(let r=0; r<puzzle.rows; r++) if(filled.has(r+','+c)) n++;
+    if(n % 2) oddCols.push(c);
+  }
+
+  if(!oddRows.length && !oddCols.length){
+    solved = true;
+    document.getElementById('solved-time').textContent = 'Your time: ' + formatElapsed(Date.now() - startTime);
+    document.getElementById('solved-popup').hidden = false;
+    return;
+  }
+  oddRows.forEach(r=>boardEl.querySelectorAll(`.board-cell[data-r="${r}"]`).forEach(el=>el.classList.add('parity-odd')));
+  oddCols.forEach(c=>boardEl.querySelectorAll(`.board-cell[data-c="${c}"]`).forEach(el=>el.classList.add('parity-odd')));
+}
+document.getElementById('solved-close').addEventListener('click', ()=>{
+  document.getElementById('solved-popup').hidden = true;
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   START
+═══════════════════════════════════════════════════════════════════ */
+if(!puzzle){
+  document.querySelector('.game').hidden = true;
+  document.getElementById('missing-popup').hidden = false;
+} else {
+  document.title = 'Parity Blocks: ' + puzzle.title;
+  puzzle.pieces.forEach(def=>{ trayCells[def.name] = def.cells.map(c=>c.slice()); });
+  const caption = document.getElementById('hint-caption');
+  caption.textContent = puzzle.hintText || '';
+  caption.hidden = !puzzle.hintText;
+  renderTray();          // tray + caption first, so the board sizes itself to the space left
+  setupBoard();
+  renderAll();
+  let resizeTimer = null;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(()=>{ setupBoard(); renderAll(); }, 100);
+  });
+}
+</script>
+</body>
+</html>

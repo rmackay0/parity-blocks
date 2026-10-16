@@ -14,8 +14,27 @@ reference below to `index.html` now means `sandbox.html`.
 - Images live in `assets/` (`assets/logo.svg` is a placeholder mark: a 4×4
   board where every row/column is even). It's also the favicon.
 - Fonts: Fredoka (display) + Nunito (body) via Google Fonts.
-- Difficulty buttons read `DIFFICULTY_LINKS` in the script; all three are
-  `null` (shows a "coming soon" toast) until game pages exist.
+- Difficulty buttons read `DIFFICULTY_LINKS` in the script: Medium →
+  `play.html?puzzle=test-puzzle-2`, Hard → `play.html?puzzle=test-puzzle-1`,
+  Easy is `null` ("coming soon" toast) until there's an easy puzzle.
+- **`puzzles.js`** holds `PUZZLES` (moved out of the sandbox 2026-10-16) and
+  is loaded by both `play.html` and `sandbox.html` via `<script src>` —
+  edit puzzles there only.
+- **`play.html`** is the public game page: a standalone, much smaller
+  rewrite rather than the sandbox with things hidden. Layout (per user):
+  pieces at the top with **no labels**, a large centered board (squares sized
+  to fill the space between, capped by `--board-max-cell`), and **Reflect
+  (left) / Rotate (right)** buttons below. Interaction: drag from the top
+  to place; tap a piece (board or top) to select it for Reflect/Rotate
+  (R/F/Esc keys too); drag a placed piece off the board or back to the top
+  to remove it (it returns in its current orientation). Same placement
+  rules as the sandbox (bad drops allowed but shown red; validity is
+  rechecked for every piece after each change), same win condition and
+  odd-row/column red outline, hidden blocked cells and hint outline/caption
+  supported. No visible timer; the "Solved!" popup shows the time. No
+  undo, trash zone, multi-select, or duplicate — deliberately left out to
+  keep it simple. Piece-drawing code (`buildOutlinePath` etc.) is copied
+  from the sandbox, not shared.
 - Unlike the sandbox's modals, the rules popup also closes on Escape and
   backdrop click (standard for a public landing page).
 
