@@ -1,5 +1,24 @@
 # Polyomino Playground — Handoff Notes
 
+## Parity Blocks redesign (started 2026-10-16) — read first
+
+The site now launches on a **splash screen** (`index.html`): logo, an info
+(i) button that opens a rules popup, and Easy / Medium / Hard buttons. The
+old sandbox app described in the rest of this document was moved unchanged
+to **`sandbox.html`** (kept as the admin/puzzle-building tool) — every
+reference below to `index.html` now means `sandbox.html`.
+
+- `index.html` is annotated for non-developer editing: search for the tags
+  `[FONTS]`, `[COLORS]`, `[POSITIONING]`, `[IMAGES]`, `[CONTENT]`,
+  `[BEHAVIOR]`. Nearly all tunables are CSS variables in its `:root` block.
+- Images live in `assets/` (`assets/logo.svg` is a placeholder mark: a 4×4
+  board where every row/column is even). It's also the favicon.
+- Fonts: Fredoka (display) + Nunito (body) via Google Fonts.
+- Difficulty buttons read `DIFFICULTY_LINKS` in the script; all three are
+  `null` (shows a "coming soon" toast) until game pages exist.
+- Unlike the sandbox's modals, the rules popup also closes on Escape and
+  backdrop click (standard for a public landing page).
+
 A single-file HTML/CSS/JS puzzle app (`index.html`, no build step, no
 dependencies). Drag polyomino pieces onto a grid, design your own shapes,
 rotate/flip/duplicate/delete them (single or multi-select), undo, toggle a

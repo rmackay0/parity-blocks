@@ -1,2643 +1,458 @@
 <!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  PARITY BLOCKS: SPLASH SCREEN
+  ═══════════════════════════════════════════════════════════════════════
+
+  EDIT GUIDE: search this file for these tags to find each kind of setting:
+
+    [FONTS]        typefaces, sizes, weights        (font link in <head> + CSS)
+    [COLORS]       every color on the page          (CSS :root block)
+    [POSITIONING]  layout, spacing, sizes, placement (CSS :root block + rules)
+    [IMAGES]       logo, favicon, background image  (<head>, CSS, <body>)
+    [CONTENT]      rules text, button labels        (<body>)
+    [BEHAVIOR]     what the difficulty buttons do   (<script>)
+
+  The old puzzle sandbox (admin tool) now lives in sandbox.html.
+  ═══════════════════════════════════════════════════════════════════════
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polyomino Playground</title>
+<title>Parity Blocks</title>
+
+<!-- [IMAGES] Browser-tab icon. Point href at any .svg / .png / .ico in assets/. -->
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+
+<!-- [FONTS] Step 1 of 2: load the fonts from Google Fonts.
+     To change fonts: pick new ones at https://fonts.google.com, copy their
+     "family=" part into this URL, then update --font-display / --font-body
+     in the :root block below (step 2). Delete this <link> entirely if you
+     only want system fonts. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+
 <style>
-  :root {
-    --bg: #241f1c;
-    --panel: #332a25;
-    --panel-border: #4d3f36;
-    --board-cell: #443830;
-    --text: #e8ddd0;
-    --text-dim: #a3937f;
-    --accent: #d99a4e;
-    --accent-dim: #8a6b3e;
-    --valid-bg: #3c5638;
-    --valid-border: #6fae5a;
-    --invalid-bg: #5a3838;
-    --invalid-border: #c25a5a;
-    --danger: #a34a4a;
-    --teal: #4f8a8b;
-    --plum: #7d5a78;
-    --edit-color: #5a7d8c;
-    --checker-0: #2e2622;
-    --checker-1: #5e4c3e;
-    --checker-2: #8a6d52;
+  /* [FONTS] Locally hosted font for the title/logo text.
+     To swap it: drop a new .ttf/.otf/.woff2 in the project, change the
+     url() below, and (optionally) rename font-family here and in
+     --font-logo. The variable font covers every weight from 400 to 700. */
+  @font-face {
+    font-family: 'Pixelify Sans';
+    src: url('Pixelify_Sans/PixelifySans-VariableFont_wght.ttf') format('truetype');
+    font-weight: 400 700;
+    font-display: swap;
   }
+
+  :root {
+    /* ─────────────────────────────────────────────────────────────
+       [FONTS] Step 2 of 2: which font is used where.
+       The first name must match a family loaded in the <link> above;
+       the names after it are fallbacks if that font fails to load.
+       ───────────────────────────────────────────────────────────── */
+    --font-logo:    'Roboto', 'Segoe UI', sans-serif;    /* "Parity Blocks" title. To go back to the
+                                                            pixel font: 'Pixelify Sans', monospace */
+    --font-display: 'Fredoka', 'Segoe UI', sans-serif;   /* buttons, popup heading */
+    --font-body:    'Nunito', 'Segoe UI', sans-serif;    /* tagline, rules text */
+
+    /* [FONTS] Sizes. clamp(min, preferred, max) scales with screen width. */
+    --title-size:   clamp(2.4rem, 8vw, 4.25rem);
+    --tagline-size: clamp(0.95rem, 2.6vw, 1.15rem);
+    --button-size:  1.15rem;
+    --rules-size:   0.95rem;
+
+    /* [FONTS] Weights (must be a weight listed in the font <link>). */
+    --title-weight:  700;
+    --button-weight: 600;
+
+    /* ─────────────────────────────────────────────────────────────
+       [COLORS] Every color on the page is set here.
+       Change a value once and it updates everywhere it's used.
+       ───────────────────────────────────────────────────────────── */
+    --color-bg:          #241f1c;   /* page background */
+    --color-bg-glow:     #3a2e27;   /* soft radial glow behind the logo */
+    --color-title:       #d99a4e;   /* "Parity Blocks" heading */
+    --color-pent-letter: #4f8a8b;   /* the pentomino P and b in the heading */
+    --color-text:        #e8ddd0;   /* main text (rules body) */
+    --color-text-dim:    #a3937f;   /* tagline, secondary text */
+
+    --color-easy:        #4f8a8b;   /* Easy button */
+    --color-medium:      #d99a4e;   /* Medium button */
+    --color-hard:        #7d5a78;   /* Hard button */
+    --color-button-text: #ffffff;   /* label text on all three buttons */
+
+    --color-info-bg:     #332a25;   /* info (i) button fill */
+    --color-info-border: #4d3f36;   /* info (i) button outline */
+    --color-info-icon:   #e8ddd0;   /* the "i" itself */
+
+    --color-panel:       #332a25;   /* rules popup background */
+    --color-panel-border:#4d3f36;   /* rules popup outline */
+    --color-overlay:     rgba(0, 0, 0, 0.6);  /* dimmed backdrop behind popup */
+    --color-focus:       #f2c48a;   /* keyboard-focus ring on buttons */
+
+    /* ─────────────────────────────────────────────────────────────
+       [POSITIONING] Sizes and spacing.
+       ───────────────────────────────────────────────────────────── */
+    --logo-size:       clamp(110px, 26vw, 170px);  /* logo width & height */
+    --stack-gap:       28px;    /* space between logo, title block, buttons */
+    --button-width:    260px;   /* width of each difficulty button */
+    --button-height:   56px;    /* height of each difficulty button */
+    --button-gap:      14px;    /* space between the three buttons */
+    --button-radius:   14px;    /* corner roundness (0 = square, 999px = pill) */
+
+    --info-size:       44px;    /* diameter of the info (i) button */
+    --info-top:        18px;    /* info button distance from top edge */
+    --info-right:      18px;    /* info button distance from right edge
+                                   (swap to `left` in .info-btn to move it) */
+
+    --popup-width:     440px;   /* rules popup max width */
+
+    /* [IMAGES] Optional full-page background image.
+       e.g. url('assets/background.jpg'). Leave as none for a plain color. */
+    --bg-image: none;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
+
   body {
-    font-family: 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    /* [IMAGES] Background image sits on top of the glow. Change
+       background-size to `contain` or a fixed size if needed. */
+    background-image:
+      var(--bg-image),
+      radial-gradient(circle at 50% 38%, var(--color-bg-glow) 0%, transparent 60%);
+    background-size: cover, auto;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* ── [POSITIONING] Main column ──────────────────────────────────
+     Everything (logo, title, buttons) is stacked in one centered column.
+       • justify-content: vertical placement.
+           center     = middle of screen (current)
+           flex-start = top   (add padding-top to push down)
+           flex-end   = bottom
+       • align-items: horizontal placement (center / flex-start / flex-end).
+       • To reorder elements, move them in the HTML or set `order:` on them. */
+  .splash {
+    min-height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    padding: 10px 14px;
-    gap: 8px;
-  }
-
-  .topbar { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; }
-  .topbar .logo { color: var(--accent); font-size: 1.1rem; }
-  .topbar .title { font-size: 1.05rem; font-weight: 700; letter-spacing: 1px; color: var(--accent); }
-
-  .tab-bar { flex: 0 0 auto; display: flex; gap: 6px; margin-top: 10px; border-bottom: 1px solid var(--panel-border); }
-  .tab-btn {
-    background: none; border: none; color: var(--text-dim);
-    font-size: 0.8rem; padding: 7px 14px; cursor: pointer;
-    border-bottom: 2px solid transparent;
-  }
-  .tab-btn:hover { color: var(--text); }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-
-  .main-row {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: row;
-    gap: 14px;
-    align-items: stretch;
     justify-content: center;
-  }
-
-  /* ── SIDEBAR / PALETTE ── */
-  .sidebar {
-    flex: 0 0 320px;
-    overflow-y: auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 12px;
-  }
-
-  .row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-dim); }
-  .row input[type=number] {
-    width: 48px;
-    padding: 4px 6px;
-    border-radius: 6px;
-    border: 1px solid var(--panel-border);
-    background: var(--board-cell);
-    color: var(--text);
-  }
-  .row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
-  .row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-  .row select {
-    padding: 4px 6px;
-    border-radius: 6px;
-    border: 1px solid var(--panel-border);
-    background: var(--board-cell);
-    color: var(--text);
-    font-size: 0.78rem;
-    cursor: pointer;
-  }
-  .row select:disabled { cursor: not-allowed; opacity: 0.6; }
-
-  .tray-controls-row { padding-bottom: 10px; border-bottom: 1px solid var(--panel-border); }
-
-  button {
-    padding: 6px 11px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.76rem;
-    font-weight: 600;
-    color: #fff;
-    transition: opacity 0.15s, transform 0.1s;
-  }
-  button:hover { opacity: 0.85; transform: translateY(-1px); }
-  button:active { transform: translateY(0); }
-
-  .btn-mini   { background: var(--teal); padding: 5px 10px; }
-  .btn-mini.active { box-shadow: 0 0 0 2px var(--accent); }
-  .btn-clear  { background: var(--panel-border); color: var(--text); }
-  .btn-trash  { background: var(--danger); }
-  .btn-save   { background: var(--plum); }
-  /* Rotate is always teal, flip/reflect is always plum, wherever they appear */
-  .btn-rotate { background: var(--teal); }
-  .btn-flip   { background: var(--plum); }
-
-  .palette-section.collapsed .palette-tiles { display: none; }
-  .palette-section.collapsed .chevron { transform: rotate(-90deg); }
-
-  .section-header {
-    font-size: 0.82rem;
-    color: var(--accent);
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-    padding: 2px 0;
-  }
-  .section-header .chevron { transition: transform 0.15s; font-size: 0.7rem; }
-
-  .palette-tiles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .tile {
-    position: relative;
-    background: var(--board-cell);
-    border: 1px solid var(--panel-border);
-    border-radius: 8px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    cursor: grab;
-    user-select: none;
-    touch-action: none;
-    transition: box-shadow 0.15s, transform 0.15s;
-    min-width: 52px;
-  }
-  .tile:hover { box-shadow: 0 0 8px #d99a4e55; transform: translateY(-2px); }
-  .tile:active { cursor: grabbing; }
-  .tile .tile-name { font-size: 0.6rem; color: var(--text-dim); text-align: center; white-space: nowrap; }
-  .tile .tile-grid { position: relative; }
-
-  .tile-btn {
-    position: absolute;
-    top: -6px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: none;
-    font-size: 9px;
-    line-height: 16px;
+    gap: var(--stack-gap);
+    padding: 72px 16px 40px;     /* top / sides / bottom breathing room */
     text-align: center;
-    cursor: pointer;
-    color: #fff;
-    display: none;
   }
-  .tile:hover .tile-btn { display: block; }
-  /* positions only here — colors come from the shared .btn-rotate/.btn-flip
-     rules plus these two, so every rotate/flip button app-wide matches */
-  .tile-btn.edit   { right: -6px; background: var(--edit-color); }
-  .tile-btn.del    { right: 18px; background: var(--danger); }
-  .tile-btn.flip   { right: 42px; }
-  .tile-btn.rotate { right: 66px; }
-  /* standard/pentomino tiles only ever show rotate+flip (no edit/del),
-     so they get the first two slots instead of the crowded 4-button layout */
-  .tile-btn.flip.pair   { right: -6px; }
-  .tile-btn.rotate.pair { right: 18px; }
 
-  .add-tile {
-    background: var(--board-cell);
-    border: 1px dashed var(--accent-dim);
-    border-radius: 8px;
-    padding: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 52px;
-    min-height: 52px;
-    cursor: pointer;
-    color: var(--accent-dim);
-    font-size: 1.3rem;
+  /* [IMAGES] [POSITIONING] Logo image size. Its file is set in the <img> tag. */
+  .logo {
+    width: var(--logo-size);
+    height: var(--logo-size);
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
   }
-  .add-tile:hover { background: #4d4038; color: var(--accent); }
 
-  /* ── BOARD ── */
-  .board-area {
-    flex: 0 0 auto;
+  /* [FONTS] Title text */
+  .title {
+    font-family: var(--font-logo);
+    font-size: var(--title-size);
+    font-weight: var(--title-weight);
+    color: var(--color-title);
+    letter-spacing: 0.02em;
+    line-height: 1.05;
+  }
+
+  /* [POSITIONING] [COLORS] Pentomino letters in the title (the P and the b).
+     They're drawn in the <svg> tags in the <h1>, not typed, so they don't
+     change with the font.
+       • height: size of the pieces. 1.1em is about 1.7x the font's capital
+         height (capital height is 0.711em in Roboto, 0.638em in
+         Pixelify Sans). Width follows
+         automatically (pieces are 2 squares wide, 3 tall).
+       • vertical-align: baseline = bottoms sit on the text baseline, so the
+         extra height rises above the other letters. Use `middle` to center
+         them on the text instead.
+       • margin = space on each side (right, then left are the 2nd/4th values).
+       • Color comes from --color-pent-letter in :root; dividers are the thin
+         lines between squares. */
+  .pent-letter {
+    height: 1.1em;
+    width: auto;
+    margin: 0 0.06em 0 0.1em;
+    vertical-align: baseline;
+    fill: var(--color-pent-letter);
+    overflow: visible;
+  }
+  .pent-letter .dividers {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.3);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* [FONTS] Tagline under the title */
+  .tagline {
+    margin-top: 8px;               /* [POSITIONING] gap between title and tagline */
+    font-size: var(--tagline-size);
+    color: var(--color-text-dim);
+  }
+
+  /* ── [POSITIONING] Difficulty buttons ───────────────────────────
+     flex-direction: column = stacked vertically (current).
+     Change to `row` (and add flex-wrap: wrap) to lay them side by side. */
+  .difficulty {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    min-height: 0;
-    overflow: auto;
+    gap: var(--button-gap);
+    width: 100%;
+    max-width: var(--button-width);
   }
 
-  .trash-zone {
-    width: 100%;
-    max-width: 480px;
-    min-height: 48px;
+  .difficulty-btn {
+    height: var(--button-height);
+    border: none;
+    border-radius: var(--button-radius);
+    font-family: var(--font-display);          /* [FONTS] */
+    font-size: var(--button-size);             /* [FONTS] */
+    font-weight: var(--button-weight);         /* [FONTS] */
+    letter-spacing: 0.04em;
+    color: var(--color-button-text);           /* [COLORS] */
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+    transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+  }
+  .difficulty-btn:hover  { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
+  .difficulty-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+
+  /* [COLORS] Per-difficulty button colors (values live in :root) */
+  .difficulty-btn[data-difficulty="easy"]   { background: var(--color-easy); }
+  .difficulty-btn[data-difficulty="medium"] { background: var(--color-medium); }
+  .difficulty-btn[data-difficulty="hard"]   { background: var(--color-hard); }
+
+  /* ── [POSITIONING] Info (i) button, pinned to the top-right corner ── */
+  .info-btn {
+    position: fixed;
+    top: var(--info-top);
+    right: var(--info-right);
+    width: var(--info-size);
+    height: var(--info-size);
+    border-radius: 50%;
+    border: 2px solid var(--color-info-border);
+    background: var(--color-info-bg);
+    color: var(--color-info-icon);
+    font-family: Georgia, 'Times New Roman', serif;  /* [FONTS] the "i" glyph */
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-style: italic;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    border: 2px dashed var(--danger);
-    border-radius: 10px;
-    background: rgba(163,74,74,0.08);
-    color: var(--danger);
-    font-size: 0.8rem;
-    font-weight: 600;
-    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    transition: transform 0.1s, filter 0.15s;
   }
-  .trash-zone .trash-icon { font-size: 1.1rem; }
-  .trash-zone.drag-over {
-    background: rgba(163,74,74,0.35);
-    border-color: #ff8080;
-    border-style: solid;
-    transform: scale(1.03);
+  .info-btn:hover { filter: brightness(1.2); transform: scale(1.06); }
+
+  .difficulty-btn:focus-visible,
+  .info-btn:focus-visible,
+  .popup-close:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
   }
 
-  .error-toast {
+  /* ── Rules popup ─────────────────────────────────────────────── */
+  .popup-backdrop {
     position: fixed;
-    bottom: 20px;
+    inset: 0;
+    background: var(--color-overlay);
+    display: flex;                 /* [POSITIONING] popup centered on screen */
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 100;
+  }
+  .popup-backdrop[hidden] { display: none; }
+
+  .popup {
+    position: relative;
+    width: 100%;
+    max-width: var(--popup-width);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    background: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 16px;
+    padding: 26px 24px 22px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+  .popup h2 {
+    font-family: var(--font-display);   /* [FONTS] */
+    font-size: 1.5rem;
+    color: var(--color-title);          /* [COLORS] */
+    margin-bottom: 14px;
+  }
+  .popup p {
+    font-size: var(--rules-size);       /* [FONTS] */
+    line-height: 1.55;
+    margin-bottom: 12px;
+  }
+  .popup b { color: var(--color-title); }
+  .popup-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-dim);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .popup-close:hover { color: var(--color-text); background: rgba(255, 255, 255, 0.06); }
+  .popup-ok {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    height: 46px;
+    font-size: 1rem;
+    background: var(--color-easy);      /* [COLORS] "Got it" button */
+  }
+
+  /* Small "coming soon" notice shown when a difficulty has no game yet */
+  .toast {
+    position: fixed;
     left: 50%;
+    bottom: 24px;
     transform: translateX(-50%) translateY(10px);
-    background: var(--danger);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    background: var(--color-panel);
+    border: 1px solid var(--color-panel-border);
+    color: var(--color-text);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 0.9rem;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s, transform 0.2s;
-    z-index: 3000;
   }
-  .error-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  #marquee-box {
-    position: fixed;
-    display: none;
-    border: 1px dashed rgba(255,255,255,0.85);
-    background: rgba(255,255,255,0.08);
-    pointer-events: none;
-    z-index: 1500;
-  }
-
-  #board-outer {
-    position: relative;
-    background: #1c1714;
-    border-radius: 10px;
-    padding: 10px;
-    box-shadow: 0 0 24px rgba(0,0,0,0.5);
-  }
-
-  #board { position: relative; display: grid; }
-
-  .board-cell {
-    background: var(--board-cell);
-    border: 1px solid var(--panel-border);
-    border-radius: 3px;
-  }
-  /* Pattern classes (checkerboard today, more groups later) come before the
-     drag-highlight rules below so hl-valid/hl-invalid still win when both
-     apply to the same cell during a drag. */
-  .board-cell.pat0 { background: var(--checker-0); }
-  .board-cell.pat1 { background: var(--checker-1); }
-  .board-cell.pat2 { background: var(--checker-2); }
-  .board-cell.blocked {
-    background: var(--bg);
-    border-style: dashed;
-    border-color: var(--panel-border);
-    position: relative;
-  }
-  .board-cell.blocked::after {
-    content: '\2715';
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #e05252;
-    font-size: 1.3rem;
-    font-weight: 700;
-    pointer-events: none;
-  }
-  .board-cell.hl-valid { background: var(--valid-bg); border-color: var(--valid-border); }
-  .board-cell.hl-invalid { background: var(--invalid-bg); border-color: var(--invalid-border); }
-  /* Shown once every puzzle piece is placed and valid but the row/column
-     parity win condition still fails -- an inset ring rather than a
-     background/border change so it never fights with the cell's own
-     pattern color underneath. */
-  .board-cell.parity-odd { box-shadow: inset 0 0 0 2px var(--invalid-border); }
-
-  #puzzle-tiles .tile.consumed { opacity: 0.3; pointer-events: none; }
-
-  /* While editing the grid shape, clicks must reach the board cell
-     underneath even where a piece is currently sitting, so a cell can be
-     blocked/unblocked regardless of what's on it right now. */
-  body.editing-grid-shape #board .board-cell { cursor: pointer; }
-  body.editing-grid-shape .placed-piece .blk { pointer-events: none; }
-
-  #pieces-layer { position: absolute; inset: 10px; pointer-events: none; }
-  /* Sits above pieces-layer so the pattern shows through ("onion skin")
-     even over covered squares; never intercepts clicks/drags. */
-  #checker-overlay { position: absolute; inset: 10px; pointer-events: none; }
-  .checker-overlay-cell { position: absolute; opacity: 0.5; border-radius: 3px; }
-  /* Sits above everything else so a puzzle's hint outline (a static dashed
-     boundary around a hint region, e.g. "these cells can only be covered
-     by two pieces") stays visible regardless of what's placed underneath. */
-  #hint-overlay { position: absolute; inset: 10px; pointer-events: none; z-index: 500; }
-
-  .placed-piece { position: absolute; }
-  .placed-piece .blk {
-    pointer-events: auto;
-    cursor: grab;
-  }
-  .placed-piece .piece-svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
-  .placed-piece.selected .piece-svg {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 2px rgba(255,255,255,0.75));
-  }
-  /* Comes after .selected so it wins when a piece is both selected and
-     invalid — which is the common case, since the piece needing fixing
-     stays selected until it's resolved. */
-  .placed-piece.invalid .piece-svg {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 4px rgba(220,70,70,0.95)) drop-shadow(0 0 4px rgba(220,70,70,0.95));
-  }
-
-  .ghost {
-    position: absolute;
-    pointer-events: none;
-    opacity: 0.7;
-    z-index: 999;
-  }
-  .ghost.invalid .piece-svg { filter: grayscale(0.5) brightness(0.7); }
-  .ghost.trashing { opacity: 0.35; transform: scale(0.6); transition: opacity 0.15s, transform 0.15s; }
-
-  .sel-toolbar {
-    position: fixed;
-    display: flex;
-    gap: 4px;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 8px;
-    padding: 4px;
-    z-index: 1000;
-  }
-  .sel-toolbar button { padding: 5px 8px; font-size: 0.68rem; }
-
-  .info-bar { font-size: 0.76rem; color: var(--text-dim); text-align: center; }
-  .info-bar b { color: var(--accent); }
-  .checker-counts-selected { margin-top: 2px; opacity: 0.8; }
-  #hint-caption { color: var(--accent); margin-bottom: 4px; }
-
-  .hint { color: #7a6c5e; font-size: 0.68rem; text-align: center; }
-
-  /* ── EDITOR MODAL ── */
-  .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-    display: flex; align-items: center; justify-content: center; z-index: 2000;
-  }
-  .modal-backdrop.hidden { display: none; }
-  .modal {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 18px;
-    width: 340px;
-    max-width: 92vw;
-  }
-  .modal h2 { color: var(--accent); font-size: 0.95rem; margin-bottom: 12px; }
-  .editor-label { font-size: 0.72rem; color: var(--text-dim); margin: 8px 0 6px; }
-  #editor-grid { display: grid; gap: 2px; margin-bottom: 4px; }
-  .editor-cell { width: 26px; height: 26px; background: var(--board-cell); border-radius: 4px; cursor: pointer; }
-  .name-input {
-    width: 100%; padding: 6px 8px; border-radius: 6px;
-    border: 1px solid var(--panel-border); background: var(--board-cell); color: var(--text); font-size: 0.78rem;
-  }
-  .color-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .color-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-  .color-swatch.active { border-color: #fff; }
-  .color-custom-input { width: 28px; height: 22px; border: none; background: none; cursor: pointer; }
-  .modal-btn-row { display: flex; gap: 8px; margin-top: 14px; }
-  .modal-btn-row button { flex: 1; }
-
-  .htp-body p { font-size: 0.8rem; color: var(--text); line-height: 1.5; margin-bottom: 10px; }
-  .htp-body p:last-child { margin-bottom: 0; }
-  .htp-controls { color: var(--text-dim) !important; font-size: 0.72rem !important; }
-  .htp-dont-show {
-    display: flex; align-items: center; gap: 6px; margin-top: 14px;
-    font-size: 0.74rem; color: var(--text-dim); cursor: pointer;
-  }
-  .htp-dont-show input { accent-color: var(--accent); cursor: pointer; }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <span class="logo">&#9670;</span><span class="title">Polyominoes</span>
-  <button class="btn-mini" id="how-to-play-btn" style="margin-left:auto;" title="How to Play">? How to Play</button>
-</div>
-<div class="tab-bar" id="tab-bar"></div>
-<div id="error-toast" class="error-toast"></div>
-<div id="marquee-box"></div>
+<!-- [POSITIONING] Info button is pinned to a corner via .info-btn CSS, so
+     its place in the HTML doesn't affect where it appears. -->
+<button class="info-btn" id="info-btn" type="button" aria-label="How to play" aria-haspopup="dialog">i</button>
 
-<div class="main-row">
+<main class="splash">
 
-  <div class="board-area">
-    <div id="trash-zone" class="trash-zone">
-      <span class="trash-icon">&#128465;</span>
-      <span>Drag piece here to delete</span>
-    </div>
-    <div id="board-outer">
-      <div id="board"></div>
-      <div id="pieces-layer"></div>
-      <div id="checker-overlay"></div>
-      <div id="hint-overlay"></div>
-    </div>
-    <div class="info-bar" id="hint-caption" style="display:none;"></div>
-    <div class="info-bar">Open: <b id="holes-count">64</b>/<span id="total-count">64</span></div>
-    <div class="info-bar" id="puzzle-timer" style="display:none;"></div>
-    <div class="info-bar" id="checker-counts" style="display:none;"></div>
-    <button class="btn-trash" id="clear-board-btn">
-      <svg width="12" height="12" viewBox="0 0 14 14" style="vertical-align:middle;margin-right:6px;" fill="none">
-        <rect x="0" y="0" width="6" height="6" fill="currentColor"/>
-        <rect x="8" y="0" width="6" height="6" fill="currentColor"/>
-        <rect x="0" y="8" width="6" height="6" fill="currentColor"/>
-        <rect x="8" y="8" width="6" height="6" fill="currentColor"/>
-      </svg>Clear entire grid
-    </button>
-    <p class="hint">Drag to place &bull; click to select (+shift for multiple) &bull; arrows/R/T/D/Del/Z/Esc</p>
+  <!-- [IMAGES] Logo. To replace it, overwrite assets/logo.svg, or put a new
+       file in assets/ and change src (e.g. src="assets/logo.png").
+       Keep alt text descriptive. Size is set by --logo-size in CSS.
+       To ADD another image, copy this line, change src/alt, and give it its
+       own class for sizing. -->
+  <img class="logo" src="assets/logo.svg" alt="Parity Blocks logo">
+
+  <!-- [CONTENT] Title + tagline. If your logo image already contains the
+       name, you can delete the <h1> (keep the tagline or remove it too).
+       The "P" and "b" are pentomino shapes drawn as <svg>; the rest is typed
+       text. Screen readers and search engines read the aria-label instead.
+       Each piece is a 2×3 grid of 10-unit squares (viewBox 0 0 20 30):
+         P = P pentomino       b = P pentomino flipped so the stem points up
+             ██                    █
+             ██                    ██
+             █                     ██
+       The first <path> is the shape, the second draws the lines between squares. -->
+  <div>
+    <h1 class="title" aria-label="Parity Blocks"><span aria-hidden="true"><svg class="pent-letter" viewBox="0 0 20 30"><path d="M0 0H20V20H10V30H0Z"/><path class="dividers" d="M10 0V20M0 10H20M0 20H10"/></svg>arity <svg class="pent-letter" viewBox="0 0 20 30"><path d="M0 0H10V10H20V30H0Z"/><path class="dividers" d="M10 10V30M0 10H10M0 20H20"/></svg>locks</span></h1>
+    <p class="tagline">Place every piece. Keep every row and column even.</p>
   </div>
 
-  <div class="sidebar">
-    <div id="sandbox-controls">
-      <div class="row">
-        Grid
-        <input type="number" id="grid-size-input" min="4" max="20" value="8">
-      </div>
-      <div class="row" id="grid-size-error" style="display:none; color: var(--invalid-border); font-size:0.7rem;">
-        <span id="grid-size-error-text"></span>
-        <button class="btn-mini" id="grid-error-accept" style="padding:3px 8px;">Accept</button>
-      </div>
-      <div class="row">
-        <label><input type="checkbox" id="infinite-grid-toggle"> Infinite Grid</label>
-      </div>
-      <div class="row">
-        <label><input type="checkbox" id="edit-shape-toggle"> Edit grid shape</label>
-      </div>
-      <div class="row" id="edit-shape-hint" style="display:none; font-size:0.7rem; color: var(--text-dim);">
-        Click a cell to remove or restore it from the board
-      </div>
-      <div class="row">
-        <label><input type="checkbox" id="checkerboard-toggle"> Checkerboard</label>
-      </div>
-      <div class="row" style="padding-left:20px;">
-        <select id="color-scheme-select" disabled>
-          <option value="checkerboard">Checkerboard</option>
-          <option value="stripes2">Stripes (2-color)</option>
-          <option value="stripes3">Stripes (3-color)</option>
-        </select>
-      </div>
-      <div class="row" style="padding-left:20px;">
-        <label><input type="checkbox" id="onion-skin-toggle" disabled> Onion skin overlay</label>
-      </div>
+  <!-- [CONTENT] Difficulty buttons. data-difficulty is what the script
+       reads, so leave it alone. Change only the visible label. -->
+  <nav class="difficulty" aria-label="Choose difficulty">
+    <button class="difficulty-btn" type="button" data-difficulty="easy">Easy</button>
+    <button class="difficulty-btn" type="button" data-difficulty="medium">Medium</button>
+    <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
+  </nav>
 
-      <div class="row tray-controls-row">
-        Tray
-        <button class="btn-mini btn-rotate" id="tray-rotate-btn" title="Rotate pieces as you drag them from the tray">&#10227; 0&deg;</button>
-        <button class="btn-mini btn-flip" id="tray-flip-btn" title="Flip pieces as you drag them from the tray">&#8646;</button>
-      </div>
+</main>
 
-      <div class="palette-section" id="section-standard">
-        <div class="section-header" data-target="section-standard">
-          <span>Standard</span><span class="chevron">&#9662;</span>
-        </div>
-        <div class="palette-tiles" id="standard-tiles"></div>
-      </div>
-
-      <div class="palette-section collapsed" id="section-pentomino">
-        <div class="section-header" data-target="section-pentomino">
-          <span>Pentominoes</span><span class="chevron">&#9662;</span>
-        </div>
-        <div class="palette-tiles" id="pentomino-tiles"></div>
-      </div>
-
-      <div class="palette-section" id="section-custom">
-        <div class="section-header" data-target="section-custom">
-          <span>Custom</span><span class="chevron">&#9662;</span>
-        </div>
-        <div class="palette-tiles" id="custom-tiles"></div>
-      </div>
-    </div>
-
-    <div class="palette-section" id="section-puzzle" style="display:none;">
-      <div class="section-header" data-target="section-puzzle">
-        <span id="puzzle-section-label">Pieces</span><span class="chevron">&#9662;</span>
-      </div>
-      <div class="palette-tiles" id="puzzle-tiles"></div>
-    </div>
-  </div>
-
-</div>
-
-<div class="modal-backdrop hidden" id="editor-modal">
-  <div class="modal">
-    <h2>Custom piece</h2>
-    <input class="name-input" id="editor-name" maxlength="24" placeholder="Name">
-    <div class="editor-label">Draw cells</div>
-    <div id="editor-grid"></div>
-    <div class="modal-btn-row" style="margin-top:8px;">
-      <button class="btn-mini btn-rotate" id="editor-rotate">&#8635;</button>
-      <button class="btn-mini btn-flip" id="editor-flip">&#8646;</button>
-      <button class="btn-clear" id="editor-clear">&#10005;</button>
-    </div>
-    <div class="editor-label">Color</div>
-    <div class="color-row" id="editor-colors"></div>
-    <div class="modal-btn-row">
-      <button class="btn-clear" id="editor-cancel">Cancel</button>
-      <button class="btn-save" id="editor-save">Save</button>
-    </div>
+<!-- [CONTENT] Rules popup text -->
+<div class="popup-backdrop" id="rules-popup" hidden>
+  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <button class="popup-close" id="rules-close" type="button" aria-label="Close">&times;</button>
+    <h2 id="rules-title">How to Play</h2>
+    <p>Place <b>every piece</b> onto the board. Pieces can't overlap or hang off the grid, but you don't need to fill every square. Empty cells are fine.</p>
+    <p>The puzzle is solved when <b>every row and every column</b> has an <b>even number</b> of filled squares.</p>
+    <p>Count squares, not pieces. A U-shaped piece that covers 2 squares of one row and 3 squares of the row below adds 2 to the first row and 3 to the second.</p>
+    <button class="difficulty-btn popup-ok" id="rules-ok" type="button">Got it</button>
   </div>
 </div>
 
-<div class="modal-backdrop hidden" id="how-to-play-modal">
-  <div class="modal" style="width:420px;">
-    <h2>How to Play</h2>
-    <div class="htp-body">
-      <p>Place <b>every piece</b> onto the board. Pieces can't overlap or hang off the grid, but you don't need to fill every square — empty cells are fine.</p>
-      <p>The board is solved once, for <b>every row and every column</b>, the number of <b>filled squares</b> in it adds up to an even number.</p>
-      <p>Count squares, not pieces. A U-pentomino placed so its top edge covers 2 squares of one row and its bottom edge covers 3 squares of the row below adds 2 to that row's count and 3 to the next row's — not "1 piece" to each.</p>
-      <p class="htp-controls">Drag to place &bull; click to select (+shift for multiple) &bull; arrows move &bull; R rotate &bull; T flip &bull; D duplicate &bull; Del delete &bull; Z undo &bull; Esc deselect</p>
-    </div>
-    <label class="htp-dont-show"><input type="checkbox" id="how-to-play-dont-show"> Don't show this again</label>
-    <div class="modal-btn-row">
-      <button class="btn-save" id="how-to-play-close">Got it</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-backdrop hidden" id="congrats-modal">
-  <div class="modal" style="width:320px; text-align:center;">
-    <h2>Solved!</h2>
-    <p id="congrats-time" style="font-size:0.9rem; color: var(--text); margin-bottom:14px;"></p>
-    <div class="modal-btn-row">
-      <button class="btn-save" id="congrats-close">Nice</button>
-    </div>
-  </div>
-</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   CONSTANTS & GEOMETRY HELPERS
-═══════════════════════════════════════════════ */
-let CELL = 46;           // recomputed by computeCellSize() so any grid size fits on screen
-const GAP = 3;
-const MAX_BOARD_PX = 460;
-const MIN_CELL = 20, MAX_CELL = 52;
-const EDITOR_SIZE = 8;
-const CELL_E = 26;
-const MUTED_PINK = '#c98a8f';
-
-const PALETTE_COLORS = [
-  '#c98a8f', '#c1666b', '#d9a441', '#6b8f71', '#4f8a8b',
-  '#8c6a9c', '#7a9471', '#a34a4a', '#4a6b8a', '#c67d3f',
-  '#9c7350', '#5c8a72', '#b8865a', '#6a5a8c', '#a6763f',
-  '#5a7d8c', '#8f5c4a', '#7d8c4a', '#a44e6b', '#4a8c7a',
-  '#8c6a4a', '#6b4a6b'
-];
-
-function computeCellSize(){
-  const dim = Math.max(gridRows(), gridCols());
-  const raw = Math.floor((MAX_BOARD_PX - (dim-1)*GAP) / dim);
-  return Math.max(MIN_CELL, Math.min(MAX_CELL, raw));
-}
-
-function normalize(cells){
-  const minR = Math.min(...cells.map(c=>c[0]));
-  const minC = Math.min(...cells.map(c=>c[1]));
-  return cells.map(([r,c])=>[r-minR, c-minC]);
-}
-function bounds(cells){
-  return { rows: Math.max(...cells.map(c=>c[0]))+1, cols: Math.max(...cells.map(c=>c[1]))+1 };
-}
-function rotateCells(cells){
-  const {rows} = bounds(cells);
-  return normalize(cells.map(([r,c])=>[c, rows-1-r]));
-}
-function flipCells(cells){
-  const {cols} = bounds(cells);
-  return normalize(cells.map(([r,c])=>[r, cols-1-c]));
-}
-
-/* ═══════════════════════════════════════════════
-   FIXED PIECE SETS
-═══════════════════════════════════════════════ */
-const STANDARD_PIECES = [
-  { name:'Mono',   color:'#c1666b', cells:[[0,0]] },
-  { name:'Domino', color:'#d9a441', cells:[[0,0],[0,1]] },
-  { name:'Tri I',  color:'#6b8f71', cells:[[0,0],[0,1],[0,2]] },
-  { name:'Tri L',  color:'#c67d3f', cells:[[0,0],[1,0],[1,1]] },
-  { name:'I', color:'#4f8a8b', cells:[[0,0],[0,1],[0,2],[0,3]] },
-  { name:'O', color:'#d9a441', cells:[[0,0],[0,1],[1,0],[1,1]] },
-  { name:'T', color:'#8c6a9c', cells:[[0,0],[0,1],[0,2],[1,1]] },
-  { name:'S', color:'#7a9471', cells:[[0,1],[0,2],[1,0],[1,1]] },
-  { name:'Z', color:'#a34a4a', cells:[[0,0],[0,1],[1,1],[1,2]] },
-  { name:'J', color:'#4a6b8a', cells:[[0,0],[1,0],[1,1],[1,2]] },
-  { name:'L', color:'#c67d3f', cells:[[0,2],[1,0],[1,1],[1,2]] },
-];
-
-const PENTOMINO_PIECES = [
-  { name:'F', color:'#9c7350', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] },
-  { name:'I', color:'#5c8a72', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]] },
-  { name:'L', color:'#b8865a', cells:[[0,0],[1,0],[2,0],[3,0],[3,1]] },
-  { name:'N', color:'#6a5a8c', cells:[[0,1],[1,1],[2,0],[2,1],[3,0]] },
-  { name:'P', color:'#a6763f', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] },
-  { name:'T', color:'#5a7d8c', cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] },
-  { name:'U', color:'#8f5c4a', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] },
-  { name:'V', color:'#7d8c4a', cells:[[0,0],[1,0],[2,0],[2,1],[2,2]] },
-  { name:'W', color:'#a44e6b', cells:[[0,0],[1,0],[1,1],[2,1],[2,2]] },
-  { name:'X', color:'#4a8c7a', cells:[[0,1],[1,0],[1,1],[1,2],[2,1]] },
-  { name:'Y', color:'#8c6a4a', cells:[[0,1],[1,0],[1,1],[2,1],[3,1]] },
-  { name:'Z', color:'#6b4a6b', cells:[[0,0],[0,1],[1,1],[2,1],[2,2]] },
-];
-
-/* ═══════════════════════════════════════════════
-   PUZZLES
-   A fixed board shape + piece set, independent of the sandbox's general
-   catalog — the "puzzle mode" from the public-deployment direction (see
-   HANDOFF.md). Switching to a puzzle tab temporarily takes over the same
-   board/tray UI (grid bounds, blockedCells, placedPieces, the tray
-   sections) without touching the sandbox's own persisted state; switching
-   back to Sandbox restores it exactly via `sandboxSnapshot`. Cell
-   coordinates are relative (top-left of each piece's own bounding box),
-   exactly like STANDARD_PIECES/PENTOMINO_PIECES above.
-═══════════════════════════════════════════════ */
-const PUZZLES = {
-  'test-puzzle-1': {
-    title: 'Test Puzzle #1',
-    rows: 6, cols: 6,
-    blocked: [[1,1],[1,5],[5,0],[5,5]],
-    pieces: [
-      { name:'L', color:'#c9a877', cells:[[0,0],[1,0],[2,0],[3,0],[3,1]] },
-      { name:'I', color:'#5f9e8f', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]] },
-      { name:'X', color:'#5f9e8f', cells:[[0,1],[1,0],[1,1],[1,2],[2,1]] },
-      { name:'N', color:'#7d6aa8', cells:[[0,1],[0,2],[0,3],[1,0],[1,1]] },
-      { name:'P', color:'#b8923f', cells:[[0,0],[0,1],[1,0],[1,1],[1,2]] },
-      { name:'U', color:'#a85c4a', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] },
-    ]
-  },
-  'test-puzzle-2': {
-    title: 'Test Puzzle #2',
-    rows: 6, cols: 6,
-    // Fully covered by design (30 open cells, 6x5=30 piece cells) -- the
-    // user supplied this as a complete, pre-solved layout, extracted
-    // directly from it (verified: no overlaps, every row/column even).
-    blocked: [[0,3],[0,5],[2,0],[2,3],[5,0],[5,5]],
-    // Of the 6 blocked cells, only these 4 (the "right side" ones) show
-    // the red X -- the other 2 are deliberately unmarked, functionally
-    // blocked but indistinguishable from an open cell until you try
-    // placing something there. See isVisiblyBlocked().
-    hiddenBlocked: [[2,0],[5,0]],
-    // A static dashed outline around the combined footprint of the X and
-    // T pieces -- a logical anchor ("only these two pieces can cover this
-    // region") rather than a full solution reveal.
-    hintOutline: [[0,4],[1,3],[1,4],[1,5],[2,4],[2,5],[3,3],[3,4],[3,5],[4,5]],
-    hintText: 'The outlined cells can only be covered by two of the six pieces.',
-    pieces: [
-      { name:'V', color:'#8a9c5a', cells:[[0,0],[0,1],[0,2],[1,2],[2,2]] },
-      { name:'U', color:'#a86f4f', cells:[[0,0],[0,1],[1,1],[2,0],[2,1]] },
-      { name:'X', color:'#4f8a7a', cells:[[0,1],[1,0],[1,1],[1,2],[2,1]] },
-      { name:'T', color:'#6b8a9c', cells:[[0,2],[1,0],[1,1],[1,2],[2,2]] },
-      { name:'N', color:'#6f6a9c', cells:[[0,0],[0,1],[1,1],[1,2],[1,3]] },
-      { name:'Z', color:'#8a5a7a', cells:[[0,0],[1,0],[1,1],[1,2],[2,2]] },
-    ]
-  }
+/* ═══════════════════════════════════════════════════════════════════
+   [BEHAVIOR] Where each difficulty button goes.
+   Set a URL (e.g. 'play.html?level=easy') once that game page exists.
+   null = not built yet; the button shows a "coming soon" notice instead.
+═══════════════════════════════════════════════════════════════════ */
+const DIFFICULTY_LINKS = {
+  easy:   null,
+  medium: null,
+  hard:   null,
 };
 
-function applyOverrides(key, piecesArray){
-  try {
-    const raw = localStorage.getItem('poly_overrides_'+key);
-    if(!raw) return;
-    const overrides = JSON.parse(raw);
-    piecesArray.forEach(def=>{ if(overrides[def.name]) def.cells = overrides[def.name]; });
-  } catch(e){}
-}
-function saveOverrides(key, piecesArray){
-  const overrides = {};
-  piecesArray.forEach(def=>{ overrides[def.name] = def.cells; });
-  localStorage.setItem('poly_overrides_'+key, JSON.stringify(overrides));
-}
-applyOverrides('standard', STANDARD_PIECES);
-applyOverrides('pentomino', PENTOMINO_PIECES);
-Object.keys(PUZZLES).forEach(key=>applyOverrides('puzzle_'+key, PUZZLES[key].pieces));
+const popup   = document.getElementById('rules-popup');
+const infoBtn = document.getElementById('info-btn');
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
 
-/* ═══════════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════════ */
-// The grid is tracked as an absolute-coordinate rectangle [minRow..maxRow] x
-// [minCol..maxCol] rather than a fixed 0-based size. This lets Infinite Grid
-// mode expand a specific side (e.g. just the right edge) without ever having
-// to shift existing pieces' stored anchorRow/anchorCol — only the rendering
-// offset (see pxCol/pxRow) and the bounds checks change.
-let gridMinRow, gridMaxRow, gridMinCol, gridMaxCol;
-(function initGridBounds(){
-  let bounds = null;
-  try { bounds = JSON.parse(localStorage.getItem('poly_gridBounds')); } catch(e){}
-  if(bounds && typeof bounds.minRow === 'number'){
-    ({minRow:gridMinRow, maxRow:gridMaxRow, minCol:gridMinCol, maxCol:gridMaxCol} = bounds);
-  } else {
-    const n = parseInt(localStorage.getItem('poly_gridSize')) || 8;
-    gridMinRow = 0; gridMaxRow = n-1; gridMinCol = 0; gridMaxCol = n-1;
-  }
-})();
-function gridRows(){ return gridMaxRow - gridMinRow + 1; }
-function gridCols(){ return gridMaxCol - gridMinCol + 1; }
-function saveGridBounds(){
-  localStorage.setItem('poly_gridBounds', JSON.stringify({minRow:gridMinRow, maxRow:gridMaxRow, minCol:gridMinCol, maxCol:gridMaxCol}));
+function openRules() {
+  popup.hidden = false;
+  document.getElementById('rules-ok').focus();
+}
+function closeRules() {
+  popup.hidden = true;
+  infoBtn.focus();
 }
 
-let infiniteGrid = localStorage.getItem('poly_infiniteGrid') === 'true';
-const INFINITE_MIN_DIM = 8;
-const EXPAND_BUFFER = 2;
+infoBtn.addEventListener('click', openRules);
+document.getElementById('rules-close').addEventListener('click', closeRules);
+document.getElementById('rules-ok').addEventListener('click', closeRules);
+// Clicking the dimmed area outside the popup also closes it
+popup.addEventListener('click', e => { if (e.target === popup) closeRules(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !popup.hidden) closeRules();
+});
 
-/* ═══════════════════════════════════════════════
-   CHECKERBOARD / CELL PATTERNS
-   A small registry of colorings rather than one hardcoded checkerboard, so
-   switching the active scheme is just picking a different entry — nothing
-   else (rendering, counts, the onion skin overlay) needs to change to
-   support a new one. Only the three schemes a coloring-theory reference
-   recommends building first are included: checkerboard and 2/3-color row
-   stripes. (See "Grid Colorings for Pentomino Puzzles", shared 2026-10-01 —
-   its other ~10 schemes and its solver/validator sections are for a puzzle
-   solver, which this app doesn't have; these three are overlay/paint
-   options only.)
-═══════════════════════════════════════════════ */
-const COLOR_SCHEMES = {
-  checkerboard: {
-    label: 'Checkerboard',
-    colors: ['var(--checker-0)', 'var(--checker-1)'],
-    labels: ['Black', 'White'],
-    indexFor: (r, c) => { const n = 2; return ((r + c) % n + n) % n; }
-  },
-  stripes2: {
-    label: 'Stripes (2-color)',
-    colors: ['var(--checker-0)', 'var(--checker-1)'],
-    labels: ['Dark', 'Light'],
-    indexFor: (r, c) => { const n = 2; return (r % n + n) % n; }
-  },
-  stripes3: {
-    label: 'Stripes (3-color)',
-    colors: ['var(--checker-0)', 'var(--checker-1)', 'var(--checker-2)'],
-    labels: ['Dark', 'Mid', 'Light'],
-    indexFor: (r, c) => { const n = 3; return (r % n + n) % n; }
-  }
-};
-let activeColorScheme = COLOR_SCHEMES[localStorage.getItem('poly_colorScheme')] ? localStorage.getItem('poly_colorScheme') : 'checkerboard';
-function currentScheme(){ return COLOR_SCHEMES[activeColorScheme]; }
-// r/c can be negative in Infinite Grid mode — each scheme's indexFor already
-// double-mods, so this just forwards to the active one.
-function patternIndexFor(r, c){ return currentScheme().indexFor(r, c); }
-
-let checkerboardEnabled = localStorage.getItem('poly_checkerboard') === 'true';
-let onionSkinEnabled = checkerboardEnabled && localStorage.getItem('poly_onionSkin') === 'true';
-
-function renderCheckerOverlay(){
-  const overlay = document.getElementById('checker-overlay');
-  overlay.innerHTML = '';
-  if(!checkerboardEnabled || !onionSkinEnabled) return;
-  const scheme = currentScheme();
-  // Onion skin only matters where it's actually hiding something — draw it
-  // only over squares a piece currently covers, not the whole board.
-  const covered = new Set();
-  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
-    const rr = p.anchorRow+r, cc = p.anchorCol+c;
-    if(rr>=gridMinRow && rr<=gridMaxRow && cc>=gridMinCol && cc<=gridMaxCol) covered.add(rr+','+cc);
-  }));
-  covered.forEach(key=>{
-    const [r,c] = key.split(',').map(Number);
-    const cell = document.createElement('div');
-    cell.className = 'checker-overlay-cell';
-    cell.style.left = pxCol(c) + 'px';
-    cell.style.top = pxRow(r) + 'px';
-    cell.style.width = CELL + 'px';
-    cell.style.height = CELL + 'px';
-    cell.style.background = scheme.colors[patternIndexFor(r,c)];
-    overlay.appendChild(cell);
-  });
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 2200);
 }
 
-// A puzzle's optional static hint: a single dashed outline traced around a
-// region of absolute board cells (e.g. "only two pieces can cover this
-// area"), plus a caption. Reuses buildOutlinePath/SVG_NS -- the same
-// boundary-walk already used for piece outlines -- just fed a region that
-// isn't a piece, so it traces one smooth boundary instead of per-cell
-// borders. Static: doesn't depend on placedPieces, only on which puzzle is
-// active and the current cell size, so it's re-rendered from setupBoard().
-function renderHintOverlay(){
-  const overlay = document.getElementById('hint-overlay');
-  const caption = document.getElementById('hint-caption');
-  overlay.innerHTML = '';
-  const puzzle = PUZZLES[activeTab];
-  if(!puzzle || !puzzle.hintOutline || !puzzle.hintOutline.length){
-    caption.style.display = 'none';
-    return;
-  }
-  const minR = Math.min(...puzzle.hintOutline.map(c=>c[0]));
-  const minC = Math.min(...puzzle.hintOutline.map(c=>c[1]));
-  const relCells = puzzle.hintOutline.map(([r,c])=>[r-minR, c-minC]);
-  const {rows, cols} = bounds(relCells);
-  const totalW = cols*CELL + (cols-1)*GAP;
-  const totalH = rows*CELL + (rows-1)*GAP;
-
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('width', totalW);
-  svg.setAttribute('height', totalH);
-  svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
-  svg.style.position = 'absolute';
-  svg.style.left = pxCol(minC) + 'px';
-  svg.style.top = pxRow(minR) + 'px';
-  svg.style.overflow = 'visible';
-
-  const path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', buildOutlinePath(relCells, CELL, GAP));
-  path.setAttribute('fill', 'none');
-  path.setAttribute('stroke', 'var(--accent)');
-  path.setAttribute('stroke-width', '3');
-  path.setAttribute('stroke-dasharray', '7 5');
-  path.setAttribute('stroke-linejoin', 'round');
-  svg.appendChild(path);
-  overlay.appendChild(svg);
-
-  caption.textContent = puzzle.hintText || '';
-  caption.style.display = puzzle.hintText ? 'block' : 'none';
-}
-
-// Counts cells of each color covered by the given pieces (overlaps counted
-// once). Shared by the whole-board and selected-pieces count displays.
-function countColorsCovered(pieces, n){
-  const counts = new Array(n).fill(0);
-  const seen = new Set();
-  pieces.forEach(p=>p.cells.forEach(([r,c])=>{
-    const rr = p.anchorRow+r, cc = p.anchorCol+c;
-    if(rr<gridMinRow || rr>gridMaxRow || cc<gridMinCol || cc>gridMaxCol) return;
-    const key = rr+','+cc;
-    if(seen.has(key)) return; // overlapping pieces shouldn't double-count a square
-    seen.add(key);
-    counts[patternIndexFor(rr,cc)]++;
-  }));
-  return counts;
-}
-
-function updateCheckerCounts(){
-  const el = document.getElementById('checker-counts');
-  if(!checkerboardEnabled){ el.style.display = 'none'; return; }
-  el.style.display = 'block';
-  const scheme = currentScheme();
-  const n = scheme.colors.length;
-
-  const totalByColor = new Array(n).fill(0);
-  for(let r=gridMinRow; r<=gridMaxRow; r++){
-    for(let c=gridMinCol; c<=gridMaxCol; c++){
-      if(isBlocked(r,c)) continue;
-      totalByColor[patternIndexFor(r,c)]++;
-    }
-  }
-  const coveredByColor = countColorsCovered(placedPieces, n);
-  const remainingByColor = totalByColor.map((t,i)=>t-coveredByColor[i]);
-
-  let html = '<div>' + scheme.labels.map((label,i)=>`${label}: <b>${remainingByColor[i]}</b>`).join(' &nbsp; ') + ' remaining</div>';
-
-  if(selectedIds.size > 0){
-    const selectedPieces = [...selectedIds].map(id=>placedPieces.find(p=>p.id===id)).filter(Boolean);
-    const selByColor = countColorsCovered(selectedPieces, n);
-    html += '<div class="checker-counts-selected">Selected: ' + scheme.labels.map((label,i)=>`${label}: <b>${selByColor[i]}</b>`).join(' &nbsp; ') + ' covered</div>';
-  }
-
-  el.innerHTML = html;
-}
-
-// Grow the grid to keep `piece` comfortably inside it — only on the side(s)
-// it's actually near, so pushing a piece toward the right edge only grows
-// the right side (an existing piece's stored coordinates never change).
-function maybeExpandGrid(piece){
-  if(!infiniteGrid || !piece) return;
-  const {rows, cols} = bounds(piece.cells);
-  let changed = false;
-  if(piece.anchorRow <= gridMinRow){ gridMinRow = Math.min(gridMinRow, piece.anchorRow) - EXPAND_BUFFER; changed = true; }
-  if(piece.anchorRow + rows - 1 >= gridMaxRow){ gridMaxRow = Math.max(gridMaxRow, piece.anchorRow+rows-1) + EXPAND_BUFFER; changed = true; }
-  if(piece.anchorCol <= gridMinCol){ gridMinCol = Math.min(gridMinCol, piece.anchorCol) - EXPAND_BUFFER; changed = true; }
-  if(piece.anchorCol + cols - 1 >= gridMaxCol){ gridMaxCol = Math.max(gridMaxCol, piece.anchorCol+cols-1) + EXPAND_BUFFER; changed = true; }
-  if(changed){ saveGridBounds(); setupBoard(); }
-}
-
-// Shrink the grid back when its outermost row/col has no pieces left in it,
-// down to a sensible minimum — the mirror image of maybeExpandGrid.
-function maybeContractGrid(){
-  if(!infiniteGrid) return;
-  const rowHasPiece = r => placedPieces.some(p=>p.cells.some(([dr])=>p.anchorRow+dr===r));
-  const colHasPiece = c => placedPieces.some(p=>p.cells.some(([,dc])=>p.anchorCol+dc===c));
-  let changed = false;
-  while(gridRows() > INFINITE_MIN_DIM && !rowHasPiece(gridMinRow)){ gridMinRow++; changed = true; }
-  while(gridRows() > INFINITE_MIN_DIM && !rowHasPiece(gridMaxRow)){ gridMaxRow--; changed = true; }
-  while(gridCols() > INFINITE_MIN_DIM && !colHasPiece(gridMinCol)){ gridMinCol++; changed = true; }
-  while(gridCols() > INFINITE_MIN_DIM && !colHasPiece(gridMaxCol)){ gridMaxCol--; changed = true; }
-  if(changed){ saveGridBounds(); setupBoard(); }
-}
-
-/* Tray transform: rotates/flips pieces as they're dragged from the tray.
-   Only affects future drags-from-tray — never retroactively touches pieces
-   already placed on the board. */
-let trayRotation = 0; // 0, 90, 180, 270
-let trayFlipped = false;
-function applyTrayTransform(cells){
-  let result = trayFlipped ? flipCells(cells) : cells;
-  for(let i=0; i<trayRotation/90; i++) result = rotateCells(result);
-  return result;
-}
-
-function defaultCustomPiece(id){
-  return {
-    id, name: 'Custom ' + id.split('-')[1],
-    cells: [[0,0],[0,1],[0,2],[0,3],[0,4]],
-    color: MUTED_PINK,
-    edited: false
-  };
-}
-
-let customPieces = loadCustomPieces();
-function loadCustomPieces(){
-  try {
-    const raw = localStorage.getItem('poly_customPieces');
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed) && parsed.length) return parsed;
-    }
-  } catch(e){}
-  return [defaultCustomPiece('custom-1')];
-}
-function saveCustomPieces(){
-  localStorage.setItem('poly_customPieces', JSON.stringify(customPieces));
-}
-let customIdCounter = customPieces.reduce((m,p)=>{
-  const n = parseInt(p.id.split('-')[1])||0;
-  return Math.max(m,n);
-},0) + 1;
-
-let placedPieces = [];   // {id, cells, color, name, anchorRow, anchorCol}
-let placedIdCounter = 1;
-
-// Multiple pieces can be selected at once (shift-click to add/remove one).
-// A single click still replaces the whole selection with just that piece.
-let selectedIds = new Set();
-
-// Any piece currently sitting invalid — overlapping another piece, or
-// extending past the grid edge in fixed-size mode. Rendered with a red
-// glow (`.invalid`, driven purely by membership here, independent of
-// selection) until it's moved/rotated/flipped/deleted into a valid spot
-// or removed — but it does NOT block interacting with any other piece in
-// the meantime. There used to be a global "lock" here that blocked
-// selecting/dragging anything else while a piece was pending; removed at
-// the user's explicit request so a misplaced piece can just sit there
-// while the rest of the board keeps working normally.
-let pendingPlacementIds = new Set();
-
-function updatePendingPlacement(pieceId){
-  const piece = placedPieces.find(p=>p.id===pieceId);
-  const valid = piece && isValidPlacement(piece.cells, piece.anchorRow, piece.anchorCol, piece.id);
-  if(!valid) pendingPlacementIds.add(pieceId);
-  else pendingPlacementIds.delete(pieceId);
-}
-
-let blockedMsgTimer = null;
-function showBlockedMessage(msg){
-  const el = document.getElementById('error-toast');
-  el.textContent = msg || 'Previous piece not placed in the right place';
-  el.classList.add('visible');
-  clearTimeout(blockedMsgTimer);
-  blockedMsgTimer = setTimeout(()=> el.classList.remove('visible'), 2500);
-}
-
-let undoStack = [];
-const UNDO_LIMIT = 50;
-function pushUndo(){
-  undoStack.push(JSON.stringify({
-    placedPieces,
-    selectedIds: [...selectedIds],
-    pendingPlacementIds: [...pendingPlacementIds],
-    gridMinRow, gridMaxRow, gridMinCol, gridMaxCol,
-    blockedCells: [...blockedCells]
-  }));
-  if(undoStack.length > UNDO_LIMIT) undoStack.shift();
-}
-function undo(){
-  if(!undoStack.length) return;
-  const snap = JSON.parse(undoStack.pop());
-  placedPieces = snap.placedPieces;
-  selectedIds = new Set(snap.selectedIds);
-  pendingPlacementIds = new Set(snap.pendingPlacementIds);
-  gridMinRow = snap.gridMinRow; gridMaxRow = snap.gridMaxRow;
-  gridMinCol = snap.gridMinCol; gridMaxCol = snap.gridMaxCol;
-  blockedCells = new Set(snap.blockedCells || []);
-  saveBlockedCells();
-  setupBoard();
-  renderAll();
-}
-
-const boardEl = document.getElementById('board');
-const piecesLayerEl = document.getElementById('pieces-layer');
-const trashZoneEl = document.getElementById('trash-zone');
-
-/* ═══════════════════════════════════════════════
-   GRID SHAPE (BLOCKED CELLS)
-   A puzzle's board isn't always a plain rectangle — specific cells can be
-   blocked out ("variable layouts" per the public puzzle-mode direction;
-   see HANDOFF.md). Deliberately NOT called "holes": that word already
-   means something else in this app (and in the pentomino-coloring
-   reference doc) — an uncovered-but-placeable cell, which is what
-   #holes-count has tracked all along. A blocked cell is removed from the
-   board entirely: it can't be placed on (isValidPlacement treats it like
-   out-of-bounds) and doesn't count toward the board's total/open tallies.
-═══════════════════════════════════════════════ */
-let blockedCells = new Set(JSON.parse(localStorage.getItem('poly_blockedCells') || '[]'));
-let editingGridShape = false;
-function isBlocked(r, c){ return blockedCells.has(r+','+c); }
-// A puzzle can mark some of its blocked cells "hidden": still functionally
-// blocked (isBlocked/isValidPlacement don't change), but rendered exactly
-// like a normal open cell -- no dashed border, no X -- so the player only
-// discovers it's blocked by trying to place something there. Sandbox
-// cells are never hidden (no active puzzle to define hiddenBlocked).
-function isVisiblyBlocked(r, c){
-  if(!isBlocked(r, c)) return false;
-  const puzzle = PUZZLES[activeTab];
-  if(!puzzle || !puzzle.hiddenBlocked) return true;
-  return !puzzle.hiddenBlocked.some(([hr,hc]) => hr===r && hc===c);
-}
-function saveBlockedCells(){ localStorage.setItem('poly_blockedCells', JSON.stringify([...blockedCells])); }
-function toggleBlockedCell(r, c){
-  pushUndo();
-  const key = r+','+c;
-  if(blockedCells.has(key)) blockedCells.delete(key); else blockedCells.add(key);
-  saveBlockedCells();
-  // Revalidate every placed piece: one might now overlap a freshly-blocked
-  // cell, or have been stuck invalid only because of a cell that just got
-  // unblocked.
-  placedPieces.forEach(p=>updatePendingPlacement(p.id));
-  setupBoard();
-  renderAll();
-}
-
-/* ═══════════════════════════════════════════════
-   PUZZLE TABS
-   Switching to a puzzle tab temporarily takes over the shared board/tray
-   UI (grid bounds, blockedCells, placedPieces, undo stack) with that
-   puzzle's fixed config, without ever writing to the sandbox's own
-   localStorage keys — switching back to Sandbox restores it exactly from
-   `sandboxSnapshot`, taken the moment you leave it. Grid-size/Infinite
-   Grid/Edit-grid-shape are disabled while a puzzle is active since its
-   board shape is fixed; the checkerboard/stripes overlay is left alone on
-   purpose — it's a display preference, not board state, so it stays
-   whatever it was regardless of which tab you're on.
-═══════════════════════════════════════════════ */
-let activeTab = 'sandbox';
-let sandboxSnapshot = null;
-
-function captureSandboxSnapshot(){
-  sandboxSnapshot = {
-    gridMinRow, gridMaxRow, gridMinCol, gridMaxCol,
-    blockedCells: [...blockedCells],
-    placedPieces: JSON.parse(JSON.stringify(placedPieces)),
-    selectedIds: [...selectedIds],
-    pendingPlacementIds: [...pendingPlacementIds],
-    infiniteGrid
-  };
-}
-
-function updateTabBarUI(){
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.tab === activeTab);
-  });
-}
-
-function renderTabBar(){
-  const bar = document.getElementById('tab-bar');
-  bar.innerHTML = '';
-  const sandboxBtn = document.createElement('button');
-  sandboxBtn.className = 'tab-btn';
-  sandboxBtn.dataset.tab = 'sandbox';
-  sandboxBtn.textContent = 'Sandbox';
-  sandboxBtn.onclick = switchToSandbox;
-  bar.appendChild(sandboxBtn);
-  Object.keys(PUZZLES).forEach(key=>{
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn';
-    btn.dataset.tab = key;
-    btn.textContent = PUZZLES[key].title;
-    btn.onclick = ()=>switchToPuzzle(key);
-    bar.appendChild(btn);
-  });
-  updateTabBarUI();
-}
-
-function renderPuzzleTiles(key){
-  document.getElementById('puzzle-section-label').textContent = PUZZLES[key].title + ' pieces';
-  renderFixedTiles('puzzle-tiles', PUZZLES[key].pieces, 'puzzle_'+key);
-  // A puzzle piece is "used up" once an instance of it is on the board --
-  // grayed out and undraggable until that instance is deleted again.
-  const placedNames = new Set(placedPieces.map(p=>p.name));
-  document.querySelectorAll('#puzzle-tiles .tile').forEach(tileEl=>{
-    const nameEl = tileEl.querySelector('.tile-name');
-    tileEl.classList.toggle('consumed', !!nameEl && placedNames.has(nameEl.textContent));
-  });
-}
-
-function switchToPuzzle(key){
-  const puzzle = PUZZLES[key];
-  if(!puzzle) return;
-  if(activeTab === 'sandbox') captureSandboxSnapshot();
-  activeTab = key;
-
-  gridMinRow = 0; gridMaxRow = puzzle.rows-1;
-  gridMinCol = 0; gridMaxCol = puzzle.cols-1;
-  blockedCells = new Set(puzzle.blocked.map(([r,c])=>r+','+c));
-  placedPieces = [];
-  selectedIds = new Set();
-  pendingPlacementIds = new Set();
-  undoStack = [];
-  infiniteGrid = false;
-  editingGridShape = false;
-
-  document.getElementById('edit-shape-toggle').checked = false;
-  document.getElementById('edit-shape-toggle').disabled = true;
-  document.getElementById('infinite-grid-toggle').disabled = true;
-  document.getElementById('grid-size-input').disabled = true;
-  document.body.classList.remove('editing-grid-shape');
-  document.getElementById('edit-shape-hint').style.display = 'none';
-
-  document.getElementById('sandbox-controls').style.display = 'none';
-  document.getElementById('section-puzzle').style.display = 'block';
-
-  startPuzzleTimer();
-  setupBoard();
-  renderAll(); // renders the puzzle tray and runs the first progress check too
-  updateTabBarUI();
-}
-
-function switchToSandbox(){
-  activeTab = 'sandbox';
-  if(sandboxSnapshot){
-    gridMinRow = sandboxSnapshot.gridMinRow; gridMaxRow = sandboxSnapshot.gridMaxRow;
-    gridMinCol = sandboxSnapshot.gridMinCol; gridMaxCol = sandboxSnapshot.gridMaxCol;
-    blockedCells = new Set(sandboxSnapshot.blockedCells);
-    placedPieces = sandboxSnapshot.placedPieces;
-    selectedIds = new Set(sandboxSnapshot.selectedIds);
-    pendingPlacementIds = new Set(sandboxSnapshot.pendingPlacementIds);
-    infiniteGrid = sandboxSnapshot.infiniteGrid;
-  }
-  undoStack = [];
-
-  document.getElementById('edit-shape-toggle').disabled = false;
-  document.getElementById('infinite-grid-toggle').disabled = false;
-  document.getElementById('infinite-grid-toggle').checked = infiniteGrid;
-  document.getElementById('grid-size-input').disabled = infiniteGrid;
-  document.getElementById('grid-size-input').value = Math.max(gridRows(), gridCols());
-
-  document.getElementById('sandbox-controls').style.display = '';
-  document.getElementById('section-puzzle').style.display = 'none';
-  stopPuzzleTimer();
-  document.getElementById('puzzle-timer').style.display = 'none';
-
-  setupBoard();
-  renderAll();
-  updateTabBarUI();
-}
-
-/* ═══════════════════════════════════════════════
-   PUZZLE PROGRESS (timer + win check)
-   The win condition (see HANDOFF.md): every piece in the puzzle's set
-   placed exactly once, validly (no overlaps/off-grid/blocked cells, so
-   none of it sitting in pendingPlacementIds), AND every row and column
-   has an EVEN number of covered cells -- not "every cell filled". Checked
-   fresh after every renderAll() while a puzzle tab is active, which is
-   cheap (a handful of pieces, a 6x6-ish board) and fires at exactly the
-   granularity of "something changed" without needing calls scattered
-   across every mutation site.
-═══════════════════════════════════════════════ */
-let puzzleStartTime = null;
-let puzzleTimerHandle = null;
-let puzzleSolved = false;
-
-function formatElapsed(ms){
-  const totalSec = Math.max(0, Math.floor(ms/1000));
-  const m = Math.floor(totalSec/60);
-  const s = totalSec % 60;
-  return m + ':' + String(s).padStart(2,'0');
-}
-
-function startPuzzleTimer(){
-  stopPuzzleTimer();
-  puzzleStartTime = Date.now();
-  puzzleSolved = false;
-  const el = document.getElementById('puzzle-timer');
-  el.style.display = 'block';
-  el.textContent = 'Time: 0:00';
-  puzzleTimerHandle = setInterval(()=>{
-    el.textContent = 'Time: ' + formatElapsed(Date.now() - puzzleStartTime);
-  }, 500);
-}
-
-function stopPuzzleTimer(){
-  if(puzzleTimerHandle){ clearInterval(puzzleTimerHandle); puzzleTimerHandle = null; }
-}
-
-function clearParityHighlights(){
-  document.querySelectorAll('.board-cell.parity-odd').forEach(el=>el.classList.remove('parity-odd'));
-}
-
-function showCongratsModal(timeStr){
-  document.getElementById('congrats-time').textContent = 'Your time: ' + timeStr;
-  document.getElementById('congrats-modal').classList.remove('hidden');
-}
-
-function checkPuzzleProgress(){
-  const puzzle = PUZZLES[activeTab];
-  if(!puzzle) return;
-  clearParityHighlights();
-  if(puzzleSolved) return; // already congratulated this attempt
-
-  // Not "complete" yet: wrong piece count, a piece still invalid, or a
-  // duplicate/missing name (e.g. via Duplicate instead of the tray) --
-  // none of these are evaluated for parity, same as the win condition says.
-  if(placedPieces.length !== puzzle.pieces.length) return;
-  if(pendingPlacementIds.size > 0) return;
-  const placedNames = placedPieces.map(p=>p.name);
-  const uniqueNames = new Set(placedNames);
-  if(uniqueNames.size !== placedNames.length) return;
-  for(const def of puzzle.pieces) if(!uniqueNames.has(def.name)) return;
-
-  const covered = new Set();
-  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
-    covered.add((p.anchorRow+r)+','+(p.anchorCol+c));
-  }));
-
-  const badRows = [], badCols = [];
-  for(let r=gridMinRow; r<=gridMaxRow; r++){
-    let cnt = 0;
-    for(let c=gridMinCol; c<=gridMaxCol; c++) if(covered.has(r+','+c)) cnt++;
-    if(cnt % 2 !== 0) badRows.push(r);
-  }
-  for(let c=gridMinCol; c<=gridMaxCol; c++){
-    let cnt = 0;
-    for(let r=gridMinRow; r<=gridMaxRow; r++) if(covered.has(r+','+c)) cnt++;
-    if(cnt % 2 !== 0) badCols.push(c);
-  }
-
-  if(badRows.length === 0 && badCols.length === 0){
-    puzzleSolved = true;
-    const elapsed = formatElapsed(Date.now() - puzzleStartTime);
-    stopPuzzleTimer();
-    document.getElementById('puzzle-timer').textContent = 'Time: ' + elapsed;
-    showCongratsModal(elapsed);
-    return;
-  }
-
-  badRows.forEach(r=>{
-    boardEl.querySelectorAll(`.board-cell[data-r="${r}"]`).forEach(el=>el.classList.add('parity-odd'));
-  });
-  badCols.forEach(c=>{
-    boardEl.querySelectorAll(`.board-cell[data-c="${c}"]`).forEach(el=>el.classList.add('parity-odd'));
-  });
-}
-
-/* ═══════════════════════════════════════════════
-   BOARD SETUP
-═══════════════════════════════════════════════ */
-function setupBoard(){
-  CELL = computeCellSize();
-  const rows = gridRows(), cols = gridCols();
-  boardEl.style.gridTemplateColumns = `repeat(${cols}, ${CELL}px)`;
-  boardEl.style.gridTemplateRows = `repeat(${rows}, ${CELL}px)`;
-  boardEl.style.gap = GAP + 'px';
-  boardEl.innerHTML = '';
-  let blockedInBounds = 0;
-  for(let i=0;i<rows;i++){
-    for(let j=0;j<cols;j++){
-      const r = gridMinRow + i, c = gridMinCol + j;
-      const blocked = isBlocked(r,c);
-      const visiblyBlocked = isVisiblyBlocked(r,c);
-      if(blocked) blockedInBounds++;
-      const cell = document.createElement('div');
-      cell.className = 'board-cell'
-        + (checkerboardEnabled && !visiblyBlocked ? ' pat'+patternIndexFor(r,c) : '')
-        + (visiblyBlocked ? ' blocked' : '');
-      cell.dataset.r = r;
-      cell.dataset.c = c;
-      boardEl.appendChild(cell);
-    }
-  }
-  document.getElementById('total-count').textContent = rows*cols - blockedInBounds;
-  renderCheckerOverlay();
-  updateCheckerCounts();
-  renderHintOverlay();
-}
-
-function occupied(excludeId){
-  const set = new Set();
-  placedPieces.forEach(p=>{
-    if(p.id === excludeId) return;
-    p.cells.forEach(([r,c])=>set.add((p.anchorRow+r)+','+(p.anchorCol+c)));
-  });
-  return set;
-}
-
-function isValidPlacement(cells, anchorRow, anchorCol, excludeId){
-  const occ = occupied(excludeId);
-  for(const [r,c] of cells){
-    const rr = anchorRow+r, cc = anchorCol+c;
-    if(rr<gridMinRow || cc<gridMinCol || rr>gridMaxRow || cc>gridMaxCol) return false;
-    if(isBlocked(rr,cc)) return false;
-    if(occ.has(rr+','+cc)) return false;
-  }
-  return true;
-}
-
-// A piece only gets deleted by dragging it off the board once NONE of its
-// cells overlap the grid at all — partially overlapping the border is a
-// valid (if "invalid-tinted") place for it to sit, per the placement rules.
-function isCompletelyOffBoard(cells, anchorRow, anchorCol){
-  const {rows, cols} = bounds(cells);
-  return (anchorRow+rows-1 < gridMinRow) || (anchorRow > gridMaxRow) ||
-         (anchorCol+cols-1 < gridMinCol) || (anchorCol > gridMaxCol);
-}
-
-function findOpenAnchor(cells, prefRow, prefCol){
-  const {rows, cols} = bounds(cells);
-  if(rows>gridRows() || cols>gridCols()) return null;
-  let best = null, bestDist = Infinity;
-  for(let r=gridMinRow; r<=gridMaxRow-rows+1; r++){
-    for(let c=gridMinCol; c<=gridMaxCol-cols+1; c++){
-      if(isValidPlacement(cells, r, c, null)){
-        const dist = Math.abs(r-prefRow) + Math.abs(c-prefCol);
-        if(dist < bestDist){ bestDist = dist; best = {row:r, col:c}; }
-      }
-    }
-  }
-  return best;
-}
-
-function updateHolesCount(){
-  const covered = new Set();
-  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
-    const rr=p.anchorRow+r, cc=p.anchorCol+c;
-    if(rr>=gridMinRow && rr<=gridMaxRow && cc>=gridMinCol && cc<=gridMaxCol) covered.add(rr+','+cc);
-  }));
-  let blockedInBounds = 0;
-  for(let r=gridMinRow; r<=gridMaxRow; r++){
-    for(let c=gridMinCol; c<=gridMaxCol; c++){ if(isBlocked(r,c)) blockedInBounds++; }
-  }
-  document.getElementById('holes-count').textContent = gridRows()*gridCols() - blockedInBounds - covered.size;
-  updateCheckerCounts();
-  renderCheckerOverlay();
-}
-
-function pxPos(index){ return index*(CELL+GAP); }
-function pxCol(absCol){ return pxPos(absCol - gridMinCol); }
-function pxRow(absRow){ return pxPos(absRow - gridMinRow); }
-
-/* ═══════════════════════════════════════════════
-   SOLID SHAPE RENDERING
-   A piece is drawn as one shape: each cell is absolutely positioned and,
-   on any side where a same-piece cell is adjacent, is widened to swallow
-   the gap — so a piece's own cells fuse into one continuous fill with a
-   single smooth outer silhouette (border/shadow/rounded corners), instead
-   of each cell being its own separately-bordered element. That's what
-   keeps two same-colored pieces visually distinct when placed touching
-   each other: the real gap between *different* pieces is untouched; only
-   the *outer* geometry treats same-piece cells as fused.
-   A piece still needs to read as connected unit squares rather than a
-   solid blob, so buildInternalDividers() below draws a thin stroke down
-   the middle of every swallowed internal gap, as vector lines inside the
-   same SVG — never separate DOM elements, so this can't reintroduce the
-   old per-cell-border hairline-seam bug (see buildOutlinePath's comment).
-═══════════════════════════════════════════════ */
-function hasCellAt(cells, r, c){ return cells.some(([cr,cc])=>cr===r&&cc===c); }
-
-// Fill path: each cell's true square, plus a bridging rectangle toward every
-// internally-adjacent neighbor (and a small corner patch for 2x2 blocks) —
-// all as ONE path, so it paints as a single seamless region.
-// The rectangles that make up a piece's seamless footprint: each cell's
-// true square, plus a bridging rectangle toward every internally-adjacent
-// neighbor (and a small corner patch for 2x2 blocks). Shared by the fill
-// path and the outline trace below, so both agree on exactly what area
-// the piece covers.
-function buildPieceRects(cells, cellSize, gapSize){
-  const rects = [];
-  cells.forEach(([r,c])=>{
-    const x = c*(cellSize+gapSize), y = r*(cellSize+gapSize);
-    rects.push([x, y, x+cellSize, y+cellSize]);
-    if(hasCellAt(cells, r, c+1)) rects.push([x+cellSize, y, x+cellSize+gapSize, y+cellSize]);
-    if(hasCellAt(cells, r+1, c)) rects.push([x, y+cellSize, x+cellSize, y+cellSize+gapSize]);
-    if(hasCellAt(cells, r, c+1) && hasCellAt(cells, r+1, c) && hasCellAt(cells, r+1, c+1)){
-      rects.push([x+cellSize, y+cellSize, x+cellSize+gapSize, y+cellSize+gapSize]); // 2x2 corner join
+document.querySelectorAll('.difficulty-btn[data-difficulty]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const level = btn.dataset.difficulty;
+    const url = DIFFICULTY_LINKS[level];
+    if (url) {
+      window.location.href = url;
+    } else {
+      showToast(btn.textContent.trim() + ' puzzles are coming soon');
     }
   });
-  return rects;
-}
-
-function buildFillPath(cells, cellSize, gapSize){
-  return buildPieceRects(cells, cellSize, gapSize)
-    .map(([x0,y0,x1,y1]) => `M${x0},${y0} H${x1} V${y1} H${x0} Z`)
-    .join(' ');
-}
-
-// Outline path: traces the boundary of the same rectangle union used for
-// the fill, as one connected loop per boundary component, so the border
-// renders as a single continuous stroke instead of one border segment per
-// cell. (Per-cell borders were the actual cause of the visible "grid
-// lines" — separate elements can each get their own border independently
-// anti-aliased/composited by the browser, which shows as a hairline seam
-// on some displays even when the edges are computed to align exactly.)
-//
-// Approach: collect every x/y coordinate that appears in any rectangle,
-// use them to build a fine (non-uniform) grid, mark which fine cells fall
-// inside some rectangle, then trace THAT grid's boundary with the
-// standard per-cell-edge algorithm. Because every rectangle's edges are
-// drawn from this one shared coordinate set, adjacent filled fine-cells
-// always meet at an exact shared point — including at T-junctions and
-// other concave corners, which a simpler per-cell extension can't get
-// right (two non-adjacent cells' edges need to meet at one point there).
-function buildOutlinePath(cells, cellSize, gapSize){
-  const rects = buildPieceRects(cells, cellSize, gapSize);
-  const xsSet = new Set(), ysSet = new Set();
-  rects.forEach(([x0,y0,x1,y1])=>{ xsSet.add(x0); xsSet.add(x1); ysSet.add(y0); ysSet.add(y1); });
-  const xs = [...xsSet].sort((a,b)=>a-b);
-  const ys = [...ysSet].sort((a,b)=>a-b);
-  const nx = xs.length-1, ny = ys.length-1;
-  const occ = Array.from({length:ny}, ()=>Array(nx).fill(false));
-  for(let iy=0; iy<ny; iy++){
-    const cy = (ys[iy]+ys[iy+1])/2;
-    for(let ix=0; ix<nx; ix++){
-      const cx = (xs[ix]+xs[ix+1])/2;
-      occ[iy][ix] = rects.some(([x0,y0,x1,y1]) => cx>x0 && cx<x1 && cy>y0 && cy<y1);
-    }
-  }
-  const occAt = (iy,ix) => (iy>=0 && iy<ny && ix>=0 && ix<nx) ? occ[iy][ix] : false;
-  const next = new Map();
-  const key = (x,y)=> x+','+y;
-  for(let iy=0; iy<ny; iy++){
-    for(let ix=0; ix<nx; ix++){
-      if(!occ[iy][ix]) continue;
-      const x0=xs[ix], x1=xs[ix+1], y0=ys[iy], y1=ys[iy+1];
-      if(!occAt(iy-1,ix)) next.set(key(x0,y0), [x1,y0]);
-      if(!occAt(iy,ix+1)) next.set(key(x1,y0), [x1,y1]);
-      if(!occAt(iy+1,ix)) next.set(key(x1,y1), [x0,y1]);
-      if(!occAt(iy,ix-1)) next.set(key(x0,y1), [x0,y0]);
-    }
-  }
-  const visited = new Set();
-  const loops = [];
-  for(const startKey of next.keys()){
-    if(visited.has(startKey)) continue;
-    const pts = [];
-    let curKey = startKey, guard = 0;
-    do {
-      visited.add(curKey);
-      pts.push(curKey.split(',').map(Number));
-      const n = next.get(curKey);
-      if(!n) break;
-      curKey = key(n[0], n[1]);
-      guard++;
-    } while(curKey !== startKey && guard < 10000);
-    if(pts.length >= 3) loops.push(pts);
-  }
-  // drop collinear intermediate points for a tidier path
-  const simplified = loops.map(pts=>{
-    const n = pts.length;
-    return pts.filter((cur,i)=>{
-      const prev = pts[(i-1+n)%n], nxt = pts[(i+1)%n];
-      const dx1=cur[0]-prev[0], dy1=cur[1]-prev[1], dx2=nxt[0]-cur[0], dy2=nxt[1]-cur[1];
-      return dx1*dy2 - dy1*dx2 !== 0;
-    });
-  });
-  return simplified.map(pts => 'M'+pts.map(p=>p.join(',')).join('L')+'Z').join(' ');
-}
-
-// Internal divider lines: one stroke segment down the middle of every
-// swallowed gap between two orthogonally-adjacent same-piece cells, so a
-// piece reads as connected unit squares rather than one solid blob. Drawn
-// as vector strokes inside the piece's own SVG (never separate DOM
-// elements), so this can't reintroduce the old per-cell-border hairline
-// seam bug — the outer silhouette is still the single smooth
-// buildOutlinePath() trace, completely unaffected by these interior lines.
-function buildInternalDividers(cells, cellSize, gapSize){
-  const segs = [];
-  cells.forEach(([r,c])=>{
-    const x = c*(cellSize+gapSize), y = r*(cellSize+gapSize);
-    if(hasCellAt(cells, r, c+1)){
-      const dx = x + cellSize + gapSize/2;
-      segs.push(`M${dx},${y} V${y+cellSize}`);
-    }
-    if(hasCellAt(cells, r+1, c)){
-      const dy = y + cellSize + gapSize/2;
-      segs.push(`M${x},${dy} H${x+cellSize}`);
-    }
-  });
-  return segs.join(' ');
-}
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-function buildSolidShape(cells, color, cellSize, gapSize){
-  const {rows, cols} = bounds(cells);
-  const totalW = cols*cellSize + (cols-1)*gapSize;
-  const totalH = rows*cellSize + (rows-1)*gapSize;
-
-  const container = document.createElement('div');
-  container.className = 'tile-grid';
-  container.style.position = 'relative';
-  container.style.width = totalW + 'px';
-  container.style.height = totalH + 'px';
-
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('width', totalW);
-  svg.setAttribute('height', totalH);
-  svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
-  svg.classList.add('piece-svg');
-  svg.style.position = 'absolute';
-  svg.style.left = '0';
-  svg.style.top = '0';
-  svg.style.overflow = 'visible';
-
-  const fillPath = document.createElementNS(SVG_NS, 'path');
-  fillPath.setAttribute('d', buildFillPath(cells, cellSize, gapSize));
-  fillPath.setAttribute('fill', color);
-  svg.appendChild(fillPath);
-
-  const dividers = buildInternalDividers(cells, cellSize, gapSize);
-  if(dividers){
-    const dividerPath = document.createElementNS(SVG_NS, 'path');
-    dividerPath.setAttribute('d', dividers);
-    dividerPath.setAttribute('fill', 'none');
-    dividerPath.setAttribute('stroke', 'rgba(0,0,0,0.25)');
-    dividerPath.setAttribute('stroke-width', '1.5');
-    svg.appendChild(dividerPath);
-  }
-
-  const outlinePath = document.createElementNS(SVG_NS, 'path');
-  outlinePath.setAttribute('d', buildOutlinePath(cells, cellSize, gapSize));
-  outlinePath.setAttribute('fill', 'none');
-  outlinePath.setAttribute('stroke', 'rgba(0,0,0,0.45)');
-  outlinePath.setAttribute('stroke-width', '2');
-  outlinePath.setAttribute('stroke-linejoin', 'round');
-  svg.appendChild(outlinePath);
-
-  container.appendChild(svg);
-
-  // Invisible per-cell hit targets, purely so drag code can read which
-  // exact cell (dr/dc) was grabbed — no visual styling here at all, so
-  // they can't reintroduce the seam problem.
-  cells.forEach(([r,c])=>{
-    const blk = document.createElement('div');
-    blk.className = 'blk';
-    blk.dataset.dr = r;
-    blk.dataset.dc = c;
-    blk.style.position = 'absolute';
-    blk.style.left = (c*(cellSize+gapSize)) + 'px';
-    blk.style.top = (r*(cellSize+gapSize)) + 'px';
-    blk.style.width = cellSize + 'px';
-    blk.style.height = cellSize + 'px';
-    container.appendChild(blk);
-  });
-  return container;
-}
-
-/* ═══════════════════════════════════════════════
-   RENDERING
-═══════════════════════════════════════════════ */
-function renderPlacedPieces(){
-  piecesLayerEl.innerHTML = '';
-  placedPieces.forEach(p=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'placed-piece'
-      + (selectedIds.has(p.id) ? ' selected' : '')
-      + (pendingPlacementIds.has(p.id) ? ' invalid' : '');
-    wrap.style.left = pxCol(p.anchorCol) + 'px';
-    wrap.style.top = pxRow(p.anchorRow) + 'px';
-    wrap.dataset.id = p.id;
-    wrap.appendChild(buildSolidShape(p.cells, p.color, CELL, GAP));
-    piecesLayerEl.appendChild(wrap);
-  });
-  updateHolesCount();
-}
-
-function renderAll(){
-  renderPlacedPieces();
-  updateSelToolbar();
-  if(activeTab !== 'sandbox'){
-    renderPuzzleTiles(activeTab);
-    checkPuzzleProgress();
-  }
-}
-
-/* ═══════════════════════════════════════════════
-   TILE PREVIEW RENDERING
-═══════════════════════════════════════════════ */
-function buildTilePreview(cells, color, cellPx){
-  return buildSolidShape(cells, color, cellPx, 2);
-}
-
-/* ═══════════════════════════════════════════════
-   PALETTE RENDERING
-═══════════════════════════════════════════════ */
-function renderFixedTiles(containerId, piecesArray, overrideKey){
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  piecesArray.forEach(def=>{
-    const effectiveCells = applyTrayTransform(def.cells);
-    const tile = document.createElement('div');
-    tile.className = 'tile';
-    tile.appendChild(buildTilePreview(effectiveCells, def.color, 13));
-    const label = document.createElement('div');
-    label.className = 'tile-name';
-    label.textContent = def.name;
-    tile.appendChild(label);
-
-    const rotateBtn = document.createElement('button');
-    rotateBtn.className = 'tile-btn rotate pair btn-rotate';
-    rotateBtn.textContent = '↻';
-    rotateBtn.title = 'Rotate';
-    rotateBtn.onclick = (e)=>{
-      e.stopPropagation();
-      def.cells = rotateCells(def.cells);
-      saveOverrides(overrideKey, piecesArray);
-      renderFixedTiles(containerId, piecesArray, overrideKey);
-    };
-    tile.appendChild(rotateBtn);
-
-    const flipBtn = document.createElement('button');
-    flipBtn.className = 'tile-btn flip pair btn-flip';
-    flipBtn.textContent = '⇆';
-    flipBtn.title = 'Flip';
-    flipBtn.onclick = (e)=>{
-      e.stopPropagation();
-      def.cells = flipCells(def.cells);
-      saveOverrides(overrideKey, piecesArray);
-      renderFixedTiles(containerId, piecesArray, overrideKey);
-    };
-    tile.appendChild(flipBtn);
-
-    tile.addEventListener('pointerdown', e=>{
-      if(e.target.closest('.tile-btn')) return;
-      startDragFromTile(e, effectiveCells, def.color, def.name);
-    });
-    container.appendChild(tile);
-  });
-}
-function renderStandardTiles(){ renderFixedTiles('standard-tiles', STANDARD_PIECES, 'standard'); }
-function renderPentominoTiles(){ renderFixedTiles('pentomino-tiles', PENTOMINO_PIECES, 'pentomino'); }
-
-function renderCustomTiles(){
-  const container = document.getElementById('custom-tiles');
-  container.innerHTML = '';
-  customPieces.forEach(def=>{
-    const effectiveCells = applyTrayTransform(def.cells);
-    const tile = document.createElement('div');
-    tile.className = 'tile';
-    tile.appendChild(buildTilePreview(effectiveCells, def.color, 13));
-    const label = document.createElement('div');
-    label.className = 'tile-name';
-    label.textContent = def.name;
-    tile.appendChild(label);
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'tile-btn edit';
-    editBtn.textContent = '✎';
-    editBtn.title = 'Edit';
-    editBtn.onclick = (e)=>{ e.stopPropagation(); openEditor(def.id); };
-    tile.appendChild(editBtn);
-
-    const rotateBtn = document.createElement('button');
-    rotateBtn.className = 'tile-btn rotate btn-rotate';
-    rotateBtn.textContent = '↻';
-    rotateBtn.title = 'Rotate';
-    rotateBtn.onclick = (e)=>{
-      e.stopPropagation();
-      def.cells = rotateCells(def.cells);
-      def.edited = true;
-      saveCustomPieces();
-      renderCustomTiles();
-    };
-    tile.appendChild(rotateBtn);
-
-    const flipBtn = document.createElement('button');
-    flipBtn.className = 'tile-btn flip btn-flip';
-    flipBtn.textContent = '⇆';
-    flipBtn.title = 'Flip';
-    flipBtn.onclick = (e)=>{
-      e.stopPropagation();
-      def.cells = flipCells(def.cells);
-      def.edited = true;
-      saveCustomPieces();
-      renderCustomTiles();
-    };
-    tile.appendChild(flipBtn);
-
-    if(customPieces.length > 1){
-      const delBtn = document.createElement('button');
-      delBtn.className = 'tile-btn del';
-      delBtn.textContent = '✕';
-      delBtn.title = 'Remove';
-      delBtn.onclick = (e)=>{
-        e.stopPropagation();
-        customPieces = customPieces.filter(p=>p.id!==def.id);
-        saveCustomPieces();
-        renderCustomTiles();
-      };
-      tile.appendChild(delBtn);
-    }
-
-    tile.addEventListener('pointerdown', e=>{
-      if(e.target !== tile && e.target.closest('.tile-btn')) return;
-      startDragFromTile(e, effectiveCells, def.color, def.name);
-    });
-    container.appendChild(tile);
-  });
-
-  const addTile = document.createElement('div');
-  addTile.className = 'add-tile';
-  addTile.textContent = '+';
-  addTile.title = 'New custom piece';
-  addTile.onclick = ()=>{
-    const id = 'custom-' + (customIdCounter++);
-    const piece = defaultCustomPiece(id);
-    customPieces.push(piece);
-    saveCustomPieces();
-    renderCustomTiles();
-    openEditor(id);
-  };
-  container.appendChild(addTile);
-}
-
-/* ═══════════════════════════════════════════════
-   COLLAPSIBLE SECTIONS
-═══════════════════════════════════════════════ */
-document.querySelectorAll('.section-header').forEach(h=>{
-  h.addEventListener('click', ()=>{
-    const section = document.getElementById(h.dataset.target);
-    section.classList.toggle('collapsed');
-    localStorage.setItem('poly_collapsed_'+h.dataset.target, section.classList.contains('collapsed'));
-  });
 });
-(function restoreCollapseState(){
-  ['section-standard','section-pentomino','section-custom'].forEach(id=>{
-    const stored = localStorage.getItem('poly_collapsed_'+id);
-    if(stored===null) return;
-    document.getElementById(id).classList.toggle('collapsed', stored==='true');
-  });
-})();
-
-/* ═══════════════════════════════════════════════
-   DRAG (tray → board, board → board)
-═══════════════════════════════════════════════ */
-let drag = null;
-/* drag = {mode:'new'|'move', cells, color, name, grabDR, grabDC, ghostEl,
-           sourceId, startX, startY, moved} */
-
-function makeGhost(cells, color){
-  const ghost = document.createElement('div');
-  ghost.className = 'ghost';
-  ghost.appendChild(buildSolidShape(cells, color, CELL, GAP));
-  piecesLayerEl.appendChild(ghost);
-  return ghost;
-}
-
-function startDragFromTile(e, cells, color, name){
-  if(editingGridShape){ showBlockedMessage('Finish editing the grid shape first'); return; }
-  e.preventDefault();
-  const {rows, cols} = bounds(cells);
-  const grabDR = Math.floor((rows-1)/2);
-  const grabDC = Math.floor((cols-1)/2);
-  const ghostEl = makeGhost(cells, color);
-  drag = { mode:'new', cells: cells.map(c=>c.slice()), color, name, grabDR, grabDC, ghostEl, moved:true };
-  updateSelToolbar(); // hide immediately — drag is now set, no need to wait for a renderAll
-  updateDrag(e.clientX, e.clientY);
-  window.addEventListener('pointermove', onDragMove);
-  window.addEventListener('pointerup', onDragEnd);
-}
-
-function startDragFromPlaced(e, piece){
-  e.preventDefault();
-  e.stopPropagation();
-  // Starting a drag on a piece that's already part of a multi-selection
-  // moves the whole group together; only collapse to a single-piece
-  // selection when the piece wasn't already selected alongside others.
-  const groupIds = (selectedIds.has(piece.id) && selectedIds.size > 1)
-    ? [...selectedIds]
-    : [piece.id];
-  if(groupIds.length === 1) selectPiece(piece.id);
-  const blk = e.target.closest('.blk');
-  const dr = blk ? parseInt(blk.dataset.dr) : 0;
-  const dc = blk ? parseInt(blk.dataset.dc) : 0;
-  const ghostEl = makeGhost(piece.cells, piece.color);
-  const groupStart = groupIds.map(id=>{
-    const p = placedPieces.find(pp=>pp.id===id);
-    return { id, anchorRow: p.anchorRow, anchorCol: p.anchorCol };
-  });
-  drag = {
-    mode:'move', cells: piece.cells.map(c=>c.slice()), color: piece.color, name: piece.name,
-    grabDR: dr, grabDC: dc, ghostEl, sourceId: piece.id,
-    groupStart, startAnchorRow: piece.anchorRow, startAnchorCol: piece.anchorCol,
-    startX: e.clientX, startY: e.clientY, moved: false
-  };
-  updateSelToolbar(); // hide immediately — drag is now set, no need to wait for a renderAll
-  updateDrag(e.clientX, e.clientY);
-  const wrapEl = piecesLayerEl.querySelector(`[data-id="${piece.id}"]`);
-  if(wrapEl) wrapEl.style.visibility = 'hidden';
-  window.addEventListener('pointermove', onDragMove);
-  window.addEventListener('pointerup', onDragEnd);
-}
-
-function clearHighlights(){
-  document.querySelectorAll('.board-cell.hl-valid, .board-cell.hl-invalid').forEach(el=>{
-    el.classList.remove('hl-valid','hl-invalid');
-  });
-}
-
-/* Single source of truth for "where would this drag land right now". Used by
-   both pointermove (ghost/highlights) and pointerup (commit), so the ghost
-   you see and the cell you get always agree. The red/green tint is still
-   shown during the drag as a hint — but per the placement rules, dropping
-   on "invalid" no longer rejects the drop; it just leaves the piece there,
-   tinted invalid, until it's fixed. */
-function updateDrag(clientX, clientY){
-  const rect = boardEl.getBoundingClientRect();
-  const relX = clientX - rect.left;
-  const relY = clientY - rect.top;
-  const pointerCol = Math.floor(relX / (CELL+GAP)) + gridMinCol;
-  const pointerRow = Math.floor(relY / (CELL+GAP)) + gridMinRow;
-  const anchorRow = pointerRow - drag.grabDR;
-  const anchorCol = pointerCol - drag.grabDC;
-  const excludeId = drag.mode==='move' ? drag.sourceId : null;
-  const valid = isValidPlacement(drag.cells, anchorRow, anchorCol, excludeId);
-
-  drag.ghostEl.style.left = pxCol(anchorCol) + 'px';
-  drag.ghostEl.style.top  = pxRow(anchorRow) + 'px';
-  drag.ghostEl.classList.toggle('invalid', !valid);
-
-  clearHighlights();
-  drag.cells.forEach(([r,c])=>{
-    const rr=anchorRow+r, cc=anchorCol+c;
-    const cellEl = boardEl.querySelector(`.board-cell[data-r="${rr}"][data-c="${cc}"]`);
-    if(cellEl) cellEl.classList.add(valid?'hl-valid':'hl-invalid');
-  });
-
-  // When dragging one piece of a multi-selection, preview the whole group
-  // moving together by nudging the other selected pieces' DOM elements by
-  // the same delta — only the dragged piece gets a ghost, so without this
-  // the rest of the group would sit frozen until the drop, then jump.
-  if(drag.mode==='move' && drag.groupStart && drag.groupStart.length > 1){
-    const dRow = anchorRow - drag.startAnchorRow;
-    const dCol = anchorCol - drag.startAnchorCol;
-    drag.groupStart.forEach(g=>{
-      if(g.id === drag.sourceId) return;
-      const wrapEl = piecesLayerEl.querySelector(`[data-id="${g.id}"]`);
-      if(wrapEl){
-        wrapEl.style.left = pxCol(g.anchorCol + dCol) + 'px';
-        wrapEl.style.top = pxRow(g.anchorRow + dRow) + 'px';
-      }
-    });
-  }
-
-  return { anchorRow, anchorCol, valid };
-}
-
-function isOverTrashZone(clientX, clientY){
-  const r = trashZoneEl.getBoundingClientRect();
-  return clientX>=r.left && clientX<=r.right && clientY>=r.top && clientY<=r.bottom;
-}
-
-function onDragMove(e){
-  if(!drag) return;
-  if(drag.mode==='move'){
-    if(Math.abs(e.clientX-drag.startX)>3 || Math.abs(e.clientY-drag.startY)>3) drag.moved = true;
-  }
-  const overTrash = isOverTrashZone(e.clientX, e.clientY);
-  trashZoneEl.classList.toggle('drag-over', overTrash);
-  drag.ghostEl.classList.toggle('trashing', overTrash);
-  // While hovering the trash zone, leave the ghost at its last board
-  // position (shrunk + faded) rather than running the board-relative math
-  // for a point that isn't over the board at all — but do clear any
-  // leftover green/red cell highlight from just before it crossed in.
-  if(overTrash) clearHighlights();
-  else updateDrag(e.clientX, e.clientY);
-}
-
-// Dragging a piece off the grid edge no longer deletes it — that's what
-// used to conflict with Infinite Grid's expansion (the two features were
-// fighting over what an off-board drop should mean). Deletion now only
-// happens via this explicit trash zone, for both a new tray piece (just
-// cancels its creation) and an existing placed piece (removes it).
-function onDragEnd(e){
-  if(!drag) return;
-  window.removeEventListener('pointermove', onDragMove);
-  window.removeEventListener('pointerup', onDragEnd);
-
-  if(drag.mode==='move'){
-    if(Math.abs(e.clientX-drag.startX)>3 || Math.abs(e.clientY-drag.startY)>3) drag.moved = true;
-  }
-
-  const overTrash = isOverTrashZone(e.clientX, e.clientY);
-  trashZoneEl.classList.remove('drag-over');
-  clearHighlights();
-  drag.ghostEl.remove();
-
-  if(overTrash){
-    if(drag.mode==='move' && drag.moved){
-      pushUndo();
-      placedPieces = placedPieces.filter(p=>p.id!==drag.sourceId);
-      pendingPlacementIds.delete(drag.sourceId);
-      selectedIds.delete(drag.sourceId);
-      maybeContractGrid();
-    }
-    drag = null;
-    renderAll();
-    return;
-  }
-
-  const { anchorRow, anchorCol } = updateDrag(e.clientX, e.clientY);
-
-  if(drag.mode==='new'){
-    // A brand new piece never dropped anywhere on the board at all just
-    // cancels; anything that overlaps the grid at all gets placed, valid
-    // or not (grid locking still applies — it snaps to the cell grid).
-    if(!isCompletelyOffBoard(drag.cells, anchorRow, anchorCol)){
-      pushUndo();
-      const id = 'p'+(placedIdCounter++);
-      const piece = { id, cells: drag.cells, color: drag.color, name: drag.name, anchorRow, anchorCol };
-      placedPieces.push(piece);
-      selectedIds.clear();
-      selectedIds.add(id);
-      maybeExpandGrid(piece);
-      updatePendingPlacement(id);
-    }
-  } else if(drag.mode==='move'){
-    const piece = placedPieces.find(p=>p.id===drag.sourceId);
-    if(piece && drag.moved){
-      pushUndo();
-      // Move every piece in the group (just this one, unless the drag
-      // started on a piece that was already part of a multi-selection) by
-      // the same delta the dragged piece moved, mirroring how arrow-key
-      // moves apply to the whole selection — no fit check, literal moves.
-      const dRow = anchorRow - drag.startAnchorRow;
-      const dCol = anchorCol - drag.startAnchorCol;
-      const groupPieces = drag.groupStart
-        .map(g=>({ piece: placedPieces.find(p=>p.id===g.id), start: g }))
-        .filter(g=>g.piece);
-      groupPieces.forEach(({piece: p, start})=>{
-        p.anchorRow = start.anchorRow + dRow;
-        p.anchorCol = start.anchorCol + dCol;
-      });
-      groupPieces.forEach(({piece: p})=>{ maybeExpandGrid(p); updatePendingPlacement(p.id); });
-      maybeContractGrid();
-    }
-  }
-  // updateDrag() above re-adds hl-valid/hl-invalid as a side effect of
-  // computing the final anchor — clear them again now that the drop is
-  // actually committed, or they'd linger on the board forever (nothing
-  // else ever touches .board-cell classes outside an active drag).
-  clearHighlights();
-  drag = null;
-  renderAll();
-}
-
-/* ═══════════════════════════════════════════════
-   SELECTION / ROTATE / FLIP / DUPLICATE / DELETE
-═══════════════════════════════════════════════ */
-function selectPiece(id){
-  selectedIds.clear();
-  selectedIds.add(id);
-  renderAll();
-}
-
-// Shift-click toggles one piece's membership in the selection without
-// touching the rest — this is how you build a multi-piece selection before
-// letting go of shift and using arrow keys / rotate / flip on all of them.
-function toggleSelectPiece(id){
-  if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
-  renderAll();
-}
-
-function deselect(){
-  selectedIds.clear();
-  renderAll();
-}
-
-function deleteSelected(){
-  if(selectedIds.size===0) return;
-  pushUndo();
-  const ids = new Set(selectedIds);
-  placedPieces = placedPieces.filter(p=>!ids.has(p.id));
-  ids.forEach(id=>{ pendingPlacementIds.delete(id); selectedIds.delete(id); });
-  maybeContractGrid();
-  renderAll();
-}
-
-// Rotate/flip always apply in place — never auto-relocated to find a fit.
-// If that leaves a piece invalid, it just stays there tinted red until
-// moved (arrow keys or drag) into a valid spot.
-//
-// With more than one piece selected, this rotates/flips the WHOLE
-// selection as one rigid shape: each piece's own orientation transforms
-// exactly like the single-piece case, AND its position moves around the
-// group's shared bounding box, using the same per-cell transform logic
-// (rotateCells/flipCells) a lone piece would use — just applied to the
-// group's frame instead of one piece's own cells.
-function transformSelected(fn){
-  if(selectedIds.size===0) return;
-  const pieces = [...selectedIds].map(id=>placedPieces.find(p=>p.id===id)).filter(Boolean);
-  if(pieces.length===0) return;
-
-  if(pieces.length===1){
-    const piece = pieces[0];
-    pushUndo();
-    piece.cells = fn(piece.cells);
-    maybeExpandGrid(piece);
-    updatePendingPlacement(piece.id);
-    maybeContractGrid();
-    renderAll();
-    return;
-  }
-
-  pushUndo();
-  let minR=Infinity, minC=Infinity, maxR=-Infinity, maxC=-Infinity;
-  pieces.forEach(p=>{
-    const {rows,cols} = bounds(p.cells);
-    minR = Math.min(minR, p.anchorRow); minC = Math.min(minC, p.anchorCol);
-    maxR = Math.max(maxR, p.anchorRow+rows-1); maxC = Math.max(maxC, p.anchorCol+cols-1);
-  });
-  const groupRows = maxR-minR+1, groupCols = maxC-minC+1;
-  const isRotate = (fn === rotateCells);
-  pieces.forEach(p=>{
-    const {rows:pr, cols:pc} = bounds(p.cells);
-    const localR = p.anchorRow - minR, localC = p.anchorCol - minC;
-    // Transform the piece's own bounding-box corners within the group's
-    // frame using the exact same point rule rotateCells/flipCells uses,
-    // then the new top-left corner is just the min of those — this works
-    // generically for any such transform without hand-deriving a separate
-    // anchor formula per transform type.
-    const corners = [[localR,localC],[localR,localC+pc-1],[localR+pr-1,localC],[localR+pr-1,localC+pc-1]];
-    const transformed = corners.map(([r,c]) => isRotate ? [c, groupRows-1-r] : [r, groupCols-1-c]);
-    const newLocalR = Math.min(...transformed.map(t=>t[0]));
-    const newLocalC = Math.min(...transformed.map(t=>t[1]));
-    p.cells = fn(p.cells);
-    p.anchorRow = minR + newLocalR;
-    p.anchorCol = minC + newLocalC;
-  });
-  pieces.forEach(p=>{ maybeExpandGrid(p); updatePendingPlacement(p.id); });
-  maybeContractGrid();
-  renderAll();
-}
-
-// Auto-placement (finding the nearest open spot) happens ONLY here, for
-// duplicate — never for rotate/flip/arrow moves. If there's no open spot,
-// the copy lands directly on top of the original (allowed, since overlap is
-// permitted) and becomes the piece that needs fixing. Only works on a
-// single selected piece — duplicating a multi-piece group isn't supported.
-function duplicateSelected(){
-  if(selectedIds.size !== 1) return;
-  const id = [...selectedIds][0];
-  const source = placedPieces.find(p=>p.id===id);
-  if(!source) return;
-  pushUndo();
-  const anchor = findOpenAnchor(source.cells, source.anchorRow, source.anchorCol);
-  const newId = 'p'+(placedIdCounter++);
-  const newPiece = {
-    id: newId, cells: source.cells.map(c=>c.slice()), color: source.color, name: source.name,
-    anchorRow: anchor ? anchor.row : source.anchorRow,
-    anchorCol: anchor ? anchor.col : source.anchorCol
-  };
-  placedPieces.push(newPiece);
-  selectedIds.clear();
-  selectedIds.add(newId);
-  maybeExpandGrid(newPiece);
-  updatePendingPlacement(newId);
-  renderAll();
-}
-
-function updateSelToolbar(){
-  let bar = document.getElementById('sel-toolbar');
-  if(bar) bar.remove();
-  // Hide the floating rotate/flip/duplicate/delete buttons for the whole
-  // duration of a drag (new piece or move) — they shouldn't hover over a
-  // piece's old position while it's being dragged somewhere else.
-  if(drag) return;
-  if(selectedIds.size===0) return;
-
-  const pieces = [...selectedIds].map(id=>placedPieces.find(p=>p.id===id)).filter(Boolean);
-  if(pieces.length===0) return;
-
-  // Bounding box of the whole selection on screen (just one piece in the
-  // common case, several when multi-selected).
-  let left=Infinity, top=Infinity, bottom=-Infinity;
-  pieces.forEach(p=>{
-    const wrapEl = piecesLayerEl.querySelector(`[data-id="${p.id}"]`);
-    if(!wrapEl) return;
-    const r = wrapEl.getBoundingClientRect();
-    left = Math.min(left, r.left);
-    top = Math.min(top, r.top);
-    bottom = Math.max(bottom, r.bottom);
-  });
-  if(!isFinite(left)) return;
-
-  bar = document.createElement('div');
-  bar.className = 'sel-toolbar';
-  bar.id = 'sel-toolbar';
-  bar.style.left = left + 'px';
-  // Prefer placing the toolbar above the selection, but flip below it when
-  // there isn't enough headroom (e.g. sitting right under the trash zone)
-  // so it never overlaps other UI.
-  const controlsRect = trashZoneEl.getBoundingClientRect();
-  const wouldOverlapControls = (top - 34) < controlsRect.bottom + 4;
-  bar.style.top = (wouldOverlapControls ? bottom + 6 : top - 34) + 'px';
-
-  const mk = (label, title, fn, cls)=>{
-    const b = document.createElement('button');
-    b.className = cls || 'btn-mini';
-    b.textContent = label;
-    b.title = title;
-    b.onclick = fn;
-    return b;
-  };
-  bar.appendChild(mk('↻','Rotate (R)', ()=>transformSelected(rotateCells), 'btn-mini btn-rotate'));
-  bar.appendChild(mk('⇆','Flip (T)', ()=>transformSelected(flipCells), 'btn-mini btn-flip'));
-  if(pieces.length===1) bar.appendChild(mk('⧉','Duplicate (D)', duplicateSelected));
-  bar.appendChild(mk('✕','Delete (Del)', deleteSelected, 'btn-trash'));
-  document.body.appendChild(bar);
-}
-
-/* ═══════════════════════════════════════════════
-   KEYBOARD CONTROLS
-═══════════════════════════════════════════════ */
-const ARROW_DIRS = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
-
-// Clicking a piece, a board cell, or a tile is clicking a plain <div> — none
-// of that naturally moves keyboard focus away from whatever form control
-// (the grid-size input, the Infinite Grid checkbox, ...) was last focused.
-// Without this, keyboard focus can get "stuck" on a control indefinitely,
-// silently blocking every shortcut below since they check what's focused.
-document.addEventListener('pointerdown', e=>{
-  const onFormControl = e.target.closest && e.target.closest('input, button, select, textarea, label');
-  if(!onFormControl && document.activeElement && document.activeElement !== document.body){
-    document.activeElement.blur();
-  }
-}, true);
-
-document.addEventListener('keydown', e=>{
-  // Only actual text-editable inputs need arrow keys/letters for their own
-  // native behavior. A checkbox (or a button) keeps keyboard focus after
-  // being clicked — a blanket "any INPUT" check silently ate every shortcut
-  // afterward until the page was reloaded (focus reset), which is exactly
-  // what made the Infinite Grid checkbox look broken.
-  if(e.target.matches && e.target.matches('input[type=text], input[type=number], input[type=color]')) return;
-
-  if(e.key==='z' || e.key==='Z'){ e.preventDefault(); undo(); return; }
-  // D is already Duplicate, so Escape is the deselect-all shortcut instead.
-  if(e.key==='Escape'){ deselect(); return; }
-  if(selectedIds.size===0) return;
-
-  // Arrow keys always move every selected piece together, even into an
-  // invalid position — no fit check, no auto-placement. That's the point:
-  // this is how you rescue a piece that rotate/duplicate left sitting
-  // somewhere invalid, and how a multi-piece selection (shift-click to
-  // build it) moves as one unit once you let go of shift.
-  if(ARROW_DIRS[e.key]){
-    e.preventDefault();
-    const [dr,dc] = ARROW_DIRS[e.key];
-    const pieces = [...selectedIds].map(id=>placedPieces.find(p=>p.id===id)).filter(Boolean);
-    if(pieces.length){
-      pushUndo();
-      pieces.forEach(p=>{ p.anchorRow += dr; p.anchorCol += dc; });
-      pieces.forEach(p=>{ maybeExpandGrid(p); updatePendingPlacement(p.id); });
-      maybeContractGrid();
-      renderAll();
-    }
-    return;
-  }
-  if(e.key==='r' || e.key==='R'){ transformSelected(rotateCells); return; }
-  if(e.key==='t' || e.key==='T' || e.key==='f' || e.key==='F'){ transformSelected(flipCells); return; }
-  if(e.key==='d' || e.key==='D'){ duplicateSelected(); return; }
-  if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); deleteSelected(); return; }
-});
-
-piecesLayerEl.addEventListener('pointerdown', e=>{
-  const wrapEl = e.target.closest('.placed-piece');
-  if(!wrapEl) return;
-  const piece = placedPieces.find(p=>p.id===wrapEl.dataset.id);
-  if(!piece) return;
-  // Shift-click toggles this piece into/out of the selection and doesn't
-  // start a drag — that's a separate gesture from moving pieces around.
-  if(e.shiftKey){
-    e.preventDefault();
-    e.stopPropagation();
-    toggleSelectPiece(piece.id);
-    return;
-  }
-  startDragFromPlaced(e, piece);
-});
-piecesLayerEl.addEventListener('contextmenu', e=>{
-  const wrapEl = e.target.closest('.placed-piece');
-  if(!wrapEl) return;
-  e.preventDefault();
-  const id = wrapEl.dataset.id;
-  pushUndo();
-  placedPieces = placedPieces.filter(p=>p.id!==id);
-  selectedIds.delete(id);
-  pendingPlacementIds.delete(id);
-  maybeContractGrid();
-  renderAll();
-});
-/* ═══════════════════════════════════════════════
-   BOX (MARQUEE) SELECTION
-   Click-drag starting on empty board space draws a selection rectangle;
-   any piece whose on-screen CENTER falls inside it when released gets
-   selected (added to the existing selection if shift was held at the
-   start, otherwise replacing it) — then arrow keys / rotate / flip work
-   on the whole group exactly as with a shift-click-built selection.
-═══════════════════════════════════════════════ */
-let marquee = null; // {startX, startY, additive, moved}
-const marqueeBoxEl = document.getElementById('marquee-box');
-
-boardEl.addEventListener('pointerdown', e=>{
-  if(!e.target.classList.contains('board-cell')) return;
-  if(editingGridShape){
-    e.preventDefault();
-    toggleBlockedCell(Number(e.target.dataset.r), Number(e.target.dataset.c));
-    return;
-  }
-  e.preventDefault();
-  marquee = { startX: e.clientX, startY: e.clientY, additive: e.shiftKey, moved: false };
-  marqueeBoxEl.style.left = e.clientX + 'px';
-  marqueeBoxEl.style.top = e.clientY + 'px';
-  marqueeBoxEl.style.width = '0px';
-  marqueeBoxEl.style.height = '0px';
-  marqueeBoxEl.style.display = 'block';
-  window.addEventListener('pointermove', onMarqueeMove);
-  window.addEventListener('pointerup', onMarqueeEnd);
-});
-
-function onMarqueeMove(e){
-  if(!marquee) return;
-  if(Math.abs(e.clientX-marquee.startX)>3 || Math.abs(e.clientY-marquee.startY)>3) marquee.moved = true;
-  const x0 = Math.min(marquee.startX, e.clientX), x1 = Math.max(marquee.startX, e.clientX);
-  const y0 = Math.min(marquee.startY, e.clientY), y1 = Math.max(marquee.startY, e.clientY);
-  marqueeBoxEl.style.left = x0 + 'px';
-  marqueeBoxEl.style.top = y0 + 'px';
-  marqueeBoxEl.style.width = (x1-x0) + 'px';
-  marqueeBoxEl.style.height = (y1-y0) + 'px';
-}
-
-function onMarqueeEnd(e){
-  window.removeEventListener('pointermove', onMarqueeMove);
-  window.removeEventListener('pointerup', onMarqueeEnd);
-  if(!marquee) return;
-  marqueeBoxEl.style.display = 'none';
-
-  if(!marquee.moved){
-    // A plain click on empty space (no real drag) — the old simple
-    // deselect-on-empty-click behavior. Shift+click on empty space stays
-    // a no-op, same as before.
-    if(!marquee.additive) deselect();
-    marquee = null;
-    return;
-  }
-
-  const x0 = Math.min(marquee.startX, e.clientX), x1 = Math.max(marquee.startX, e.clientX);
-  const y0 = Math.min(marquee.startY, e.clientY), y1 = Math.max(marquee.startY, e.clientY);
-  const additive = marquee.additive;
-  marquee = null;
-
-  const hitIds = [];
-  placedPieces.forEach(p=>{
-    const wrapEl = piecesLayerEl.querySelector(`[data-id="${p.id}"]`);
-    if(!wrapEl) return;
-    const r = wrapEl.getBoundingClientRect();
-    const cx = r.left + r.width/2, cy = r.top + r.height/2;
-    if(cx>=x0 && cx<=x1 && cy>=y0 && cy<=y1) hitIds.push(p.id);
-  });
-  if(!additive) selectedIds.clear();
-  hitIds.forEach(id=>selectedIds.add(id));
-  renderAll();
-}
-
-/* ═══════════════════════════════════════════════
-   GRID SIZE / CLEAR BOARD
-═══════════════════════════════════════════════ */
-function piecesFitInBounds(pieces, minR, maxR, minC, maxC){
-  // Only checks each piece against the proposed outer bounds — overlap
-  // *between* pieces is a separate, already-allowed concern (shown with
-  // the red invalid tint), not a reason to block a resize.
-  return pieces.every(p => p.cells.every(([r,c]) => {
-    const rr = p.anchorRow+r, cc = p.anchorCol+c;
-    return rr>=minR && rr<=maxR && cc>=minC && cc<=maxC;
-  }));
-}
-
-const gridSizeInputEl = document.getElementById('grid-size-input');
-const gridSizeErrorEl = document.getElementById('grid-size-error');
-
-function gridSizeErrorActive(){ return gridSizeErrorEl.style.display !== 'none'; }
-function showGridSizeError(msg){
-  document.getElementById('grid-size-error-text').textContent = msg;
-  gridSizeErrorEl.style.display = 'flex';
-}
-function clearGridSizeError(){
-  gridSizeErrorEl.style.display = 'none';
-  document.getElementById('grid-size-error-text').textContent = '';
-}
-// "Undo" for a rejected edit: drop the error and snap the input back to
-// whatever the grid's actual current size is, ready for another attempt.
-function dismissGridSizeError(){
-  clearGridSizeError();
-  gridSizeInputEl.value = Math.max(gridRows(), gridCols());
-}
-
-// No more Apply button — any way the number changes (typing + blur/Enter,
-// arrow keys while focused, or the input's native spinner arrows) attempts
-// the resize immediately via this one handler.
-function attemptGridResize(){
-  if(infiniteGrid) return; // input is disabled in this mode anyway
-  const raw = gridSizeInputEl.value.trim();
-  const n = Number(raw);
-  if(raw === '' || !Number.isInteger(n) || n < 4 || n > 20){
-    showGridSizeError('Enter a whole number between 4 and 20.');
-    return;
-  }
-  if(placedPieces.length && !piecesFitInBounds(placedPieces, 0, n-1, 0, n-1)){
-    showGridSizeError('Grid size too small for current piece arrangement.');
-    return;
-  }
-  clearGridSizeError();
-  if(n === gridRows() && n === gridCols()) return; // already this size, nothing to do
-
-  // Existing pieces are preserved — resizing only changes the grid's outer
-  // bounds, it doesn't touch placedPieces at all.
-  pushUndo();
-  gridMinRow = 0; gridMaxRow = n-1; gridMinCol = 0; gridMaxCol = n-1;
-  saveGridBounds();
-  setupBoard();
-  placedPieces.forEach(p=>updatePendingPlacement(p.id));
-  renderAll();
-}
-
-gridSizeInputEl.addEventListener('change', attemptGridResize);
-gridSizeInputEl.addEventListener('keydown', e=>{
-  if(e.key !== 'Enter') return;
-  e.preventDefault();
-  // Enter means two different things depending on context, so it never
-  // fights with itself: dismiss a showing error, or otherwise commit.
-  if(gridSizeErrorActive()){ dismissGridSizeError(); return; }
-  attemptGridResize();
-  // Only blur on success ("confirm and move on"). If that attempt just
-  // raised a new error, the input must stay focused — otherwise a
-  // follow-up Enter press (meant to dismiss it) would land nowhere.
-  if(!gridSizeErrorActive()) gridSizeInputEl.blur();
-});
-document.getElementById('grid-error-accept').addEventListener('click', dismissGridSizeError);
-
-document.getElementById('clear-board-btn').addEventListener('click', ()=>{
-  if(!placedPieces.length) return;
-  if(!confirm('Clear all pieces from the board?')) return;
-  pushUndo();
-  placedPieces = [];
-  selectedIds.clear(); pendingPlacementIds.clear();
-  maybeContractGrid();
-  renderAll();
-});
-
-document.getElementById('infinite-grid-toggle').addEventListener('change', function(){
-  infiniteGrid = this.checked;
-  localStorage.setItem('poly_infiniteGrid', infiniteGrid);
-  document.getElementById('grid-size-input').disabled = infiniteGrid;
-  clearGridSizeError();
-  if(infiniteGrid) maybeContractGrid();
-  else document.getElementById('grid-size-input').value = Math.max(gridRows(), gridCols());
-});
-
-document.getElementById('edit-shape-toggle').addEventListener('change', function(){
-  editingGridShape = this.checked;
-  document.body.classList.toggle('editing-grid-shape', editingGridShape);
-  document.getElementById('edit-shape-hint').style.display = editingGridShape ? 'block' : 'none';
-});
-
-document.getElementById('checkerboard-toggle').addEventListener('change', function(){
-  checkerboardEnabled = this.checked;
-  localStorage.setItem('poly_checkerboard', checkerboardEnabled);
-  const onionToggle = document.getElementById('onion-skin-toggle');
-  onionToggle.disabled = !checkerboardEnabled;
-  document.getElementById('color-scheme-select').disabled = !checkerboardEnabled;
-  if(!checkerboardEnabled){
-    onionSkinEnabled = false;
-    onionToggle.checked = false;
-    localStorage.setItem('poly_onionSkin', false);
-  }
-  setupBoard();
-});
-document.getElementById('color-scheme-select').addEventListener('change', function(){
-  activeColorScheme = this.value;
-  localStorage.setItem('poly_colorScheme', activeColorScheme);
-  setupBoard();
-});
-document.getElementById('onion-skin-toggle').addEventListener('change', function(){
-  onionSkinEnabled = this.checked && checkerboardEnabled;
-  localStorage.setItem('poly_onionSkin', onionSkinEnabled);
-  renderCheckerOverlay();
-});
-
-/* ═══════════════════════════════════════════════
-   TRAY ORIENTATION CONTROLS
-═══════════════════════════════════════════════ */
-function refreshTrayPreviews(){
-  renderStandardTiles();
-  renderPentominoTiles();
-  renderCustomTiles();
-}
-document.getElementById('tray-rotate-btn').addEventListener('click', ()=>{
-  trayRotation = (trayRotation + 90) % 360;
-  document.getElementById('tray-rotate-btn').innerHTML = '&#10227; ' + trayRotation + '&deg;';
-  refreshTrayPreviews();
-});
-document.getElementById('tray-flip-btn').addEventListener('click', ()=>{
-  trayFlipped = !trayFlipped;
-  document.getElementById('tray-flip-btn').classList.toggle('active', trayFlipped);
-  refreshTrayPreviews();
-});
-
-/* ═══════════════════════════════════════════════
-   CUSTOM PIECE EDITOR
-═══════════════════════════════════════════════ */
-let editorGrid = [];
-let editorColor = MUTED_PINK;
-let editingId = null;
-
-function emptyEditorGrid(){
-  return Array.from({length:EDITOR_SIZE},()=>Array(EDITOR_SIZE).fill(false));
-}
-
-function buildEditorGridDOM(){
-  const g = document.getElementById('editor-grid');
-  g.innerHTML = '';
-  g.style.gridTemplateColumns = `repeat(${EDITOR_SIZE}, ${CELL_E}px)`;
-  g.style.gridTemplateRows = `repeat(${EDITOR_SIZE}, ${CELL_E}px)`;
-  for(let r=0;r<EDITOR_SIZE;r++){
-    for(let c=0;c<EDITOR_SIZE;c++){
-      const cell = document.createElement('div');
-      cell.className = 'editor-cell';
-      cell.dataset.r = r;
-      cell.dataset.c = c;
-      cell.addEventListener('pointerdown', e=>{
-        e.preventDefault();
-        editorGrid[r][c] = !editorGrid[r][c];
-        syncEditorUI();
-      });
-      cell.addEventListener('pointerenter', e=>{
-        if(e.buttons===1 && !editorGrid[r][c]){
-          editorGrid[r][c] = true;
-          syncEditorUI();
-        }
-      });
-      g.appendChild(cell);
-    }
-  }
-}
-
-function syncEditorUI(){
-  document.querySelectorAll('.editor-cell').forEach(el=>{
-    const r=+el.dataset.r, c=+el.dataset.c;
-    el.style.background = editorGrid[r][c] ? editorColor : '';
-  });
-}
-
-function buildEditorColors(){
-  const row = document.getElementById('editor-colors');
-  row.innerHTML = '';
-  PALETTE_COLORS.forEach(col=>{
-    const sw = document.createElement('div');
-    sw.className = 'color-swatch' + (col===editorColor ? ' active' : '');
-    sw.style.background = col;
-    sw.onclick = ()=>{ editorColor = col; buildEditorColors(); syncEditorUI(); };
-    row.appendChild(sw);
-  });
-  const custom = document.createElement('input');
-  custom.type = 'color';
-  custom.className = 'color-custom-input';
-  custom.value = editorColor;
-  custom.oninput = ()=>{ editorColor = custom.value; buildEditorColors(); syncEditorUI(); };
-  row.appendChild(custom);
-}
-
-function loadPieceIntoEditor(def){
-  editorGrid = emptyEditorGrid();
-  const offset = Math.floor(EDITOR_SIZE/2) - 2;
-  def.cells.forEach(([r,c])=>{
-    const rr = r+offset, cc = c+offset;
-    if(rr>=0 && rr<EDITOR_SIZE && cc>=0 && cc<EDITOR_SIZE) editorGrid[rr][cc] = true;
-  });
-  editorColor = def.color;
-}
-
-function extractEditorCells(){
-  const cells = [];
-  for(let r=0;r<EDITOR_SIZE;r++)
-    for(let c=0;c<EDITOR_SIZE;c++)
-      if(editorGrid[r][c]) cells.push([r,c]);
-  if(!cells.length) return null;
-  return normalize(cells);
-}
-
-function openEditor(id){
-  editingId = id;
-  const def = customPieces.find(p=>p.id===id);
-  buildEditorGridDOM();
-  loadPieceIntoEditor(def);
-  syncEditorUI();
-  buildEditorColors();
-  document.getElementById('editor-name').value = def.name;
-  document.getElementById('editor-modal').classList.remove('hidden');
-}
-
-function closeEditor(){
-  document.getElementById('editor-modal').classList.add('hidden');
-  editingId = null;
-}
-
-document.getElementById('editor-cancel').addEventListener('click', closeEditor);
-document.getElementById('editor-clear').addEventListener('click', ()=>{
-  editorGrid = emptyEditorGrid();
-  syncEditorUI();
-});
-document.getElementById('editor-rotate').addEventListener('click', ()=>{
-  const cells = extractEditorCells();
-  if(!cells) return;
-  const rotated = rotateCells(cells);
-  editorGrid = emptyEditorGrid();
-  const offset = Math.floor(EDITOR_SIZE/2) - 2;
-  rotated.forEach(([r,c])=>{
-    const rr=r+offset, cc=c+offset;
-    if(rr>=0 && rr<EDITOR_SIZE && cc>=0 && cc<EDITOR_SIZE) editorGrid[rr][cc]=true;
-  });
-  syncEditorUI();
-});
-document.getElementById('editor-flip').addEventListener('click', ()=>{
-  const cells = extractEditorCells();
-  if(!cells) return;
-  const flipped = flipCells(cells);
-  editorGrid = emptyEditorGrid();
-  const offset = Math.floor(EDITOR_SIZE/2) - 2;
-  flipped.forEach(([r,c])=>{
-    const rr=r+offset, cc=c+offset;
-    if(rr>=0 && rr<EDITOR_SIZE && cc>=0 && cc<EDITOR_SIZE) editorGrid[rr][cc]=true;
-  });
-  syncEditorUI();
-});
-document.getElementById('editor-save').addEventListener('click', ()=>{
-  const cells = extractEditorCells();
-  if(!cells){ alert('Draw at least one cell first!'); return; }
-  const def = customPieces.find(p=>p.id===editingId);
-  def.cells = cells;
-  def.color = editorColor;
-  def.edited = true;
-  const name = document.getElementById('editor-name').value.trim();
-  if(name) def.name = name;
-  saveCustomPieces();
-  renderCustomTiles();
-  closeEditor();
-});
-
-/* ═══════════════════════════════════════════════
-   HOW TO PLAY
-═══════════════════════════════════════════════ */
-function openHowToPlay(){
-  document.getElementById('how-to-play-modal').classList.remove('hidden');
-}
-function closeHowToPlay(){
-  document.getElementById('how-to-play-modal').classList.add('hidden');
-  if(document.getElementById('how-to-play-dont-show').checked){
-    localStorage.setItem('poly_hideHowToPlay', 'true');
-  }
-}
-document.getElementById('how-to-play-btn').addEventListener('click', openHowToPlay);
-document.getElementById('how-to-play-close').addEventListener('click', closeHowToPlay);
-document.getElementById('congrats-close').addEventListener('click', ()=>{
-  document.getElementById('congrats-modal').classList.add('hidden');
-});
-
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-document.getElementById('grid-size-input').value = Math.max(gridRows(), gridCols());
-document.getElementById('infinite-grid-toggle').checked = infiniteGrid;
-document.getElementById('checkerboard-toggle').checked = checkerboardEnabled;
-document.getElementById('color-scheme-select').value = activeColorScheme;
-document.getElementById('color-scheme-select').disabled = !checkerboardEnabled;
-document.getElementById('onion-skin-toggle').checked = onionSkinEnabled;
-document.getElementById('onion-skin-toggle').disabled = !checkerboardEnabled;
-document.getElementById('grid-size-input').disabled = infiniteGrid;
-setupBoard();
-renderStandardTiles();
-renderPentominoTiles();
-renderCustomTiles();
-renderTabBar();
-renderAll();
-if(localStorage.getItem('poly_hideHowToPlay') !== 'true') openHowToPlay();
-
-window.addEventListener('resize', updateSelToolbar);
-window.addEventListener('scroll', updateSelToolbar);
 </script>
 </body>
 </html>
