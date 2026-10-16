@@ -32,7 +32,7 @@
      only want system fonts. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geo&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
   /* [FONTS] Locally hosted font for the title/logo text.
@@ -52,20 +52,24 @@
        The first name must match a family loaded in the <link> above;
        the names after it are fallbacks if that font fails to load.
        ───────────────────────────────────────────────────────────── */
-    --font-logo:    'Roboto', 'Segoe UI', sans-serif;    /* "Parity Blocks" title. To go back to the
+    --font-logo:    'Geo', 'Segoe UI', sans-serif;       /* "Parity Blocks" title. To go back to the
                                                             pixel font: 'Pixelify Sans', monospace */
-    --font-display: 'Fredoka', 'Segoe UI', sans-serif;   /* buttons, popup heading */
-    --font-body:    'Nunito', 'Segoe UI', sans-serif;    /* tagline, rules text */
+    --font-display: 'Geo', 'Segoe UI', sans-serif;       /* buttons, popup heading, info "i" */
+    --font-body:    'Geo', 'Segoe UI', sans-serif;       /* rules text, notices */
+    --font-tagline: 'Nunito', 'Segoe UI', sans-serif;    /* subheader under the title */
 
     /* [FONTS] Sizes. clamp(min, preferred, max) scales with screen width. */
     --title-size:   clamp(2.4rem, 8vw, 4.25rem);
     --tagline-size: clamp(0.95rem, 2.6vw, 1.15rem);
-    --button-size:  1.15rem;
-    --rules-size:   0.95rem;
+    --button-size:  1.5rem;    /* Geo runs small, so these are larger than usual */
+    --rules-size:   1.12rem;
 
-    /* [FONTS] Weights (must be a weight listed in the font <link>). */
-    --title-weight:  700;
-    --button-weight: 600;
+    /* [FONTS] Weights (must be a weight listed in the font <link>).
+       Geo only comes in 400 (regular); anything higher gets a fake,
+       browser-smeared bold. Raise these only if you switch fonts. */
+    --title-weight:  400;
+    --button-weight: 400;
+    --heading-weight: 400;   /* popup heading and bold words in the rules */
 
     /* ─────────────────────────────────────────────────────────────
        [COLORS] Every color on the page is set here.
@@ -171,6 +175,7 @@
   /* [FONTS] Tagline under the title */
   .tagline {
     margin-top: 8px;               /* [POSITIONING] gap between title and tagline */
+    font-family: var(--font-tagline);
     font-size: var(--tagline-size);
     color: var(--color-text-dim);
   }
@@ -218,10 +223,9 @@
     border: 2px solid var(--color-info-border);
     background: var(--color-info-bg);
     color: var(--color-info-icon);
-    font-family: Georgia, 'Times New Roman', serif;  /* [FONTS] the "i" glyph */
-    font-size: 1.35rem;
-    font-weight: 700;
-    font-style: italic;
+    font-family: var(--font-display);  /* [FONTS] the "i" glyph */
+    font-size: 1.5rem;
+    font-weight: var(--heading-weight);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -265,6 +269,7 @@
   .popup h2 {
     font-family: var(--font-display);   /* [FONTS] */
     font-size: 1.5rem;
+    font-weight: var(--heading-weight); /* [FONTS] */
     color: var(--color-title);          /* [COLORS] */
     margin-bottom: 14px;
   }
@@ -273,7 +278,7 @@
     line-height: 1.55;
     margin-bottom: 12px;
   }
-  .popup b { color: var(--color-title); }
+  .popup b { color: var(--color-title); font-weight: var(--heading-weight); }
   .popup-close {
     position: absolute;
     top: 12px;
@@ -294,7 +299,7 @@
     width: 100%;
     margin-top: 8px;
     height: 46px;
-    font-size: 1rem;
+    font-size: 1.3rem;
     background: var(--color-easy);      /* [COLORS] "Got it" button */
   }
 
