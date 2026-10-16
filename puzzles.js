@@ -41,7 +41,7 @@ const PUZZLES = {
     // T pieces -- a logical anchor ("only these two pieces can cover this
     // region") rather than a full solution reveal.
     hintOutline: [[0,4],[1,3],[1,4],[1,5],[2,4],[2,5],[3,3],[3,4],[3,5],[4,5]],
-    hintText: 'The outlined cells can only be covered by two of the six pieces.',
+    hintText: 'No piece crosses the dotted line.',
     pieces: [
       { name:'V', color:'#8a9c5a', cells:[[0,0],[0,1],[0,2],[1,2],[2,2]] },
       { name:'U', color:'#a86f4f', cells:[[0,0],[0,1],[1,1],[2,0],[2,1]] },
