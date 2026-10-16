@@ -10,7 +10,7 @@
     [COLORS]       every color on the page          (CSS :root block)
     [POSITIONING]  layout, spacing, sizes, placement (CSS :root block + rules)
     [IMAGES]       logo, favicon, background image  (<head>, CSS, <body>)
-    [CONTENT]      rules text, button labels        (<body>)
+    [CONTENT]      tagline, button labels           (<body>; rules text is in rules.js)
     [BEHAVIOR]     what the difficulty buttons do   (<script>)
 
   The old puzzle sandbox (admin tool) now lives in sandbox.html.
@@ -34,6 +34,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geo&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
+<!-- Rules popup + Rules button styles (shared with play.html) -->
+<link rel="stylesheet" href="rules.css">
+
 <style>
   /* [FONTS] Locally hosted font for the title/logo text.
      To swap it: drop a new .ttf/.otf/.woff2 in the project, change the
@@ -54,8 +57,8 @@
        ───────────────────────────────────────────────────────────── */
     --font-logo:    'Geo', 'Segoe UI', sans-serif;       /* "Parity Blocks" title. To go back to the
                                                             pixel font: 'Pixelify Sans', monospace */
-    --font-display: 'Geo', 'Segoe UI', sans-serif;       /* buttons, popup heading, info "i" */
-    --font-body:    'Geo', 'Segoe UI', sans-serif;       /* rules text, notices */
+    --font-display: 'Geo', 'Segoe UI', sans-serif;       /* buttons */
+    --font-body:    'Geo', 'Segoe UI', sans-serif;       /* notices (rules popup fonts: rules.css) */
     --font-tagline: 'Nunito', 'Segoe UI', sans-serif;    /* subheader under the title */
 
     /* [FONTS] Sizes. clamp(min, preferred, max) scales with screen width. */
@@ -65,14 +68,12 @@
     --title-boldness: 0.045em;
     --tagline-size: clamp(0.95rem, 2.6vw, 1.15rem);
     --button-size:  1.5rem;    /* Geo runs small, so these are larger than usual */
-    --rules-size:   1.12rem;
 
     /* [FONTS] Weights (must be a weight listed in the font <link>).
        Geo only comes in 400 (regular); anything higher gets a fake,
        browser-smeared bold. Raise these only if you switch fonts. */
     --title-weight:  400;
     --button-weight: 400;
-    --heading-weight: 400;   /* popup heading and bold words in the rules */
 
     /* ─────────────────────────────────────────────────────────────
        [COLORS] Every color on the page is set here.
@@ -81,7 +82,7 @@
     --color-bg:          #241f1c;   /* page background */
     --color-bg-glow:     #3a2e27;   /* soft radial glow behind the logo */
     --color-title:       #d99a4e;   /* "Parity Blocks" heading */
-    --color-text:        #e8ddd0;   /* main text (rules body) */
+    --color-text:        #e8ddd0;   /* main text */
     --color-text-dim:    #a3937f;   /* tagline, secondary text */
 
     --color-easy:        #4f8a8b;   /* Easy button */
@@ -89,13 +90,9 @@
     --color-hard:        #7d5a78;   /* Hard button */
     --color-button-text: #ffffff;   /* label text on all three buttons */
 
-    --color-info-bg:     #332a25;   /* info (i) button fill */
-    --color-info-border: #4d3f36;   /* info (i) button outline */
-    --color-info-icon:   #e8ddd0;   /* the "i" itself */
 
-    --color-panel:       #332a25;   /* rules popup background */
-    --color-panel-border:#4d3f36;   /* rules popup outline */
-    --color-overlay:     rgba(0, 0, 0, 0.6);  /* dimmed backdrop behind popup */
+    --color-panel:       #332a25;   /* "coming soon" notice background */
+    --color-panel-border:#4d3f36;   /* "coming soon" notice outline */
     --color-focus:       #f2c48a;   /* keyboard-focus ring on buttons */
 
     /* ─────────────────────────────────────────────────────────────
@@ -108,12 +105,9 @@
     --button-gap:      14px;    /* space between the three buttons */
     --button-radius:   14px;    /* corner roundness (0 = square, 999px = pill) */
 
-    --info-size:       44px;    /* diameter of the info (i) button */
-    --info-top:        18px;    /* info button distance from top edge */
-    --info-right:      18px;    /* info button distance from right edge
-                                   (swap to `left` in .info-btn to move it) */
+    --rules-top:       18px;    /* Rules button distance from top edge */
+    --rules-right:     18px;    /* Rules button distance from right edge */
 
-    --popup-width:     440px;   /* rules popup max width */
 
     /* [IMAGES] Optional full-page background image.
        e.g. url('assets/background.jpg'). Leave as none for a plain color. */
@@ -217,95 +211,27 @@
   .difficulty-btn[data-difficulty="medium"] { background: var(--color-medium); }
   .difficulty-btn[data-difficulty="hard"]   { background: var(--color-hard); }
 
-  /* ── [POSITIONING] Info (i) button, pinned to the top-right corner ── */
-  .info-btn {
+  /* ── [POSITIONING] Rules buttons ──────────────────────────────
+     Their look (colors, font) and the popup itself are in rules.css.
+     Top one: pinned to the top-right corner. Bottom one: under the
+     difficulty buttons, same width as them. */
+  .rules-top {
     position: fixed;
-    top: var(--info-top);
-    right: var(--info-right);
-    width: var(--info-size);
-    height: var(--info-size);
-    border-radius: 50%;
-    border: 2px solid var(--color-info-border);
-    background: var(--color-info-bg);
-    color: var(--color-info-icon);
-    font-family: var(--font-display);  /* [FONTS] the "i" glyph */
-    font-size: 1.5rem;
-    font-weight: var(--heading-weight);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.1s, filter 0.15s;
+    top: var(--rules-top);
+    right: var(--rules-right);
+    z-index: 10;
   }
-  .info-btn:hover { filter: brightness(1.2); transform: scale(1.06); }
+  .rules-bottom {
+    width: 100%;
+    max-width: var(--button-width);
+    height: 48px;
+    margin-top: -8px;              /* sits a little closer to the buttons above */
+    background: transparent;
+  }
 
-  .difficulty-btn:focus-visible,
-  .info-btn:focus-visible,
-  .popup-close:focus-visible {
+  .difficulty-btn:focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 3px;
-  }
-
-  /* ── Rules popup ─────────────────────────────────────────────── */
-  .popup-backdrop {
-    position: fixed;
-    inset: 0;
-    background: var(--color-overlay);
-    display: flex;                 /* [POSITIONING] popup centered on screen */
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    z-index: 100;
-  }
-  .popup-backdrop[hidden] { display: none; }
-
-  .popup {
-    position: relative;
-    width: 100%;
-    max-width: var(--popup-width);
-    max-height: calc(100vh - 32px);
-    overflow-y: auto;
-    background: var(--color-panel);
-    border: 1px solid var(--color-panel-border);
-    border-radius: 16px;
-    padding: 26px 24px 22px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  }
-  .popup h2 {
-    font-family: var(--font-display);   /* [FONTS] */
-    font-size: 1.5rem;
-    font-weight: var(--heading-weight); /* [FONTS] */
-    color: var(--color-title);          /* [COLORS] */
-    margin-bottom: 14px;
-  }
-  .popup p {
-    font-size: var(--rules-size);       /* [FONTS] */
-    line-height: 1.55;
-    margin-bottom: 12px;
-  }
-  .popup b { color: var(--color-title); font-weight: var(--heading-weight); }
-  .popup-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 34px;
-    height: 34px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--color-text-dim);
-    font-size: 1.4rem;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .popup-close:hover { color: var(--color-text); background: rgba(255, 255, 255, 0.06); }
-  .popup-ok {
-    display: block;
-    width: 100%;
-    margin-top: 8px;
-    height: 46px;
-    font-size: 1.3rem;
-    background: var(--color-easy);      /* [COLORS] "Got it" button */
   }
 
   /* Small "coming soon" notice shown when a difficulty has no game yet */
@@ -329,9 +255,8 @@
 </head>
 <body>
 
-<!-- [POSITIONING] Info button is pinned to a corner via .info-btn CSS, so
-     its place in the HTML doesn't affect where it appears. -->
-<button class="info-btn" id="info-btn" type="button" aria-label="How to play" aria-haspopup="dialog">i</button>
+<!-- [POSITIONING] Rules button, pinned to the top-right corner via .rules-top -->
+<button class="rules-btn rules-top" type="button" data-open-rules>Rules</button>
 
 <main class="splash">
 
@@ -357,22 +282,17 @@
     <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
   </nav>
 
+  <!-- [CONTENT] Second Rules button, at the bottom -->
+  <button class="rules-btn rules-bottom" type="button" data-open-rules>Rules</button>
+
 </main>
 
-<!-- [CONTENT] Rules popup text -->
-<div class="popup-backdrop" id="rules-popup" hidden>
-  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="rules-title">
-    <button class="popup-close" id="rules-close" type="button" aria-label="Close">&times;</button>
-    <h2 id="rules-title">How to Play</h2>
-    <p>Place <b>every piece</b> onto the board. Pieces can't overlap or hang off the grid, but you don't need to fill every square. Empty cells are fine.</p>
-    <p>The puzzle is solved when <b>every row and every column</b> has an <b>even number</b> of filled squares.</p>
-    <p>Count squares, not pieces. A U-shaped piece that covers 2 squares of one row and 3 squares of the row below adds 2 to the first row and 3 to the second.</p>
-    <button class="difficulty-btn popup-ok" id="rules-ok" type="button">Got it</button>
-  </div>
-</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- The rules popup: text and pictures in rules.js, which needs shapes.js -->
+<script src="shapes.js"></script>
+<script src="rules.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════
    [BEHAVIOR] Where each difficulty button goes.
@@ -385,28 +305,8 @@ const DIFFICULTY_LINKS = {
   hard:   'play.html?puzzle=test-puzzle-1',
 };
 
-const popup   = document.getElementById('rules-popup');
-const infoBtn = document.getElementById('info-btn');
 const toastEl = document.getElementById('toast');
 let toastTimer = null;
-
-function openRules() {
-  popup.hidden = false;
-  document.getElementById('rules-ok').focus();
-}
-function closeRules() {
-  popup.hidden = true;
-  infoBtn.focus();
-}
-
-infoBtn.addEventListener('click', openRules);
-document.getElementById('rules-close').addEventListener('click', closeRules);
-document.getElementById('rules-ok').addEventListener('click', closeRules);
-// Clicking the dimmed area outside the popup also closes it
-popup.addEventListener('click', e => { if (e.target === popup) closeRules(); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !popup.hidden) closeRules();
-});
 
 function showToast(msg) {
   toastEl.textContent = msg;

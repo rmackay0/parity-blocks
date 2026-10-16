@@ -1,0 +1,191 @@
+/* ═══════════════════════════════════════════════════════════════════
+   RULES POPUP + RULES BUTTON
+   Shared by index.html (splash) and play.html (game). The popup's text
+   and pictures are built in rules.js; everything about how it looks is
+   here. Search for [FONTS] [COLORS] [POSITIONING].
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* [FONTS] */
+  --rules-font:          'Geo', 'Segoe UI', sans-serif;
+  --rules-title-size:    2rem;
+  --rules-heading-size:  1.5rem;     /* "Goals" / "Rules" */
+  --rules-text-size:     1.15rem;
+  --rules-caption-size:  1rem;       /* labels under pictures */
+
+  /* [COLORS] */
+  --rules-panel:         #332a25;    /* popup background */
+  --rules-panel-border:  #4d3f36;
+  --rules-overlay:       rgba(0, 0, 0, 0.65);
+  --rules-title:         #d99a4e;    /* headings */
+  --rules-text:          #e8ddd0;
+  --rules-text-dim:      #a3937f;    /* hint line, picture captions */
+  --rules-even:          #6fae5a;    /* green: even row/column */
+  --rules-odd:           #c25a5a;    /* red: odd row/column, "not allowed" mark */
+  --rules-board:         #1c1714;    /* frame behind picture boards */
+  --rules-cell:          #443830;    /* an empty square in pictures */
+  --rules-gap-x:         #e05252;    /* the X on a gap square */
+  --rules-dotted:        #d99a4e;    /* dotted perimeter line */
+  --rules-arrow:         #e8ddd0;    /* reflect / rotate arrows */
+  --rules-button:        #4f8a8b;    /* "Got it" button */
+  --rules-button-text:   #ffffff;
+  --rules-btn-bg:        #332a25;    /* the small "Rules" button */
+  --rules-btn-border:    #4d3f36;
+
+  /* [POSITIONING] */
+  --rules-width:         600px;      /* popup max width */
+  --rules-item-gap:      22px;       /* space between each goal/rule */
+}
+
+/* ── The "Rules" button (top-right of each page) ── */
+.rules-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 2px solid var(--rules-btn-border);
+  background: var(--rules-btn-bg);
+  color: var(--rules-text);
+  font-family: var(--rules-font);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+.rules-btn:hover { filter: brightness(1.2); }
+.rules-btn:focus-visible { outline: 3px solid #f2c48a; outline-offset: 3px; }
+
+/* ── Popup ── */
+.rules-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--rules-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.rules-backdrop[hidden] { display: none; }
+
+.rules-popup {
+  position: relative;
+  width: 100%;
+  max-width: var(--rules-width);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: var(--rules-panel);
+  border: 1px solid var(--rules-panel-border);
+  border-radius: 18px;
+  padding: 26px 26px 22px;
+  color: var(--rules-text);
+  font-family: var(--rules-font);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  text-align: left;
+  user-select: none;
+  outline: none;
+}
+.rules-popup h2 {
+  font-size: var(--rules-title-size);
+  font-weight: 400;
+  color: var(--rules-title);
+  margin: 0 0 6px;
+}
+.rules-popup h3 {
+  font-size: var(--rules-heading-size);
+  font-weight: 400;
+  color: var(--rules-title);
+  margin: 18px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rules-panel-border);
+}
+.rules-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--rules-text-dim);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.rules-close:hover { color: var(--rules-text); background: rgba(255, 255, 255, 0.06); }
+
+/* [POSITIONING] Each goal/rule: text, then its picture(s) underneath */
+.rules-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: var(--rules-item-gap);
+}
+.rules-item p {
+  font-size: var(--rules-text-size);
+  line-height: 1.4;
+  margin: 0;
+}
+.rules-item .rules-num { color: var(--rules-title); margin-right: 6px; }
+.rules-hint { color: var(--rules-text-dim); font-size: calc(var(--rules-text-size) * 0.9) !important; }
+
+.rules-visuals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+}
+.rules-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.rules-figure figcaption {
+  font-size: var(--rules-caption-size);
+  color: var(--rules-text-dim);
+}
+.rules-figure svg { display: block; }
+
+/* [POSITIONING] The three "check" pictures stay side by side, shrinking
+   to fit narrow screens instead of stacking */
+.rules-visuals.three { flex-wrap: nowrap; gap: 10px; }
+.rules-visuals.three .rules-figure { flex: 1 1 0; min-width: 0; max-width: 160px; }
+.rules-visuals.three svg { width: 100%; height: auto; }
+
+.rules-ok {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 12px;
+  background: var(--rules-button);
+  color: var(--rules-button-text);
+  font-family: var(--rules-font);
+  font-size: 1.35rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+.rules-ok:hover { filter: brightness(1.1); }
+.rules-ok:focus-visible, .rules-close:focus-visible { outline: 3px solid #f2c48a; outline-offset: 2px; }
+
+/* ── Picture parts (SVG classes used by rules.js) ── */
+.rb-frame    { fill: var(--rules-board); }
+.rb-cell     { fill: var(--rules-cell); }
+.rb-gap      { fill: var(--rules-board); stroke: var(--rules-panel-border); stroke-dasharray: 3 2; }
+.rb-gap-x    { stroke: var(--rules-gap-x); stroke-width: 3; stroke-linecap: round; fill: none; }
+.rb-divider  { fill: none; stroke: rgba(0, 0, 0, 0.25); stroke-width: 1.5; }
+.rb-outline  { fill: none; stroke: rgba(0, 0, 0, 0.45); stroke-width: 2; stroke-linejoin: round; }
+.rb-band     { fill-opacity: 0.22; stroke-width: 2; }
+.rb-even     { fill: var(--rules-even); stroke: var(--rules-even); }
+.rb-odd      { fill: var(--rules-odd);  stroke: var(--rules-odd); }
+.rb-count    { font-family: var(--rules-font); font-size: 15px; stroke: none; }
+.rb-solved   { fill: none; stroke: var(--rules-even); stroke-width: 3; }
+.rb-dotted   { fill: none; stroke: var(--rules-dotted); stroke-width: 2.5; stroke-dasharray: 6 4; stroke-linejoin: round; }
+.rb-no       { fill: none; stroke: var(--rules-odd); stroke-width: 3.5; }
+.rb-no-x     { stroke: var(--rules-odd); stroke-width: 3.5; stroke-linecap: round; }
+.rb-arrow    { fill: none; stroke: var(--rules-arrow); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }

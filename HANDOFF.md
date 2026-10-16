@@ -17,6 +17,26 @@ reference below to `index.html` now means `sandbox.html`.
 - Difficulty buttons read `DIFFICULTY_LINKS` in the script: Medium →
   `play.html?puzzle=test-puzzle-2`, Hard → `play.html?puzzle=test-puzzle-1`,
   Easy is `null` ("coming soon" toast) until there's an easy puzzle.
+- **Rules popup** (`rules.js` + `rules.css`, added 2026-10-16, spec'd by
+  the user): shared by both pages. Opens automatically on a visitor's first
+  visit to either page (`localStorage.pb_rulesSeen`, set on close), and from
+  any `[data-open-rules]` element — a "Rules" pill top-right on both pages
+  plus a second "Rules" button under the difficulty buttons on the splash.
+  Content: Goals (1. place every piece + finished-board picture; 2. every
+  row/column even + hint about empty blocks + three pictures: Check rows /
+  Check columns on a wrong board, All even on the solved one) and Rules
+  (reflect, rotate, no piece on a gap, no piece across a dotted perimeter),
+  each with an SVG picture. The example board is a made-up 6×6 with P/U/T/V
+  pentominoes — deliberately not a real puzzle so the pictures never spoil
+  a solution. Wording lives in `RULES_TEXT` at the top of rules.js. The
+  old splash (i) button and its popup were removed.
+- **Dotted perimeter is now a real rule in play.html** (was only a visual
+  hint): a piece must sit wholly inside or wholly outside
+  `puzzle.hintOutline`, else it's invalid/red (`crossesDottedLine`). The
+  sandbox does NOT enforce this.
+- **`shapes.js`** holds the shared piece geometry + SVG drawing
+  (`rotateCells`, `reflectCells`, `buildOutlinePath`, `buildPieceShape`…),
+  used by play.html and rules.js. The sandbox still has its own copy.
 - **`puzzles.js`** holds `PUZZLES` (moved out of the sandbox 2026-10-16) and
   is loaded by both `play.html` and `sandbox.html` via `<script src>` —
   edit puzzles there only.
@@ -33,8 +53,7 @@ reference below to `index.html` now means `sandbox.html`.
   odd-row/column red outline, hidden blocked cells and hint outline/caption
   supported. No visible timer; the "Solved!" popup shows the time. No
   undo, trash zone, multi-select, or duplicate — deliberately left out to
-  keep it simple. Piece-drawing code (`buildOutlinePath` etc.) is copied
-  from the sandbox, not shared.
+  keep it simple.
 - Unlike the sandbox's modals, the rules popup also closes on Escape and
   backdrop click (standard for a public landing page).
 
