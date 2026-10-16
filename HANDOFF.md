@@ -18,8 +18,11 @@ reference below to `index.html` now means `sandbox.html`.
   `play.html?puzzle=test-puzzle-2`, Hard → `play.html?puzzle=test-puzzle-1`,
   Easy is `null` ("coming soon" toast) until there's an easy puzzle.
 - **Rules popup** (`rules.js` + `rules.css`, added 2026-10-16, spec'd by
-  the user): shared by both pages. Opens automatically on a visitor's first
-  visit to either page (`localStorage.pb_rulesSeen`, set on close), and from
+  the user): shared by both pages. Opens automatically **only on the puzzle
+  page** (play.html loads it with `data-auto-open`; the splash doesn't), and
+  only if the player has never closed it before (`localStorage.pb_rulesSeen`,
+  set on close) — so a new player sees it right after picking a difficulty.
+  Also opens from
   any `[data-open-rules]` element — a "Rules" pill top-right on both pages
   plus a second "Rules" button under the difficulty buttons on the splash.
   Content: Goals (1. place every piece + finished-board picture; 2. every

@@ -4,7 +4,10 @@
    rules.css for its look.
 
    Opens:
-     • automatically the first time someone visits (either page), and
+     • automatically on the puzzle page, the first time a player reaches
+       it (i.e. after picking a difficulty), if they've never seen the
+       rules before. Only pages that load this script with
+       data-auto-open do this; the splash screen doesn't. And
      • whenever anything with a data-open-rules attribute is clicked
        (the "Rules" buttons).
 
@@ -303,10 +306,12 @@ document.addEventListener('click', e=>{
   if(btn){ e.preventDefault(); openRules(); }
 });
 
-// First visit: show the rules once, on whichever page they land on
+// First time ever: show the rules once, but only on a page that asks for it
+// (<script src="rules.js" data-auto-open>, i.e. the puzzle page)
+const autoOpen = document.currentScript && document.currentScript.hasAttribute('data-auto-open');
 let seen = false;
 try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch(e){}
-if(!seen) openRules();
+if(autoOpen && !seen) openRules();
 
 window.ParityRules = { open: openRules, close: closeRules };
 
