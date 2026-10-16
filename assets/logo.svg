@@ -1,7 +1,7 @@
 <!--
   Parity Blocks logo mark.
   A 3x3 board: a teal P pentomino plus four monominoes (single squares),
-  each its own color, filling the remaining cells.
+  filling the remaining cells (two yellow, two purple).
   Layout: squares are 28 wide with 6 between; columns and rows both start
   at 12, 46, 80. To recolor a square, change its fill.
   To swap in your own logo, replace this file (keep the name logo.svg), or
@@ -19,9 +19,9 @@
     <rect x="12" y="80" width="28" height="28" rx="3"/>
   </g>
 
-  <!-- monominoes, one color each -->
-  <rect x="80" y="12" width="28" height="28" rx="3" fill="#d99a4e"/>  <!-- amber -->
-  <rect x="80" y="46" width="28" height="28" rx="3" fill="#7d5a78"/>  <!-- plum -->
-  <rect x="46" y="80" width="28" height="28" rx="3" fill="#6fae5a"/>  <!-- green -->
-  <rect x="80" y="80" width="28" height="28" rx="3" fill="#c25a5a"/>  <!-- red -->
+  <!-- monominoes: top two on the right yellow, bottom two on the right purple -->
+  <rect x="80" y="12" width="28" height="28" rx="3" fill="#e2c25b"/>  <!-- yellow -->
+  <rect x="80" y="46" width="28" height="28" rx="3" fill="#e2c25b"/>  <!-- yellow -->
+  <rect x="46" y="80" width="28" height="28" rx="3" fill="#7d5a78"/>  <!-- purple -->
+  <rect x="80" y="80" width="28" height="28" rx="3" fill="#7d5a78"/>  <!-- purple -->
 </svg>

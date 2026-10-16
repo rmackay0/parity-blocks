@@ -74,7 +74,6 @@
     --color-bg:          #241f1c;   /* page background */
     --color-bg-glow:     #3a2e27;   /* soft radial glow behind the logo */
     --color-title:       #d99a4e;   /* "Parity Blocks" heading */
-    --color-pent-letter: #4f8a8b;   /* the pentomino P and b in the heading */
     --color-text:        #e8ddd0;   /* main text (rules body) */
     --color-text-dim:    #a3937f;   /* tagline, secondary text */
 
@@ -167,34 +166,6 @@
     color: var(--color-title);
     letter-spacing: 0.02em;
     line-height: 1.05;
-  }
-
-  /* [POSITIONING] [COLORS] Pentomino letters in the title (the P and the b).
-     They're drawn in the <svg> tags in the <h1>, not typed, so they don't
-     change with the font.
-       • height: size of the pieces. 1.1em is about 1.7x the font's capital
-         height (capital height is 0.711em in Roboto, 0.638em in
-         Pixelify Sans). Width follows
-         automatically (pieces are 2 squares wide, 3 tall).
-       • vertical-align: baseline = bottoms sit on the text baseline, so the
-         extra height rises above the other letters. Use `middle` to center
-         them on the text instead.
-       • margin = space on each side (right, then left are the 2nd/4th values).
-       • Color comes from --color-pent-letter in :root; dividers are the thin
-         lines between squares. */
-  .pent-letter {
-    height: 1.1em;
-    width: auto;
-    margin: 0 0.06em 0 0.1em;
-    vertical-align: baseline;
-    fill: var(--color-pent-letter);
-    overflow: visible;
-  }
-  .pent-letter .dividers {
-    fill: none;
-    stroke: rgba(0, 0, 0, 0.3);
-    stroke-width: 1.5px;
-    vector-effect: non-scaling-stroke;
   }
 
   /* [FONTS] Tagline under the title */
@@ -362,17 +333,9 @@
   <img class="logo" src="assets/logo.svg" alt="Parity Blocks logo">
 
   <!-- [CONTENT] Title + tagline. If your logo image already contains the
-       name, you can delete the <h1> (keep the tagline or remove it too).
-       The "P" and "b" are pentomino shapes drawn as <svg>; the rest is typed
-       text. Screen readers and search engines read the aria-label instead.
-       Each piece is a 2×3 grid of 10-unit squares (viewBox 0 0 20 30):
-         P = P pentomino       b = P pentomino flipped so the stem points up
-             ██                    █
-             ██                    ██
-             █                     ██
-       The first <path> is the shape, the second draws the lines between squares. -->
+       name, you can delete the <h1> (keep the tagline or remove it too). -->
   <div>
-    <h1 class="title" aria-label="Parity Blocks"><span aria-hidden="true"><svg class="pent-letter" viewBox="0 0 20 30"><path d="M0 0H20V20H10V30H0Z"/><path class="dividers" d="M10 0V20M0 10H20M0 20H10"/></svg>arity <svg class="pent-letter" viewBox="0 0 20 30"><path d="M0 0H10V10H20V30H0Z"/><path class="dividers" d="M10 10V30M0 10H10M0 20H20"/></svg>locks</span></h1>
+    <h1 class="title">Parity Blocks</h1>
     <p class="tagline">Place every piece. Keep every row and column even.</p>
   </div>
 
