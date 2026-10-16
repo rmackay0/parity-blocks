@@ -1,36 +1,27 @@
 <!--
   Parity Blocks logo mark.
-  A 3x3 board with a P pentomino on it. Each row is highlighted by its
-  parity: green = even number of filled squares, red = odd.
-    row 1: 2 filled (green)   row 2: 2 filled (green)   row 3: 1 filled (red)
-  Colors: green #6fae5a, red #c25a5a, piece #4f8a8b (matches the title's P).
-  Layout: squares are 26 wide; columns start at x = 17, 47, 77 and rows at
-  y = 11, 47, 83. Each row band sits 3-4 units outside its squares.
+  A 3x3 board: a teal P pentomino plus four monominoes (single squares),
+  each its own color, filling the remaining cells.
+  Layout: squares are 28 wide with 6 between; columns and rows both start
+  at 12, 46, 80. To recolor a square, change its fill.
   To swap in your own logo, replace this file (keep the name logo.svg), or
   drop a new file in assets/ and change the <img src> in index.html.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <rect width="120" height="120" rx="14" fill="#1c1714"/>
 
-  <!-- row highlights -->
-  <rect x="13" y="8"  width="94" height="32" rx="6" fill="#6fae5a" fill-opacity="0.22" stroke="#6fae5a" stroke-width="2.5"/>
-  <rect x="13" y="44" width="94" height="32" rx="6" fill="#6fae5a" fill-opacity="0.22" stroke="#6fae5a" stroke-width="2.5"/>
-  <rect x="13" y="80" width="94" height="32" rx="6" fill="#c25a5a" fill-opacity="0.25" stroke="#c25a5a" stroke-width="2.5"/>
-
-  <!-- empty cells -->
-  <g fill="#443830" fill-opacity="0.85">
-    <rect x="77" y="11" width="26" height="26" rx="3"/>
-    <rect x="77" y="47" width="26" height="26" rx="3"/>
-    <rect x="47" y="83" width="26" height="26" rx="3"/>
-    <rect x="77" y="83" width="26" height="26" rx="3"/>
-  </g>
-
-  <!-- P pentomino squares -->
+  <!-- P pentomino squares (matches the title's P) -->
   <g fill="#4f8a8b">
-    <rect x="17" y="11" width="26" height="26" rx="3"/>
-    <rect x="47" y="11" width="26" height="26" rx="3"/>
-    <rect x="17" y="47" width="26" height="26" rx="3"/>
-    <rect x="47" y="47" width="26" height="26" rx="3"/>
-    <rect x="17" y="83" width="26" height="26" rx="3"/>
+    <rect x="12" y="12" width="28" height="28" rx="3"/>
+    <rect x="46" y="12" width="28" height="28" rx="3"/>
+    <rect x="12" y="46" width="28" height="28" rx="3"/>
+    <rect x="46" y="46" width="28" height="28" rx="3"/>
+    <rect x="12" y="80" width="28" height="28" rx="3"/>
   </g>
+
+  <!-- monominoes, one color each -->
+  <rect x="80" y="12" width="28" height="28" rx="3" fill="#d99a4e"/>  <!-- amber -->
+  <rect x="80" y="46" width="28" height="28" rx="3" fill="#7d5a78"/>  <!-- plum -->
+  <rect x="46" y="80" width="28" height="28" rx="3" fill="#6fae5a"/>  <!-- green -->
+  <rect x="80" y="80" width="28" height="28" rx="3" fill="#c25a5a"/>  <!-- red -->
 </svg>
