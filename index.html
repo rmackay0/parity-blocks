@@ -59,7 +59,10 @@
     --font-tagline: 'Nunito', 'Segoe UI', sans-serif;    /* subheader under the title */
 
     /* [FONTS] Sizes. clamp(min, preferred, max) scales with screen width. */
-    --title-size:   clamp(2.4rem, 8vw, 4.25rem);
+    --title-size:   clamp(3rem, 14vw, 7.5rem);
+    /* Extra thickness for the title. Geo has no bold, so the letters get an
+       outline in their own color instead. 0 = normal; 0.05em ≈ heavy bold. */
+    --title-boldness: 0.045em;
     --tagline-size: clamp(0.95rem, 2.6vw, 1.15rem);
     --button-size:  1.5rem;    /* Geo runs small, so these are larger than usual */
     --rules-size:   1.12rem;
@@ -168,7 +171,9 @@
     font-size: var(--title-size);
     font-weight: var(--title-weight);
     color: var(--color-title);
-    letter-spacing: 0.02em;
+    -webkit-text-stroke: var(--title-boldness) currentColor;
+    paint-order: stroke fill;
+    letter-spacing: 0.05em;      /* a bit wider so the thicker letters don't touch */
     line-height: 1.05;
   }
 
