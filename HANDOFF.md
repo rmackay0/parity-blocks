@@ -38,7 +38,7 @@ reference below to `index.html` now means `sandbox.html`.
   pieces never glow red (the user found the last-placed piece glowing
   misleading — it looked like "the" problem). Instead: uneven rows/columns
   get a red **highlighter stroke** (`buildHighlighterPath` in shapes.js —
-  chisel ends, slight wobble, drawn over the pieces, overhanging the grid by
+  straight ends, slight wobble, drawn over the pieces, overhanging the grid by
   `--highlight-overhang`), and `#status` above the board says
   "Uneven row/rows/column/columns", joined with "and", plus any placement
   problem ("Pieces overlap", "A piece is on a gap", "A piece crosses a

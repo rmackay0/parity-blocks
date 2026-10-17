@@ -11,6 +11,8 @@
   --rules-heading-size:  1.5rem;     /* "Goals" / "Rules" */
   --rules-text-size:     1.15rem;
   --rules-caption-size:  1rem;       /* labels under pictures */
+  --rules-count-font:    system-ui, 'Segoe UI', Arial, sans-serif;  /* row/column counts (plain digits read better than Geo's) */
+  --rules-count-size:    19px;
 
   /* [COLORS] */
   --rules-panel:         #332a25;    /* popup background */
@@ -155,7 +157,7 @@
 /* [POSITIONING] The three "check" pictures stay side by side, shrinking
    to fit narrow screens instead of stacking */
 .rules-visuals.three { flex-wrap: nowrap; gap: 10px; }
-.rules-visuals.three .rules-figure { flex: 1 1 0; min-width: 0; max-width: 160px; }
+.rules-visuals.three .rules-figure { flex: 1 1 0; min-width: 0; max-width: 180px; }
 .rules-visuals.three svg { width: 100%; height: auto; }
 
 .rules-ok {
@@ -186,7 +188,7 @@
 .rb-hl.rb-even { opacity: var(--rules-highlight-even-opacity); }
 .rb-even     { fill: var(--rules-even); }
 .rb-odd      { fill: var(--rules-odd); }
-.rb-count    { font-family: var(--rules-font); font-size: 15px; opacity: 1; }
+.rb-count    { font-family: var(--rules-count-font); font-size: var(--rules-count-size); font-weight: 700; opacity: 1; }
 .rb-dotted   { fill: none; stroke: var(--rules-dotted); stroke-width: 2.5; stroke-dasharray: 6 4; stroke-linejoin: round; }
 .rb-no       { fill: none; stroke: var(--rules-odd); stroke-width: 3.5; }
 .rb-no-x     { stroke: var(--rules-odd); stroke-width: 3.5; stroke-linecap: round; }

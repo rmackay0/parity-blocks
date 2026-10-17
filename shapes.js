@@ -140,8 +140,8 @@ function buildPieceShape(cells, color, size, gap){
 
 /* ── Highlighter stroke ──
    A hand-drawn-looking marker stroke along a straight horizontal or vertical
-   line from (x0,y0) to (x1,y1), `thickness` wide: chisel-cut ends (like a
-   real highlighter tip) and slightly wavy edges. `seed` varies the wobble so
+   line from (x0,y0) to (x1,y1), `thickness` wide: straight ends and
+   slightly wavy edges. `seed` varies the wobble so
    neighboring strokes don't look identical. Returns an SVG path string. */
 function buildHighlighterPath(x0, y0, x1, y1, thickness, seed){
   let s = (seed * 9301 + 49297) % 233280;
@@ -149,7 +149,8 @@ function buildHighlighterPath(x0, y0, x1, y1, thickness, seed){
   const vertical = x0 === x1;
   const a0 = vertical ? y0 : x0, a1 = vertical ? y1 : x1;   // along the line
   const mid = vertical ? x0 : y0;                            // the line's position
-  const h = thickness / 2, slant = thickness * 0.25, wob = thickness * 0.14;
+  // slant: how much the ends are cut at an angle (0 = straight ends)
+  const h = thickness / 2, slant = 0, wob = thickness * 0.14;
   const pt = (along, across)=>vertical ? `${mid+across},${along}` : `${along},${mid+across}`;
   const am = (a0 + a1) / 2;
   return 'M' + pt(a0 + slant, -h + rand()*wob)

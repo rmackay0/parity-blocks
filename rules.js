@@ -84,7 +84,7 @@ function drawNoMark(parent, cx, cy, radius){
          dotted [[r,c]] region, noMarkOn (a piece to draw the red mark over) */
 function miniBoard(opts){
   const { rows, cols, cell, pieces = [], gaps = [], show = null, dotted = null } = opts;
-  const gap = 3, pad = 6, label = 18;
+  const gap = 3, pad = 6, label = 26;   // label = space for the row/column counts
   const step = cell + gap;
   const boardW = cols*cell + (cols-1)*gap + 2*pad;
   const boardH = rows*cell + (rows-1)*gap + 2*pad;
@@ -140,11 +140,11 @@ function miniBoard(opts){
     // 'solved' draws no strokes, just the all-green counts
 
     if(rightLabels) for(let r=0; r<rows; r++){
-      const t = svgEl('text', { x: boardW + label/2, y: pad + r*step + cell/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(rowCount(r)) }, svg);
+      const t = svgEl('text', { x: boardW + m + label/2, y: pad + r*step + cell/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(rowCount(r)) }, svg);
       t.textContent = rowCount(r);
     }
     if(bottomLabels) for(let c=0; c<cols; c++){
-      const t = svgEl('text', { x: pad + c*step + cell/2, y: boardH + label/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(colCount(c)) }, svg);
+      const t = svgEl('text', { x: pad + c*step + cell/2, y: boardH + m + label/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(colCount(c)) }, svg);
       t.textContent = colCount(c);
     }
   }
