@@ -41,8 +41,12 @@
 <main class="game">
   <div class="top-row">
     <a class="back-btn" href="index.html" aria-label="Back to menu">&lsaquo;</a>
-    <!-- Opens the rules popup (rules.js); styled by rules.css -->
-    <button type="button" class="rules-btn" data-open-rules>Rules</button>
+    <div class="top-right">
+      <!-- Clears the board (asks first). Tucked in the corner on purpose. -->
+      <button type="button" class="reset-btn" id="reset-btn" aria-label="Reset puzzle">Reset</button>
+      <!-- Opens the rules popup (rules.js); styled by rules.css -->
+      <button type="button" class="rules-btn" data-open-rules>Rules</button>
+    </div>
   </div>
 
   <div class="tray" id="tray" aria-label="Available pieces"></div>
@@ -79,6 +83,18 @@
   </div>
 </div>
 
+<!-- [CONTENT] "Are you sure?" before Reset clears the board -->
+<div class="popup-backdrop" id="reset-popup" hidden>
+  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+    <h2 id="reset-title">Start over?</h2>
+    <p>This takes every piece off the board and restarts the timer.</p>
+    <div class="popup-buttons">
+      <button type="button" class="secondary" id="reset-cancel">Keep playing</button>
+      <button type="button" id="reset-confirm">Reset</button>
+    </div>
+  </div>
+</div>
+
 <!-- [CONTENT] Shown if the link points at a puzzle that doesn't exist -->
 <div class="popup-backdrop" id="missing-popup" hidden>
   <div class="popup" role="dialog" aria-modal="true">
@@ -92,10 +108,25 @@
 <script src="shapes.js"></script>
 <!-- data-auto-open: show the rules here automatically for first-time players -->
 <script src="rules.js" data-auto-open></script>
+<script src="published.js"></script>
 <script src="game.js"></script>
 <script>
-/* The puzzle comes from the URL: play.html?puzzle=test-puzzle-1 */
-const wantedPuzzle = PUZZLES[new URLSearchParams(location.search).get('puzzle')];
+/* Which puzzle to play comes from the URL:
+     play.html?level=easy|medium|hard   whatever is published for that
+                                        difficulty (published.js; the
+                                        splash buttons use this)
+     play.html?puzzle=<id>              a specific puzzle from puzzles.js */
+const params = new URLSearchParams(location.search);
+const level = params.get('level');
+const wantedPuzzle = level ? (PUBLISHED[level] && PUBLISHED[level].puzzle) : PUZZLES[params.get('puzzle')];
+
+// Reset: asks first, then clears the board and restarts the timer
+document.getElementById('reset-btn').onclick = ()=>{ document.getElementById('reset-popup').hidden = false; };
+document.getElementById('reset-cancel').onclick = ()=>{ document.getElementById('reset-popup').hidden = true; };
+document.getElementById('reset-confirm').onclick = ()=>{
+  document.getElementById('reset-popup').hidden = true;
+  loadPuzzle(puzzle);
+};
 if(wantedPuzzle){
   document.title = 'Parity Blocks: ' + wantedPuzzle.title;
   loadPuzzle(wantedPuzzle);

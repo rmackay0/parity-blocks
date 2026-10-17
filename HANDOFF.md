@@ -53,6 +53,29 @@ reference below to `index.html` now means `sandbox.html`.
 - **`shapes.js`** holds the shared piece geometry + SVG drawing
   (`rotateCells`, `reflectCells`, `buildOutlinePath`, `buildPieceShape`…),
   used by play.html and rules.js. The sandbox still has its own copy.
+- **Publishing, archive, reset (2026-10-17, user decisions: publish via
+  GitHub, archive in the browser, reset on the game page)**:
+  - **`published.js`** holds `PUBLISHED = {easy, medium, hard}`, each
+    `{archiveId, publishedAt, puzzle}` with a FULL puzzle copy, between
+    `/*JSON*/ … /*END*/` markers (the sandbox parses between them; don't
+    remove them, and never write `*/` inside its header comment). The
+    splash links are now `play.html?level=easy|medium|hard`;
+    `play.html?puzzle=<id>` (puzzles.js) still works.
+  - **Publish** (sandbox archive ↑ button): reads published.js through the
+    GitHub contents API, replaces one level, PUTs it back with the user's
+    fine-grained token (Contents read/write on parity-blocks), stored only
+    in `localStorage.pb_github`. Vercel redeploys from that commit. Runs a
+    solver check first and warns if not exactly one solution.
+    **Consequence for local work: publishing commits to origin/main from
+    the browser, so always `git pull` before committing locally.**
+  - **Archive** (`localStorage.pb_archive`): saved puzzles with savedAt,
+    notes (✎ popup), and publish stamps; a stamp is "live" when
+    PUBLISHED[level] still has that archiveId+publishedAt. Opening an entry
+    copies it into the draft. Seeded from puzzles.js + published.js on
+    first run. Export/Import backup = JSON file (import skips duplicate
+    ids).
+  - **Reset** on the game page: small button left of Rules, asks "Start
+    over?" first, then `loadPuzzle(puzzle)` (clears pieces, restarts timer).
 - **New sandbox = puzzle builder (2026-10-17, user chose this over
   restyling the old one)**: `sandbox.html` is now built on the game's own
   code so it looks identical. play.html's inline CSS/JS were moved to

@@ -303,3 +303,20 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
 .empty-ring { fill: none; stroke: var(--color-select); stroke-width: 3; }
 /* View mode: the message above the board when a tiling passes parity */
 .status.good { color: var(--color-valid); }
+
+/* ── Reset button (game page, top-right, next to Rules) ──
+   Deliberately small and plain so it isn't hit by accident; it also asks
+   "Start over?" before doing anything. */
+.top-right { display: flex; align-items: center; gap: 10px; }
+.reset-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-cell-border);
+  background: transparent;
+  color: var(--color-text-dim);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.reset-btn:hover { color: var(--color-text); border-color: var(--color-text-dim); }

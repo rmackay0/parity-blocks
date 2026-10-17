@@ -296,13 +296,14 @@
 <script>
 /* ═══════════════════════════════════════════════════════════════════
    [BEHAVIOR] Where each difficulty button goes.
-   play.html?puzzle=<key> opens a puzzle; the keys are the names in
-   puzzles.js. null = no puzzle yet; the button shows "coming soon".
+   play.html?level=<difficulty> opens whatever is published for it in
+   published.js (set from the sandbox's Publish button). null = no link;
+   the button shows "coming soon".
 ═══════════════════════════════════════════════════════════════════ */
 const DIFFICULTY_LINKS = {
-  easy:   'play.html?puzzle=easy-puzzle-1',
-  medium: 'play.html?puzzle=test-puzzle-2',
-  hard:   'play.html?puzzle=test-puzzle-1',
+  easy:   'play.html?level=easy',
+  medium: 'play.html?level=medium',
+  hard:   'play.html?level=hard',
 };
 
 const toastEl = document.getElementById('toast');

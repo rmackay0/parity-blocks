@@ -117,6 +117,50 @@
     border: 1px solid var(--color-cell-border); border-radius: 8px; padding: 8px;
     user-select: text;
   }
+  .btn.small { font-size: 0.95rem; padding: 5px 10px; }
+
+  /* Archive list */
+  .archive { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+  .archive:empty::before { content: 'Nothing saved yet.'; color: var(--color-text-dim); font-size: 0.95rem; }
+  .arch-item {
+    display: flex; gap: 6px; align-items: flex-start;
+    background: var(--color-bg); border-radius: 10px; padding: 8px 8px 8px 10px;
+    border: 2px solid transparent;
+  }
+  .arch-item.loaded { border-color: var(--color-select); }
+  .arch-main { flex: 1; min-width: 0; cursor: pointer; }
+  .arch-main b { display: block; font-weight: 400; font-size: 1.15rem; color: var(--color-text); overflow-wrap: anywhere; }
+  .arch-main .note { font-size: 0.85rem; }
+  .stamps { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .stamp { font-size: 0.8rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--color-cell-border); color: var(--color-text-dim); }
+  .stamp.live { border-color: var(--color-valid); color: var(--color-valid); }
+  .arch-actions { display: flex; flex-direction: column; gap: 4px; }
+  .icon-btn {
+    width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
+    background: var(--color-panel); color: var(--color-text-dim); font-size: 0.95rem; line-height: 1;
+    font-family: system-ui, sans-serif;
+  }
+  .icon-btn:hover { color: var(--color-text); filter: brightness(1.2); }
+  .icon-btn.has-notes { color: var(--color-select); }
+
+  /* Popups (base look from game.css) */
+  .popup.wide { max-width: 460px; text-align: left; font-family: var(--font-display); }
+  .popup.wide h2 { text-align: left; }
+  .modal-note { font-size: 1rem !important; color: var(--color-text-dim); margin-bottom: 10px !important; line-height: 1.35; }
+  .modal-note a { color: var(--color-accent); }
+  .modal-note code { font-size: 0.85em; }
+  .steps { padding-left: 20px; }
+  .steps li { margin-bottom: 3px; }
+  .notes-box { min-height: 180px; font: 15px/1.45 system-ui, sans-serif; margin-bottom: 14px; }
+  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; font-size: 1rem; color: var(--color-text-dim); }
+  .field input { font: 14px system-ui, sans-serif; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--color-cell-border); background: var(--color-bg); color: var(--color-text); }
+  .levels { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .level-opt { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--color-bg); cursor: pointer; border: 2px solid transparent; font-size: 1.15rem; }
+  .level-opt.on { border-color: var(--color-select); }
+  .level-opt small { margin-left: auto; color: var(--color-text-dim); font-size: 0.85rem; text-align: right; white-space: pre-line; }
+  .ok-text { color: #8cc77a; }
+  .warn-text { color: var(--color-status); }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -125,6 +169,23 @@
 <!-- ═══ BUILDER PANEL ═══ -->
 <aside class="builder">
   <h1>Sandbox<small>puzzle builder &middot; <a href="analyzer.html" style="color:inherit">analyzer</a> &middot; <a href="sandbox-classic.html" style="color:inherit">classic</a></small></h1>
+
+  <section>
+    <h2>Archive</h2>
+    <div class="row">
+      <input type="text" id="save-name" placeholder="Name for this puzzle" style="flex:1; width:auto;">
+      <button class="btn primary" id="save-btn">Save</button>
+    </div>
+    <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; &#8593; publish &middot; &#10005; delete</p>
+    <div class="archive" id="archive-list"></div>
+    <div class="row">
+      <button class="btn small" id="backup-export" title="Download the whole archive as a file">Export backup</button>
+      <button class="btn small" id="backup-import" title="Load an archive backup file (adds to what's here)">Import backup</button>
+      <input type="file" id="backup-file" accept=".json,application/json" hidden>
+      <span style="flex:1"></span>
+      <button class="btn small" id="settings-btn" title="GitHub publishing settings">&#9881; Publishing</button>
+    </div>
+  </section>
 
   <section>
     <h2>Start from</h2>
@@ -225,6 +286,55 @@
   </div>
 </main>
 
+<!-- ═══ ARCHIVE POPUPS ═══ -->
+<div class="popup-backdrop" id="notes-modal" hidden>
+  <div class="popup wide" role="dialog" aria-modal="true" aria-labelledby="notes-title">
+    <h2 id="notes-title">Notes</h2>
+    <textarea id="notes-text" class="notes-box" placeholder="Anything you want to remember about this puzzle…"></textarea>
+    <div class="popup-buttons">
+      <button type="button" class="secondary" id="notes-cancel">Cancel</button>
+      <button type="button" id="notes-save">Save notes</button>
+    </div>
+  </div>
+</div>
+
+<div class="popup-backdrop" id="publish-modal" hidden>
+  <div class="popup wide" role="dialog" aria-modal="true" aria-labelledby="publish-title">
+    <h2 id="publish-title">Publish</h2>
+    <p class="modal-note">Choose which button on the main site should open this puzzle. Every player gets it about a minute after you publish.</p>
+    <div class="levels" id="publish-levels"></div>
+    <p class="modal-note" id="publish-check"></p>
+    <p class="modal-note" id="publish-status"></p>
+    <div class="popup-buttons">
+      <button type="button" class="secondary" id="publish-cancel">Cancel</button>
+      <button type="button" id="publish-go" disabled>Publish</button>
+    </div>
+  </div>
+</div>
+
+<div class="popup-backdrop" id="settings-modal" hidden>
+  <div class="popup wide" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <h2 id="settings-title">Publishing settings</h2>
+    <p class="modal-note">Publishing saves <code>published.js</code> to your GitHub repo; Vercel then updates the site. It needs a GitHub token, which is stored <b>only in this browser</b>. To make one:</p>
+    <ol class="modal-note steps">
+      <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> (fine-grained token).</li>
+      <li>Name it e.g. "Parity Blocks publish", pick an expiration.</li>
+      <li>Repository access: <b>Only select repositories</b> &rarr; <b>parity-blocks</b>.</li>
+      <li>Permissions &rarr; Repository &rarr; <b>Contents: Read and write</b>.</li>
+      <li>Generate, copy the token, paste it below.</li>
+    </ol>
+    <label class="field">Token <input type="password" id="gh-token" autocomplete="off" placeholder="github_pat_…"></label>
+    <label class="field">Repository <input type="text" id="gh-repo"></label>
+    <label class="field">Branch <input type="text" id="gh-branch"></label>
+    <p class="modal-note" id="settings-status"></p>
+    <div class="popup-buttons">
+      <button type="button" class="secondary" id="settings-cancel">Close</button>
+      <button type="button" class="secondary" id="settings-test">Test</button>
+      <button type="button" id="settings-save">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="popup-backdrop" id="solved-popup" hidden>
   <div class="popup" role="dialog" aria-modal="true" aria-labelledby="solved-title">
     <h2 id="solved-title">Solved!</h2>
@@ -237,6 +347,7 @@
 <script src="shapes.js"></script>
 <script src="rules.js"></script>
 <script src="solver.js"></script>
+<script src="published.js"></script>
 <script src="game.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════
@@ -550,8 +661,298 @@ $('download-btn').onclick = ()=>{
 $('solved-close').onclick = ()=>{ $('solved-popup').hidden = true; };
 
 /* ═══════════════════════════════════════════════════════════════════
+   ARCHIVE
+   Saved puzzles live in this browser (localStorage 'pb_archive'):
+     { id, title, savedAt, notes, puzzle, published: [{difficulty, at}] }
+   Opening one copies its puzzle into the draft, so editing the board
+   never changes the saved version. Export/Import backup move the whole
+   archive to/from a file. On first visit it's seeded with the puzzles
+   from puzzles.js, stamped with when they were published.
+═══════════════════════════════════════════════════════════════════ */
+const ARCHIVE_KEY = 'pb_archive';
+const LEVELS = ['easy', 'medium', 'hard'];
+const LEVEL_NAME = { easy:'Easy', medium:'Medium', hard:'Hard' };
+let archive = null;
+let loadedArchiveId = null;
+
+function loadArchive(){
+  try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)); } catch(e){}
+  if(Array.isArray(archive)) return;
+  const now = new Date().toISOString();
+  archive = Object.keys(PUZZLES).map(id=>({
+    id: 'puzzles-js:' + id,
+    title: PUZZLES[id].title,
+    savedAt: now,
+    notes: '',
+    puzzle: copyPuzzle(PUZZLES[id]),
+    published: LEVELS.filter(l=>PUBLISHED[l] && PUBLISHED[l].archiveId === 'puzzles-js:' + id)
+                      .map(l=>({ difficulty:l, at: PUBLISHED[l].publishedAt })),
+  }));
+  saveArchive();
+}
+function saveArchive(){ try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive)); } catch(e){ alert('Couldn’t save the archive in this browser: ' + e.message); } }
+const fmtDate = iso => new Date(iso).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+const isLive = (entry, stamp) => PUBLISHED[stamp.difficulty] && PUBLISHED[stamp.difficulty].archiveId === entry.id
+                                 && PUBLISHED[stamp.difficulty].publishedAt === stamp.at;
+
+function renderArchive(){
+  const list = $('archive-list');
+  list.innerHTML = '';
+  archive.forEach(entry=>{
+    const item = document.createElement('div');
+    item.className = 'arch-item' + (entry.id === loadedArchiveId ? ' loaded' : '');
+    const p = entry.puzzle;
+    const stamps = entry.published.slice().reverse().map(s=>
+      `<span class="stamp${isLive(entry, s) ? ' live' : ''}" title="${isLive(entry, s) ? 'Live on the site now' : 'Published before; since replaced'}">`
+      + `${LEVEL_NAME[s.difficulty]} · ${fmtDate(s.at)}${isLive(entry, s) ? ' · live' : ''}</span>`).join('');
+    item.innerHTML =
+      `<div class="arch-main" title="Open a copy in the sandbox"><b></b>` +
+      `<span class="note">Saved ${fmtDate(entry.savedAt)} · ${p.rows}×${p.cols} · ${p.pieces.map(d=>d.name).join(' ')}</span>` +
+      (stamps ? `<div class="stamps">${stamps}</div>` : '') + `</div>` +
+      `<div class="arch-actions">` +
+      `<button class="icon-btn${entry.notes ? ' has-notes' : ''}" data-act="notes" title="${entry.notes ? 'Notes (has notes)' : 'Notes'}">&#9998;</button>` +
+      `<button class="icon-btn" data-act="publish" title="Publish as Easy / Medium / Hard">&#8593;</button>` +
+      `<button class="icon-btn" data-act="delete" title="Delete from archive">&#10005;</button></div>`;
+    item.querySelector('b').textContent = entry.title;
+    item.querySelector('.arch-main').onclick = ()=>openFromArchive(entry);
+    item.querySelector('[data-act=notes]').onclick = ()=>openNotes(entry);
+    item.querySelector('[data-act=publish]').onclick = ()=>openPublish(entry);
+    item.querySelector('[data-act=delete]').onclick = ()=>{
+      const live = entry.published.some(s=>isLive(entry, s));
+      if(!confirm(`Delete “${entry.title}” from the archive?` + (live ? '\n\nIt stays live on the site until you publish something else in its place.' : ''))) return;
+      archive = archive.filter(e=>e !== entry);
+      if(loadedArchiveId === entry.id) loadedArchiveId = null;
+      saveArchive(); renderArchive();
+    };
+    list.appendChild(item);
+  });
+}
+
+function openFromArchive(entry){
+  draft = copyPuzzle(entry.puzzle);
+  draft.title = entry.title;
+  Object.keys(pieceMemory).forEach(k=>delete pieceMemory[k]);
+  draft.pieces.forEach(d=>{ pieceMemory[d.name] = d; });
+  loadedArchiveId = entry.id;
+  $('save-name').value = entry.title;
+  saveDraft();
+  invalidateAnalysis();
+  setMode('play');
+  loadPuzzle(draft);
+  renderPanel();
+  renderArchive();
+}
+
+$('save-btn').onclick = ()=>{
+  const title = $('save-name').value.trim() || draft.title || 'Untitled puzzle';
+  const puzzle = copyPuzzle(draft);
+  puzzle.title = title;
+  const entry = { id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                  title, savedAt: new Date().toISOString(), notes: '', puzzle, published: [] };
+  archive.unshift(entry);
+  loadedArchiveId = entry.id;
+  draft.title = title; saveDraft();
+  saveArchive(); renderArchive();
+};
+
+/* ── Backup ── */
+$('backup-export').onclick = ()=>{
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ type:'parity-blocks-archive', exportedAt: new Date().toISOString(), archive }, null, 2)], { type:'application/json' }));
+  a.download = 'parity-blocks-archive-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+};
+$('backup-import').onclick = ()=>$('backup-file').click();
+$('backup-file').onchange = async ()=>{
+  const file = $('backup-file').files[0];
+  $('backup-file').value = '';
+  if(!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const incoming = Array.isArray(data) ? data : data.archive;
+    if(!Array.isArray(incoming)) throw new Error('That file isn’t an archive backup.');
+    const have = new Set(archive.map(e=>e.id));
+    const added = incoming.filter(e=>e && e.id && e.puzzle && !have.has(e.id));
+    archive = archive.concat(added);
+    saveArchive(); renderArchive();
+    alert(`Imported ${added.length} puzzle${added.length===1?'':'s'}` + (incoming.length - added.length ? ` (${incoming.length - added.length} already here, skipped)` : '') + '.');
+  } catch(e){ alert('Couldn’t import: ' + e.message); }
+};
+
+/* ── Notes (the pencil) ── */
+let notesEntry = null;
+function openNotes(entry){
+  notesEntry = entry;
+  $('notes-title').textContent = 'Notes: ' + entry.title;
+  $('notes-text').value = entry.notes || '';
+  $('notes-modal').hidden = false;
+  $('notes-text').focus();
+}
+$('notes-cancel').onclick = ()=>{ $('notes-modal').hidden = true; };
+$('notes-save').onclick = ()=>{
+  notesEntry.notes = $('notes-text').value;
+  saveArchive(); renderArchive();
+  $('notes-modal').hidden = true;
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   PUBLISH  (GitHub)
+   Reads published.js from the repo, replaces one difficulty's entry
+   with a full copy of the chosen puzzle, and commits it back through
+   GitHub's API with your token. Vercel redeploys on every commit, so the
+   main site's button picks it up about a minute later.
+═══════════════════════════════════════════════════════════════════ */
+const GH_KEY = 'pb_github';
+function ghSettings(){
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(GH_KEY)); } catch(e){}
+  return Object.assign({ token:'', repo:'rmackay0/parity-blocks', branch:'main' }, s || {});
+}
+function b64encode(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for(let i=0; i<bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function b64decode(b64){
+  return new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), ch=>ch.charCodeAt(0)));
+}
+function ghError(res, action){
+  if(res.status === 401) return `GitHub says the token is invalid or expired (${action}). Check Publishing settings.`;
+  if(res.status === 403 || res.status === 404) return `GitHub refused (${res.status}) while ${action}. Make sure the token has access to the repo with "Contents: Read and write".`;
+  if(res.status === 409) return 'Someone (or another tab) changed published.js at the same moment. Try again.';
+  return `GitHub error ${res.status} while ${action}.`;
+}
+
+async function publishToGitHub(entry, level){
+  const s = ghSettings();
+  const api = `https://api.github.com/repos/${s.repo}/contents/published.js`;
+  const headers = { Authorization: 'Bearer ' + s.token, Accept: 'application/vnd.github+json' };
+  const got = await fetch(api + '?ref=' + encodeURIComponent(s.branch) + '&t=' + Date.now(), { headers, cache:'no-store' });
+  if(!got.ok) throw new Error(ghError(got, 'reading published.js'));
+  const file = await got.json();
+  const text = b64decode(file.content);
+  const m = text.match(/\/\*JSON\*\/([\s\S]*?)\/\*END\*\//);
+  if(!m) throw new Error('published.js on GitHub is missing its JSON / END markers.');
+  const data = JSON.parse(m[1]);
+  const at = new Date().toISOString();
+  const puzzle = copyPuzzle(entry.puzzle);
+  puzzle.title = entry.title;
+  data[level] = { archiveId: entry.id, publishedAt: at, puzzle };
+  const newText = text.replace(m[0], '/*JSON*/' + JSON.stringify(data, null, 2) + '/*END*/');
+  const put = await fetch(api, { method:'PUT', headers, body: JSON.stringify({
+    message: `Publish “${entry.title}” as ${LEVEL_NAME[level]}`,
+    content: b64encode(newText), sha: file.sha, branch: s.branch,
+  }) });
+  if(!put.ok) throw new Error(ghError(put, 'saving published.js'));
+  PUBLISHED[level] = data[level];          // this page now knows it's live
+  entry.published.push({ difficulty: level, at });
+  saveArchive(); renderArchive();
+}
+
+let publishEntry = null, publishLevel = null, checkWorker = null;
+function openPublish(entry){
+  publishEntry = entry; publishLevel = null;
+  $('publish-title').textContent = `Publish “${entry.title}”`;
+  const box = $('publish-levels');
+  box.innerHTML = '';
+  LEVELS.forEach(l=>{
+    const now = PUBLISHED[l];
+    const opt = document.createElement('div');
+    opt.className = 'level-opt';
+    opt.innerHTML = `<span>${LEVEL_NAME[l]}</span><small></small>`;
+    opt.querySelector('small').textContent = now ? `now: ${now.puzzle.title}\n${fmtDate(now.publishedAt)}` : 'nothing published';
+    opt.onclick = ()=>{
+      publishLevel = l;
+      box.querySelectorAll('.level-opt').forEach(o=>o.classList.toggle('on', o === opt));
+      updatePublishButton();
+    };
+    box.appendChild(opt);
+  });
+  $('publish-status').textContent = ghSettings().token ? '' : 'Set up publishing first: ⚙ Publishing (one-time GitHub token).';
+  $('publish-status').className = 'modal-note' + (ghSettings().token ? '' : ' warn-text');
+  $('publish-modal').hidden = false;
+  updatePublishButton();
+
+  // Check it with the solver while you choose
+  if(checkWorker) checkWorker.terminate();
+  const check = $('publish-check');
+  check.className = 'modal-note'; check.textContent = 'Checking with the solver…';
+  const p = entry.puzzle;
+  checkWorker = ParitySolver.createWorker();
+  checkWorker.onmessage = e=>{
+    if(e.data.type === 'progress') return;
+    checkWorker.terminate(); checkWorker = null;
+    if(e.data.type !== 'result'){ check.textContent = 'Solver check failed: ' + e.data.message; return; }
+    const r = e.data.result, n = r.paritySolutions;
+    check.className = 'modal-note ' + (n === 1 ? 'ok-text' : 'warn-text');
+    check.textContent = n === 1 ? `✓ Good puzzle: exactly one solution (${r.totalTilings.toLocaleString()} ways to fit the pieces).`
+      : n === 0 ? '⚠ This puzzle has NO solution. You can still publish it, but players can’t win.'
+      : `⚠ This puzzle has ${n} solutions, so it isn’t unique. You can still publish it.`;
+  };
+  checkWorker.postMessage({ type:'analyze', maxStored: 1, config: {
+    rows:p.rows, cols:p.cols, blocked:p.blocked, dotted:p.hintOutline || [], pieces:p.pieces.map(d=>({name:d.name, cells:d.cells})) } });
+}
+function updatePublishButton(){
+  $('publish-go').disabled = !publishLevel || !ghSettings().token;
+  $('publish-go').textContent = publishLevel ? `Publish as ${LEVEL_NAME[publishLevel]}` : 'Publish';
+}
+$('publish-cancel').onclick = ()=>{ $('publish-modal').hidden = true; if(checkWorker){ checkWorker.terminate(); checkWorker = null; } };
+$('publish-go').onclick = async ()=>{
+  const btn = $('publish-go'), status = $('publish-status');
+  btn.disabled = true;
+  status.className = 'modal-note'; status.textContent = 'Publishing…';
+  try {
+    await publishToGitHub(publishEntry, publishLevel);
+    status.className = 'modal-note ok-text';
+    status.textContent = `Published as ${LEVEL_NAME[publishLevel]}. The live site updates in about a minute.`;
+    btn.textContent = 'Done';
+    btn.disabled = false;
+    btn.onclick = ()=>{ $('publish-modal').hidden = true; btn.onclick = publishGo; };
+  } catch(e){
+    status.className = 'modal-note warn-text';
+    status.textContent = e.message || String(e);
+    updatePublishButton();
+  }
+};
+const publishGo = $('publish-go').onclick;
+
+/* ── Publishing settings ── */
+$('settings-btn').onclick = ()=>{
+  const s = ghSettings();
+  $('gh-token').value = s.token; $('gh-repo').value = s.repo; $('gh-branch').value = s.branch;
+  $('settings-status').textContent = '';
+  $('settings-modal').hidden = false;
+};
+$('settings-cancel').onclick = ()=>{ $('settings-modal').hidden = true; };
+function readSettingsForm(){
+  return { token: $('gh-token').value.trim(), repo: $('gh-repo').value.trim() || 'rmackay0/parity-blocks', branch: $('gh-branch').value.trim() || 'main' };
+}
+$('settings-save').onclick = ()=>{
+  try { localStorage.setItem(GH_KEY, JSON.stringify(readSettingsForm())); } catch(e){}
+  $('settings-status').className = 'modal-note ok-text';
+  $('settings-status').textContent = 'Saved in this browser.';
+  updatePublishButton();
+};
+$('settings-test').onclick = async ()=>{
+  const s = readSettingsForm(), out = $('settings-status');
+  out.className = 'modal-note'; out.textContent = 'Testing…';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${s.repo}/contents/published.js?ref=${encodeURIComponent(s.branch)}`,
+      { headers: { Authorization: 'Bearer ' + s.token, Accept: 'application/vnd.github+json' }, cache:'no-store' });
+    if(!res.ok) throw new Error(ghError(res, 'reading published.js'));
+    out.className = 'modal-note ok-text';
+    out.textContent = '✓ Connected: the token can read published.js. (Write access is checked when you publish.)';
+  } catch(e){ out.className = 'modal-note warn-text'; out.textContent = e.message; }
+};
+
+/* ═══════════════════════════════════════════════════════════════════
    START
 ═══════════════════════════════════════════════════════════════════ */
+loadArchive();
+renderArchive();
+$('save-name').value = draft.title || '';
 renderStartSelect();
 setMode('play');
 loadPuzzle(draft);
