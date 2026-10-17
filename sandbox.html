@@ -272,7 +272,10 @@
 <main class="game">
   <div class="top-row">
     <a class="back-btn" href="index.html" aria-label="Back to menu">&lsaquo;</a>
-    <button type="button" class="rules-btn" data-open-rules>Rules</button>
+    <div class="top-right">
+      <button type="button" class="reset-btn" id="clear-btn" title="Clear pieces or the board">Clear</button>
+      <button type="button" class="rules-btn" data-open-rules>Rules</button>
+    </div>
   </div>
   <div class="tray" id="tray" aria-label="Available pieces"></div>
   <p class="status" id="status" role="status" aria-live="polite"></p>
@@ -290,6 +293,20 @@
     <button type="button" id="rotate-btn" disabled>Rotate</button>
   </div>
 </main>
+
+<!-- ═══ CLEAR (top-right button) ═══ -->
+<div class="popup-backdrop" id="clear-modal" hidden>
+  <div class="popup wide" role="dialog" aria-modal="true" aria-labelledby="clear-title">
+    <h2 id="clear-title">Clear</h2>
+    <p class="modal-note">Nothing in the archive is affected.</p>
+    <div class="levels">
+      <div class="level-opt" id="clear-pieces"><span>Clear pieces</span><small>take every piece off the board</small></div>
+      <div class="level-opt" id="clear-board"><span>Clear board</span><small>remove all blocked squares, hidden gaps
+and the dotted area (keeps size and pieces)</small></div>
+    </div>
+    <div class="popup-buttons"><button type="button" class="secondary" id="clear-cancel">Cancel</button></div>
+  </div>
+</div>
 
 <!-- ═══ ARCHIVE POPUPS ═══ -->
 <div class="popup-backdrop" id="solution-modal" hidden>
@@ -521,7 +538,21 @@ function renderPicker(){
     box.appendChild(el);
   });
 }
-$('clear-board-btn').onclick = ()=>{ placedPieces = []; selection = null; solved = false; startTime = Date.now(); renderAll(); };
+function clearPieces(){
+  if(gameMode === 'view') setMode(clickMode);
+  placedPieces = []; selection = null; solved = false; startTime = Date.now(); renderAll();
+}
+$('clear-board-btn').onclick = clearPieces;
+
+/* ── Clear button (top-right, next to Rules) ── */
+$('clear-btn').onclick = ()=>{ $('clear-modal').hidden = false; };
+$('clear-cancel').onclick = ()=>{ $('clear-modal').hidden = true; };
+$('clear-pieces').onclick = ()=>{ $('clear-modal').hidden = true; clearPieces(); };
+$('clear-board').onclick = ()=>{
+  $('clear-modal').hidden = true;
+  draft.blocked = []; draft.hiddenBlocked = []; draft.hintOutline = []; draft.hintText = '';
+  draftChanged();
+};
 
 /* ═══════════════════════════════════════════════════════════════════
    ANALYZE  (solver.js in a Web Worker; Cancel terminates it)
