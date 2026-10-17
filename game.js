@@ -318,6 +318,54 @@ function transformSelection(fn){
 reflectBtn.addEventListener('click', ()=>transformSelection(reflectCells));
 rotateBtn.addEventListener('click', ()=>transformSelection(rotateCells));
 
+/* [BEHAVIOR] Clicking a piece (at the top or on the board):
+     one click    → rotate a quarter turn clockwise
+     double-click → reflect (mirror left↔right)
+   Every double-click starts with a single click, so a click waits
+   DOUBLE_CLICK_MS to see whether a second one follows before rotating.
+   Clicking also selects the piece, so Reflect/Rotate and R/F still work. */
+const DOUBLE_CLICK_MS = 280;
+let pendingClick = null;    // { source, timer } while waiting to see if it's a double-click
+
+const sameSource = (a, b) => a && b && a.kind === b.kind &&
+  (a.kind === 'tray' ? a.name === b.name : a.id === b.id);
+
+function transformSource(source, fn){
+  if(source.kind === 'tray'){
+    if(trayCells[source.name]) trayCells[source.name] = fn(trayCells[source.name]);
+  } else {
+    const p = placedPieces.find(pp=>pp.id===source.id);
+    if(p) p.cells = fn(p.cells);
+  }
+  renderAll();
+}
+
+// Do a waiting single-click's rotate right now (e.g. another piece got clicked)
+function flushPendingClick(){
+  if(!pendingClick) return;
+  clearTimeout(pendingClick.timer);
+  const src = pendingClick.source;
+  pendingClick = null;
+  transformSource(src, rotateCells);
+}
+
+function onPieceClick(source){
+  selection = source;
+  if(pendingClick && sameSource(pendingClick.source, source)){
+    // second click in time: it's a double-click → reflect instead of rotate
+    clearTimeout(pendingClick.timer);
+    pendingClick = null;
+    transformSource(source, reflectCells);
+    return;
+  }
+  flushPendingClick();
+  renderAll();              // show it selected straight away
+  pendingClick = { source, timer: setTimeout(()=>{
+    pendingClick = null;
+    transformSource(source, rotateCells);
+  }, DOUBLE_CLICK_MS) };
+}
+
 document.addEventListener('keydown', e=>{
   if(e.key==='r' || e.key==='R') transformSelection(rotateCells);
   else if(e.key==='f' || e.key==='F' || e.key==='t' || e.key==='T') transformSelection(reflectCells);
@@ -333,7 +381,7 @@ document.addEventListener('pointerdown', e=>{
 /* ═══════════════════════════════════════════════════════════════════
    DRAG
    A press only becomes a drag once the pointer moves a few pixels; a
-   press-and-release without moving is a tap, which selects the piece.
+   press-and-release without moving is a click (rotate; double = reflect).
 ═══════════════════════════════════════════════════════════════════ */
 const DRAG_THRESHOLD = 5;
 let press = null;   // {source, startX, startY, grabDR, grabDC, dragging, ghost, cells, color, name}
@@ -343,6 +391,8 @@ function onPiecePointerDown(e, source){
   if(e.button !== undefined && e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
+  // A different piece's click is still waiting: apply its rotate first
+  if(pendingClick && !sameSource(pendingClick.source, source)) flushPendingClick();
   let cells, color, name, grabDR, grabDC;
   if(source.kind === 'tray'){
     const def = puzzle.pieces.find(d=>d.name===source.name);
@@ -364,6 +414,16 @@ function onPiecePointerDown(e, source){
 }
 
 function beginDrag(){
+  // Clicked this piece and then started dragging it before the click's
+  // rotate happened: rotate now, and drag the rotated shape
+  if(pendingClick && sameSource(pendingClick.source, press.source)){
+    flushPendingClick();
+    if(press.source.kind === 'tray') press.cells = trayCells[press.name];
+    else { const p = placedPieces.find(pp=>pp.id===press.source.id); if(p) press.cells = p.cells; }
+    const b = bounds(press.cells);
+    press.grabDR = Math.min(press.grabDR, b.rows-1);
+    press.grabDC = Math.min(press.grabDC, b.cols-1);
+  }
   press.dragging = true;
   press.ghost = document.createElement('div');
   press.ghost.className = 'ghost';
@@ -425,10 +485,8 @@ function onPointerUp(e){
   clearHighlights();
 
   if(!p.dragging){
-    // A tap: select it (tap a selected piece again to deselect)
-    const same = selection && selection.kind===p.source.kind &&
-      (p.source.kind==='tray' ? selection.name===p.source.name : selection.id===p.source.id);
-    select(same ? null : p.source);
+    // A click: rotate, or reflect if it's the second click of a double-click
+    if(e.type !== 'pointercancel') onPieceClick(p.source);
     return;
   }
   p.ghost.remove();
