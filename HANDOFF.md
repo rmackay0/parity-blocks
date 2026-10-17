@@ -33,7 +33,10 @@ reference below to `index.html` now means `sandbox.html`.
   pentominoes — deliberately not a real puzzle so the pictures never spoil
   a solution. Wording lives in `RULES_TEXT` at the top of rules.js. The
   old splash (i) button and its popup were removed.
-- **Mistake display in play.html (2026-10-16, user request)**: while
+- **Mistake display in play.html (2026-10-16, user request; strokes turned
+  OFF in the game 2026-10-17 at the user's request: message only, via
+  `SHOW_UNEVEN_MARKS = false` in game.js; sandbox viewer + rules pictures
+  still draw them)**: while
   placing, a bad drop still glows red. Once **every piece is placed**,
   pieces never glow red (the user found the last-placed piece glowing
   misleading — it looked like "the" problem). Instead: uneven rows/columns

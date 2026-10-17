@@ -521,14 +521,21 @@ function onPointerUp(e){
    Solved = every piece placed, none overlapping/off-grid/on a gap/across
    a dotted line, and every row and column has an even number of filled
    squares.
-   Once every piece is down but it isn't solved: uneven rows/columns get a
-   red highlighter mark, and the message above the board says what's wrong
-   ("Uneven rows and column", "A piece is on a gap", ...).
+   Once every piece is down but it isn't solved, the message above the
+   board says what's wrong ("Uneven rows and column", "A piece is on a
+   gap", ...). Highlighter strokes on the uneven lines are off by default
+   (SHOW_UNEVEN_MARKS below).
 ═══════════════════════════════════════════════════════════════════ */
 const statusEl = document.getElementById('status');
 const markOverlayEl = document.getElementById('mark-overlay');
 
 // [CONTENT] Messages for a piece that breaks a placement rule
+// [BEHAVIOR] When every piece is placed but it isn't solved, the message
+// above the board says what's wrong. Set this to true to also draw red
+// highlighter strokes over the uneven rows/columns. (The sandbox's
+// solution viewer always shows them.)
+const SHOW_UNEVEN_MARKS = false;
+
 const PROBLEM_TEXT = {
   overlap: 'Pieces overlap',
   off:     'A piece is off the board',
@@ -611,7 +618,7 @@ function checkSolved(){
     document.getElementById('solved-popup').hidden = false;
     return;
   }
-  drawUnevenMarks(oddRows, oddCols);
+  if(SHOW_UNEVEN_MARKS) drawUnevenMarks(oddRows, oddCols);
   statusEl.textContent = [unevenMessage(oddRows.length, oddCols.length), ...problems.map(k=>PROBLEM_TEXT[k])]
     .filter(Boolean).join(' · ');
 }
