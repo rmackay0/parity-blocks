@@ -74,6 +74,10 @@ reference below to `index.html` now means `sandbox.html`.
     copies it into the draft. Seeded from puzzles.js + published.js on
     first run. Export/Import backup = JSON file (import skips duplicate
     ids).
+  - **Reveal** (archive eye icon): solves the saved puzzle in a worker and
+    shows its parity solution(s) in a popup (miniBoard; arrows if several;
+    says when there are 0 or many). Doesn't touch the draft; "Show on board"
+    opens a copy and runs Analyze.
   - **Reset** on the game page: small button left of Rules, asks "Start
     over?" first, then `loadPuzzle(puzzle)` (clears pieces, restarts timer).
 - **New sandbox = puzzle builder (2026-10-17, user chose this over

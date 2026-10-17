@@ -134,7 +134,8 @@
   .stamps { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   .stamp { font-size: 0.8rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--color-cell-border); color: var(--color-text-dim); }
   .stamp.live { border-color: var(--color-valid); color: var(--color-valid); }
-  .arch-actions { display: flex; flex-direction: column; gap: 4px; }
+  .arch-actions { display: grid; grid-template-columns: 28px 28px; gap: 4px; }
+  .icon-btn svg { display: block; margin: auto; }
   .icon-btn {
     width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
     background: var(--color-panel); color: var(--color-text-dim); font-size: 0.95rem; line-height: 1;
@@ -161,6 +162,10 @@
   .ok-text { color: #8cc77a; }
   .warn-text { color: var(--color-status); }
 
+  .solution-popup { max-width: 520px; }
+  .solution-board { display: flex; justify-content: center; margin: 4px 0 10px; min-height: 40px; }
+  .solution-board svg { max-width: 100%; height: auto; }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -176,7 +181,7 @@
       <input type="text" id="save-name" placeholder="Name for this puzzle" style="flex:1; width:auto;">
       <button class="btn primary" id="save-btn">Save</button>
     </div>
-    <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; &#8593; publish &middot; &#10005; delete</p>
+    <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; eye: reveal solution &middot; &#8593; publish &middot; &#10005; delete</p>
     <div class="archive" id="archive-list"></div>
     <div class="row">
       <button class="btn small" id="backup-export" title="Download the whole archive as a file">Export backup</button>
@@ -287,6 +292,23 @@
 </main>
 
 <!-- ═══ ARCHIVE POPUPS ═══ -->
+<div class="popup-backdrop" id="solution-modal" hidden>
+  <div class="popup wide solution-popup" role="dialog" aria-modal="true" aria-labelledby="solution-title">
+    <h2 id="solution-title">Solution</h2>
+    <p class="modal-note" id="solution-status"></p>
+    <div class="solution-board" id="solution-board"></div>
+    <div class="stepper" id="solution-stepper" hidden>
+      <button class="btn" id="solution-prev">&larr;</button>
+      <span id="solution-label"></span>
+      <button class="btn" id="solution-next">&rarr;</button>
+    </div>
+    <div class="popup-buttons" style="margin-top:14px;">
+      <button type="button" class="secondary" id="solution-close">Close</button>
+      <button type="button" id="solution-open" title="Open a copy of this puzzle in the sandbox and show its solutions on the board">Show on board</button>
+    </div>
+  </div>
+</div>
+
 <div class="popup-backdrop" id="notes-modal" hidden>
   <div class="popup wide" role="dialog" aria-modal="true" aria-labelledby="notes-title">
     <h2 id="notes-title">Notes</h2>
@@ -711,12 +733,14 @@ function renderArchive(){
       (stamps ? `<div class="stamps">${stamps}</div>` : '') + `</div>` +
       `<div class="arch-actions">` +
       `<button class="icon-btn${entry.notes ? ' has-notes' : ''}" data-act="notes" title="${entry.notes ? 'Notes (has notes)' : 'Notes'}">&#9998;</button>` +
+      `<button class="icon-btn" data-act="reveal" title="Reveal the solution"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M1 6 C3.5 1.5 12.5 1.5 15 6 C12.5 10.5 3.5 10.5 1 6 Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="6" r="2.2" fill="currentColor"/></svg></button>` +
       `<button class="icon-btn" data-act="publish" title="Publish as Easy / Medium / Hard">&#8593;</button>` +
       `<button class="icon-btn" data-act="delete" title="Delete from archive">&#10005;</button></div>`;
     item.querySelector('b').textContent = entry.title;
     item.querySelector('.arch-main').onclick = ()=>openFromArchive(entry);
     item.querySelector('[data-act=notes]').onclick = ()=>openNotes(entry);
     item.querySelector('[data-act=publish]').onclick = ()=>openPublish(entry);
+    item.querySelector('[data-act=reveal]').onclick = ()=>openSolution(entry);
     item.querySelector('[data-act=delete]').onclick = ()=>{
       const live = entry.published.some(s=>isLive(entry, s));
       if(!confirm(`Delete “${entry.title}” from the archive?` + (live ? '\n\nIt stays live on the site until you publish something else in its place.' : ''))) return;
@@ -794,6 +818,77 @@ $('notes-save').onclick = ()=>{
   notesEntry.notes = $('notes-text').value;
   saveArchive(); renderArchive();
   $('notes-modal').hidden = true;
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   REVEAL SOLUTION (the eye)
+   Solves the saved puzzle in a worker and shows its parity solution(s)
+   in a popup, without touching whatever is on the sandbox board.
+═══════════════════════════════════════════════════════════════════ */
+let solutionEntry = null, solutionWorker = null, solutionList = [], solutionPos = 0;
+
+function openSolution(entry){
+  solutionEntry = entry;
+  solutionList = []; solutionPos = 0;
+  $('solution-title').textContent = 'Solution: ' + entry.title;
+  $('solution-status').className = 'modal-note';
+  $('solution-status').textContent = 'Solving\u2026';
+  $('solution-board').innerHTML = '';
+  $('solution-stepper').hidden = true;
+  $('solution-modal').hidden = false;
+  if(solutionWorker) solutionWorker.terminate();
+  const p = entry.puzzle;
+  solutionWorker = ParitySolver.createWorker();
+  solutionWorker.onmessage = e=>{
+    if(e.data.type === 'progress') return;
+    solutionWorker.terminate(); solutionWorker = null;
+    if(e.data.type !== 'result'){ $('solution-status').textContent = 'Solver error: ' + e.data.message; return; }
+    const r = e.data.result;
+    solutionList = r.tilings.filter(t=>t.parity);
+    const n = r.paritySolutions;
+    $('solution-status').className = 'modal-note ' + (n === 1 ? 'ok-text' : 'warn-text');
+    $('solution-status').textContent =
+      n === 1 ? `The only solution (out of ${r.totalTilings.toLocaleString()} ways to fit the pieces).`
+      : n === 0 ? (r.totalTilings === 1 ? 'No solution: the only way to fit the pieces leaves some row or column uneven.'
+                 : r.totalTilings ? `No solution: none of the ${r.totalTilings.toLocaleString()} ways to fit the pieces has every row and column even.`
+                                  : 'No solution: the pieces can\u2019t all fit on this board.')
+      : `${n.toLocaleString()} different solutions (so this puzzle isn\u2019t unique). Use the arrows to see them all.`;
+    showSolution();
+  };
+  solutionWorker.postMessage({ type:'analyze', config: {
+    rows:p.rows, cols:p.cols, blocked:p.blocked, dotted:p.hintOutline || [],
+    pieces:p.pieces.map(d=>({ name:d.name, cells:d.cells })) } });
+}
+
+function showSolution(){
+  const p = solutionEntry.puzzle, box = $('solution-board');
+  box.innerHTML = '';
+  const cell = Math.max(24, Math.min(52, Math.floor(400 / Math.max(p.rows, p.cols)) - 4));
+  const t = solutionList[solutionPos];
+  const pieces = t ? t.placements.map(pl=>{
+    const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));
+    const d = p.pieces.find(q=>q.name === pl.piece);
+    return { color: d ? d.color : '#888', row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
+  }) : [];
+  box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, pieces, gaps:p.blocked, dotted:p.hintOutline,
+                              show: t ? 'solved' : null, markEmpty: !!t }));
+  $('solution-stepper').hidden = solutionList.length < 2;
+  $('solution-label').textContent = `${solutionPos+1} of ${solutionList.length.toLocaleString()}`;
+  $('solution-prev').disabled = solutionPos <= 0;
+  $('solution-next').disabled = solutionPos >= solutionList.length - 1;
+}
+$('solution-prev').onclick = ()=>{ if(solutionPos > 0){ solutionPos--; showSolution(); } };
+$('solution-next').onclick = ()=>{ if(solutionPos < solutionList.length-1){ solutionPos++; showSolution(); } };
+function closeSolution(){
+  $('solution-modal').hidden = true;
+  if(solutionWorker){ solutionWorker.terminate(); solutionWorker = null; }
+}
+$('solution-close').onclick = closeSolution;
+$('solution-open').onclick = ()=>{
+  const entry = solutionEntry;
+  closeSolution();
+  openFromArchive(entry);
+  $('analyze-btn').click();   // results open on the board, parity solutions first
 };
 
 /* ═══════════════════════════════════════════════════════════════════
