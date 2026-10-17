@@ -1,0 +1,305 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   PARITY BLOCKS: GAME LOOK
+   Shared by play.html (the game) and sandbox.html (the puzzle builder),
+   so the two always look the same.
+   EDIT GUIDE: search for [FONTS] [COLORS] [POSITIONING] [CONTENT]
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* [FONTS] */
+  --font-display: 'Geo', 'Segoe UI', sans-serif;
+  --button-size:  1.5rem;
+
+  /* [COLORS] (same palette as the splash screen) */
+  --color-bg:           #241f1c;   /* page background */
+  --color-text:         #e8ddd0;
+  --color-text-dim:     #a3937f;
+  --color-accent:       #d99a4e;   /* hint outline, headings */
+  --color-board-bg:     #1c1714;   /* frame around the grid */
+  --color-cell:         #443830;   /* an open grid square */
+  --color-cell-border:  #4d3f36;
+  --color-valid:        #6fae5a;   /* drop preview: fits */
+  --color-valid-bg:     #3c5638;
+  --color-invalid:      #c25a5a;   /* drop preview: doesn't fit; odd row/column */
+  --color-invalid-bg:   #5a3838;
+  --color-blocked-x:    #e05252;   /* the X on a blocked square */
+  --color-select:       #f2c48a;   /* ring around a selected piece at the top */
+  --color-highlight:    #e0484f;   /* highlighter over an uneven row/column */
+  --color-status:       #ef8a8a;   /* "Uneven rows" message above the board */
+  --color-reflect:      #7d5a78;   /* Reflect button */
+  --color-rotate:       #4f8a8b;   /* Rotate button */
+  --color-button-text:  #ffffff;
+  --color-panel:        #332a25;   /* "Solved!" popup */
+  --color-overlay:      rgba(0, 0, 0, 0.6);
+
+  /* [POSITIONING] Sizes and spacing */
+  --page-gap:        14px;   /* space between pieces, board and buttons */
+  --tray-cell:       20px;   /* square size of the pieces at the top */
+  --tray-gap:        10px;   /* space between pieces at the top */
+  --board-max-cell:  84px;   /* largest a board square gets on big screens */
+  --board-gap:       4px;    /* gap between board squares */
+  --board-pad:       12px;   /* frame thickness around the board */
+  --button-width:    170px;  /* each of Reflect / Rotate */
+  --button-height:   56px;
+  --button-radius:   14px;
+
+  /* Highlighter marks on uneven rows/columns */
+  --highlight-opacity:   0.55;  /* 0 = invisible, 1 = solid */
+  --highlight-thickness: 0.7;   /* stroke width, as a fraction of one square */
+  --highlight-overhang:  18px;  /* how far it runs past the grid's edge */
+}
+@media (max-width: 480px) {
+  :root { --tray-cell: 13px; --tray-gap: 6px; --button-width: 140px; }
+  .status { font-size: 1.15rem; }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  overflow: hidden;              /* whole game fits on screen; no scrolling */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* [POSITIONING] Main column: pieces, board, buttons, all centered. */
+.game {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--page-gap);
+  padding: 16px 16px 24px;
+}
+
+/* [POSITIONING] Top row: back button on the left, Rules on the right */
+.top-row {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--color-cell-border);
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* ── Available pieces (top) ── */
+.tray {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--tray-gap);
+  max-width: 640px;
+}
+.tray-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 10px;
+  cursor: grab;
+  touch-action: none;
+  transition: background 0.15s;
+}
+.tray-slot:hover { background: rgba(255, 255, 255, 0.05); }
+.tray-slot.selected { box-shadow: 0 0 0 2px var(--color-select); }
+.tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
+
+/* ── Board ── */
+.board-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#board-outer {
+  position: relative;
+  background: var(--color-board-bg);
+  border-radius: 14px;
+  padding: var(--board-pad);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.5);
+  touch-action: none;
+}
+#board { display: grid; }
+.board-cell {
+  background: var(--color-cell);
+  border: 1px solid var(--color-cell-border);
+  border-radius: 4px;
+}
+.board-cell.blocked {
+  position: relative;
+  background: var(--color-bg);
+  border-style: dashed;
+}
+.board-cell.blocked::after {
+  content: '\2715';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-blocked-x);
+  font-family: sans-serif;
+  font-size: 1.4em;
+  font-weight: 700;
+}
+.board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid); }
+.board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid); }
+#pieces-layer, #hint-overlay, #mark-overlay {
+  position: absolute;
+  inset: var(--board-pad);
+  pointer-events: none;
+}
+#hint-overlay { z-index: 5; }
+
+/* Highlighter marks over uneven rows/columns once every piece is placed.
+   Drawn above the pieces, running a little past the edge of the grid. */
+#mark-overlay { z-index: 6; overflow: visible; }
+.highlight { fill: var(--color-highlight); opacity: var(--highlight-opacity); }
+
+/* [CONTENT] Message above the board ("Uneven rows" etc.). Its space is
+   always reserved so the board doesn't jump when it appears. */
+.status {
+  flex: 0 0 auto;
+  min-height: 1.6rem;
+  font-size: 1.4rem;
+  line-height: 1.6rem;
+  color: var(--color-status);
+  text-align: center;
+}
+
+.placed-piece { position: absolute; }
+.placed-piece .blk { pointer-events: auto; cursor: grab; touch-action: none; }
+.piece-svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)); }
+.placed-piece.selected .piece-svg {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 3px rgba(255,255,255,0.85));
+}
+.placed-piece.invalid .piece-svg {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 4px rgba(220,70,70,0.95)) drop-shadow(0 0 4px rgba(220,70,70,0.95));
+}
+.ghost { position: absolute; pointer-events: none; opacity: 0.75; z-index: 50; }
+
+/* [CONTENT] Puzzle hint caption (only some puzzles have one) */
+.hint-caption {
+  flex: 0 0 auto;
+  max-width: 520px;
+  text-align: center;
+  color: var(--color-accent);
+  font-size: 1.1rem;
+}
+
+/* ── Reflect (left) / Rotate (right) ── */
+.controls {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 16px;
+  position: relative;
+  z-index: 60;     /* stays clickable even if a piece hangs off the board over it */
+}
+.controls button {
+  width: var(--button-width);
+  height: var(--button-height);
+  border: none;
+  border-radius: var(--button-radius);
+  font-family: var(--font-display);
+  font-size: var(--button-size);
+  letter-spacing: 0.04em;
+  color: var(--color-button-text);
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.15s, opacity 0.15s;
+}
+.controls button:not(:disabled):hover  { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
+.controls button:not(:disabled):active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+.controls button:disabled { opacity: 0.4; cursor: default; }
+#reflect-btn { background: var(--color-reflect); }
+#rotate-btn  { background: var(--color-rotate); }
+
+/* ── Popups ── */
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+.popup-backdrop[hidden] { display: none; }
+.popup {
+  width: 100%;
+  max-width: 340px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-cell-border);
+  border-radius: 16px;
+  padding: 26px 24px 22px;
+  text-align: center;
+}
+.popup h2 { color: var(--color-accent); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
+.popup p  { font-size: 1.2rem; margin-bottom: 18px; }
+.popup-buttons { display: flex; gap: 10px; }
+.popup-buttons a, .popup-buttons button {
+  flex: 1;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-button-text);
+  background: var(--color-rotate);
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.popup-buttons .secondary { background: var(--color-cell-border); }
+
+/* ── Sandbox modes (only the puzzle builder uses these) ── */
+/* Edit mode: pieces fade and ignore clicks, so clicks reach the squares */
+body.editing .placed-piece { opacity: 0.45; }
+body.editing .placed-piece .blk { pointer-events: none; }
+body.editing .board-cell { cursor: pointer; }
+body.editing .board-cell:hover { filter: brightness(1.25); }
+/* View mode: a solver tiling is shown; nothing can be dragged */
+body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
+/* A hidden gap, as the builder sees it (players never do) */
+.board-cell.hidden-gap {
+  position: relative;
+  background: var(--color-bg);
+  border: 2px dashed var(--color-blocked-x);
+}
+.board-cell.hidden-gap::after {
+  content: 'hidden';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-blocked-x);
+  font-size: 0.55em;
+  letter-spacing: 0.05em;
+}
+/* View mode: ring on an open square no piece covers */
+.empty-ring { fill: none; stroke: var(--color-select); stroke-width: 3; }
+/* View mode: the message above the board when a tiling passes parity */
+.status.good { color: var(--color-valid); }

@@ -53,6 +53,24 @@ reference below to `index.html` now means `sandbox.html`.
 - **`shapes.js`** holds the shared piece geometry + SVG drawing
   (`rotateCells`, `reflectCells`, `buildOutlinePath`, `buildPieceShape`…),
   used by play.html and rules.js. The sandbox still has its own copy.
+- **New sandbox = puzzle builder (2026-10-17, user chose this over
+  restyling the old one)**: `sandbox.html` is now built on the game's own
+  code so it looks identical. play.html's inline CSS/JS were moved to
+  shared **`game.css`** and **`game.js`** (play.html just calls
+  `loadPuzzle(PUZZLES[id])`). game.js gained `loadPuzzle(p, {keep})`,
+  `setGameMode('play'|'edit'|'view')`, `setViewTiling(t)` and
+  `gameHooks.onCellClick`; the game itself only ever uses 'play'.
+  Builder panel: start from blank/any puzzle, rows/cols (3–12), click mode
+  Play / Block squares (cycles open → X → hidden gap → open) / Dotted area
+  (+ caption), pick any of the 12 pentominoes, Analyze (worker) and flip
+  through tilings ON the main board (view mode: odd rows/cols highlighted,
+  empty squares ringed, arrow keys), "Place these pieces" to play-test a
+  tiling, export a puzzles.js entry or the analysis JSON. Draft autosaves
+  to `localStorage.pb_sandboxDraft`. Hidden gaps are shown (dashed,
+  "hidden") in edit/view mode, never in play mode.
+  The old sandbox (infinite grid, custom pieces, checkerboards, undo…) is
+  unchanged as **`sandbox-classic.html`**; most of this document's older
+  sections describe that file.
 - **Solver + analyzer (built 2026-10-17)** — supersedes the "Solver (not
   built yet)" plan further down (it ended up in-browser on an admin page,
   not a Node-only script, at the user's request).
