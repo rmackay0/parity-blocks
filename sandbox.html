@@ -181,6 +181,7 @@
       <input type="text" id="save-name" placeholder="Name for this puzzle" style="flex:1; width:auto;">
       <button class="btn primary" id="save-btn">Save</button>
     </div>
+    <p class="note" id="save-note">Saves the pieces on the grid (or every selected piece if the grid is empty).</p>
     <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; eye: reveal solution &middot; &#8593; publish &middot; &#10005; delete</p>
     <div class="archive" id="archive-list"></div>
     <div class="row">
@@ -823,8 +824,15 @@ function openFromArchive(entry){
 
 $('save-btn').onclick = ()=>{
   const title = $('save-name').value.trim() || draft.title || 'Untitled puzzle';
-  const puzzle = copyPuzzle(draft);
+  // Save only the pieces on the grid (same rule as Analyze); with an empty
+  // grid, every selected piece. Pieces keep their standard orientation, so
+  // the saved puzzle doesn't give away how they were placed.
+  const chosen = piecesToAnalyze();
+  const puzzle = copyPuzzle(Object.assign({}, draft, { pieces: chosen.pieces }));
   puzzle.title = title;
+  $('save-note').textContent = chosen.fromBoard
+    ? `Saved “${title}” with the ${chosen.pieces.length} pieces on the grid: ${pieceSetKey(chosen.pieces)}.`
+    : `Saved “${title}” with all ${chosen.pieces.length} selected pieces (nothing was on the grid).`;
   const entry = { id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
                   title, savedAt: new Date().toISOString(), notes: '', puzzle, published: [] };
   archive.unshift(entry);
