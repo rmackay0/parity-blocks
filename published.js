@@ -501,8 +501,8 @@ const PUBLISHED = /*JSON*/{
     }
   },
   "hard": {
-    "archiveId": "puzzles-js:test-puzzle-1",
-    "publishedAt": "2026-10-16T12:00:00.000Z",
+    "archiveId": "amvc1crzvpj51",
+    "publishedAt": "2026-10-17T06:55:00.145Z",
     "puzzle": {
       "title": "Test Puzzle #1",
       "rows": 6,
@@ -525,6 +525,30 @@ const PUBLISHED = /*JSON*/{
           5
         ]
       ],
+      "hiddenBlocked": [],
+      "hintOutline": [
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          4
+        ]
+      ],
+      "hintText": "",
       "pieces": [
         {
           "name": "L",
