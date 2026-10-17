@@ -50,5 +50,24 @@ const PUZZLES = {
       { name:'N', color:'#6f6a9c', cells:[[0,0],[0,1],[1,1],[1,2],[1,3]] },
       { name:'Z', color:'#8a5a7a', cells:[[0,0],[1,0],[1,1],[1,2],[2,2]] },
     ]
+  },
+  'easy-puzzle-1': {
+    title: 'Easy Puzzle #1',
+    rows: 6, cols: 6,
+    // Built in the sandbox (2026-10-17). 30 open squares, 30 piece squares:
+    // fully covered, exactly one tiling (checked with solver.js).
+    blocked: [[0,0],[0,3],[2,0],[2,1],[4,1],[4,3]],
+    hiddenBlocked: [[0,0],[0,3]],
+    hintOutline: [[0,4],[1,3],[1,4],[2,2],[2,3],[2,4],[3,2],[3,3],[3,4],[4,2]],
+    hintText: 'No piece crosses the dotted line.',
+    // Tray orientations are the standard ones, not the solution's
+    pieces: [
+      { name:'P', color:'#b8923f', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] },
+      { name:'W', color:'#a44e6b', cells:[[0,0],[1,0],[1,1],[2,1],[2,2]] },
+      { name:'I', color:'#5f9e8f', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]] },
+      { name:'Z', color:'#8a5a7a', cells:[[0,0],[0,1],[1,1],[2,1],[2,2]] },
+      { name:'U', color:'#a85c4a', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] },
+      { name:'Y', color:'#8c6a4a', cells:[[0,1],[1,0],[1,1],[2,1],[3,1]] },
+    ]
   }
 };
