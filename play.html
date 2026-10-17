@@ -422,12 +422,20 @@ function crossesDottedLine(cells, row, col){
   const inside = cells.map(([r,c])=>dottedRegion.has((row+r)+','+(col+c)));
   return inside.some(Boolean) && !inside.every(Boolean);
 }
-function fits(cells, row, col, excludeId){
+// visibleOnly: ignore hidden gaps (puzzle.hiddenBlocked). Used for anything
+// the player SEES -- the red glow and the green/red drop preview -- so a
+// hidden gap is never given away. A piece on a hidden gap still stops the
+// puzzle from counting as solved (see checkSolved).
+function fits(cells, row, col, excludeId, visibleOnly){
   const occ = occupiedExcept(excludeId);
+  const blocked = visibleOnly ? isVisiblyBlocked : isBlocked;
   return !crossesDottedLine(cells, row, col) && cells.every(([r,c])=>{
     const rr = row+r, cc = col+c;
-    return inBounds(rr, cc) && !isBlocked(rr, cc) && !occ.has(rr+','+cc);
+    return inBounds(rr, cc) && !blocked(rr, cc) && !occ.has(rr+','+cc);
   });
+}
+function coversHiddenGap(p){
+  return p.cells.some(([r,c])=>isBlocked(p.row+r, p.col+c) && !isVisiblyBlocked(p.row+r, p.col+c));
 }
 function completelyOffBoard(cells, row, col){
   return cells.every(([r,c])=>!inBounds(row+r, col+c));
@@ -435,7 +443,7 @@ function completelyOffBoard(cells, row, col){
 // Rechecked for every piece after each change, so moving one piece off
 // another clears the red state on both.
 function recomputeValidity(){
-  invalidIds = new Set(placedPieces.filter(p=>!fits(p.cells, p.row, p.col, p.id)).map(p=>p.id));
+  invalidIds = new Set(placedPieces.filter(p=>!fits(p.cells, p.row, p.col, p.id, true)).map(p=>p.id));
 }
 
 function pxPos(i){ return i*(CELL+GAP); }
@@ -656,7 +664,7 @@ function onPointerMove(e){
   if(overTray(e.clientX, e.clientY)) return;
   const {row, col} = landingSpot(e.clientX, e.clientY, press);
   const excludeId = press.source.kind==='board' ? press.source.id : null;
-  const ok = fits(press.cells, row, col, excludeId);
+  const ok = fits(press.cells, row, col, excludeId, true);
   press.cells.forEach(([r,c])=>{
     const el = boardEl.querySelector(`.board-cell[data-r="${row+r}"][data-c="${col+c}"]`);
     if(el) el.classList.add(ok ? 'hl-valid' : 'hl-invalid');
@@ -744,7 +752,7 @@ function pieceProblem(p){
   const occ = occupiedExcept(p.id);
   const abs = p.cells.map(([r,c])=>[p.row+r, p.col+c]);
   if(abs.some(([r,c])=>!inBounds(r,c))) return 'off';
-  if(abs.some(([r,c])=>isBlocked(r,c))) return 'gap';
+  if(abs.some(([r,c])=>isVisiblyBlocked(r,c))) return 'gap';   // hidden gaps stay secret
   if(abs.some(([r,c])=>occ.has(r+','+c))) return 'overlap';
   if(crossesDottedLine(p.cells, p.row, p.col)) return 'dotted';
   return null;
@@ -791,8 +799,10 @@ function checkSolved(){
   }
 
   const problems = [...new Set(placedPieces.map(pieceProblem).filter(Boolean))];
+  // A piece on a hidden gap silently prevents solving: no glow, no message
+  const onHiddenGap = placedPieces.some(coversHiddenGap);
 
-  if(!oddRows.length && !oddCols.length && !problems.length){
+  if(!oddRows.length && !oddCols.length && !problems.length && !onHiddenGap){
     solved = true;
     statusEl.textContent = '';
     document.getElementById('solved-time').textContent = 'Your time: ' + formatElapsed(Date.now() - startTime);

@@ -22,7 +22,7 @@
   --rules-even:          #6fae5a;    /* green highlighter: even row/column */
   --rules-odd:           #e0484f;    /* red highlighter: odd row/column, "not allowed" mark */
   --rules-highlight-opacity: 0.55;   /* red highlighter strength (matches the game) */
-  --rules-highlight-even-opacity: 0.3;  /* green is lighter so the red mistakes stand out */
+  --rules-highlight-even-opacity: 0.55;  /* green highlighter strength */
   --rules-board:         #1c1714;    /* frame behind picture boards */
   --rules-cell:          #443830;    /* an empty square in pictures */
   --rules-gap-x:         #e05252;    /* the X on a gap square */
