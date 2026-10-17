@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  PARITY BLOCKS: PUZZLE ANALYZER  (admin tool, not linked from the game)
+  ═══════════════════════════════════════════════════════════════════════
+  Pick a puzzle → Analyze → see every way the pieces fit (every "tiling"),
+  which of them pass the parity rule, and a verdict. Step through tilings,
+  download the results as JSON, or use the finder to search for new piece
+  sets on the same board.
+
+  All the solving happens in solver.js, inside a Web Worker so this page
+  never freezes. Everything works offline, even opened straight from disk.
+
+  Files used:  puzzles.js  (the puzzles)
+               solver.js   (the solver, pure JS)
+               shapes.js   (board pictures, shared with the rules popup)
+               rules.css   (colors for those pictures)
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parity Blocks: Puzzle Analyzer</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="stylesheet" href="rules.css">
+<style>
+  :root {
+    --bg: #241f1c;
+    --panel: #332a25;
+    --border: #4d3f36;
+    --text: #e8ddd0;
+    --dim: #a3937f;
+    --accent: #d99a4e;
+    --good: #6fae5a;
+    --bad: #e0484f;
+    --button: #4f8a8b;
+    --button-alt: #4d3f36;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, 'Segoe UI', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    padding: 20px 16px 40px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 1.4rem; color: var(--accent); }
+  h1 small { font-size: 0.85rem; color: var(--dim); font-weight: 400; margin-left: 8px; }
+  h2 { font-size: 1.05rem; color: var(--accent); margin-bottom: 10px; }
+  a { color: var(--accent); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .muted { color: var(--dim); }
+
+  button, select, input[type=number] {
+    font: inherit;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    padding: 7px 12px;
+  }
+  button { background: var(--button); border-color: transparent; color: #fff; cursor: pointer; font-weight: 600; }
+  button.alt { background: var(--button-alt); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  input[type=number] { width: 64px; }
+
+  .progress { flex: 1 1 200px; height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.15s; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .stat { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 1.5rem; }
+  .verdict { font-weight: 700; font-size: 1.1rem; }
+  .verdict.good { color: var(--good); }
+  .verdict.bad  { color: var(--bad); }
+
+  .viewer { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .board-box { flex: 0 0 auto; }
+  .details { flex: 1 1 260px; min-width: 0; }
+  .details ul { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+  .pass { color: var(--good); font-weight: 700; }
+  .fail { color: var(--bad); font-weight: 700; }
+  .legend { margin-top: 10px; font-size: 0.9rem; color: var(--dim); }
+  .legend svg { vertical-align: middle; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--dim); font-weight: 600; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: rgba(255,255,255,0.05); }
+  .finder-list { max-height: 360px; overflow-y: auto; }
+
+  textarea { width: 100%; min-height: 140px; margin-top: 8px; font: 12px/1.4 ui-monospace, Menlo, monospace;
+             background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Puzzle Analyzer <small>admin tool &middot; <a href="index.html">back to the game</a></small></h1>
+
+  <!-- ── 1. Choose + analyze ── -->
+  <section class="panel">
+    <div class="row">
+      <label for="puzzle-select">Puzzle</label>
+      <select id="puzzle-select"></select>
+      <button id="analyze-btn">Analyze puzzle</button>
+      <button id="cancel-btn" class="alt" hidden>Cancel</button>
+      <div class="progress" id="progress" hidden><div></div></div>
+      <span class="muted" id="progress-text"></span>
+    </div>
+    <p class="muted" id="puzzle-info" style="margin-top:8px;"></p>
+  </section>
+
+  <!-- ── 2. Results ── -->
+  <section class="panel" id="results" hidden>
+    <h2>Results</h2>
+    <div class="stats">
+      <div class="stat"><span class="muted">Total tilings</span><b id="stat-total"></b></div>
+      <div class="stat"><span class="muted">Pass parity</span><b id="stat-pass"></b></div>
+      <div class="stat"><span class="muted">Time</span><b id="stat-time"></b></div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <p class="muted" id="truncated-note" hidden></p>
+
+    <div class="row" style="margin-top:14px;">
+      <button id="prev-btn" class="alt">&larr; Prev</button>
+      <span id="step-label"></span>
+      <button id="next-btn" class="alt">Next &rarr;</button>
+      <label><input type="checkbox" id="parity-only"> Parity-passing only</label>
+      <span style="flex:1"></span>
+      <button id="download-btn" class="alt">Download JSON</button>
+    </div>
+
+    <div class="viewer" style="margin-top:14px;">
+      <div class="board-box" id="board-box"></div>
+      <div class="details">
+        <p id="tiling-status"></p>
+        <ul id="placement-list"></ul>
+        <p class="legend" id="legend"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. Puzzle finder ── -->
+  <section class="panel">
+    <h2>Puzzle finder</h2>
+    <p class="muted">Uses the selected puzzle's board and blocked squares. Tries every combination of
+      pentominoes and lists the ones with exactly one parity solution, most tilings (hardest) first.
+      Click one to load it.</p>
+    <div class="row" style="margin-top:10px;">
+      <label for="finder-n">Pieces</label>
+      <input type="number" id="finder-n" min="1" max="12" value="6">
+      <button id="find-btn">Find puzzles</button>
+      <button id="find-cancel-btn" class="alt" hidden>Cancel</button>
+      <div class="progress" id="find-progress" hidden><div></div></div>
+      <span class="muted" id="find-text"></span>
+    </div>
+    <div class="finder-list" id="finder-list" hidden>
+      <table>
+        <thead><tr><th>#</th><th>Pieces</th><th>Total tilings</th></tr></thead>
+        <tbody id="finder-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── 4. Export a found puzzle ── -->
+  <section class="panel" id="export" hidden>
+    <h2>Add this puzzle to the game</h2>
+    <p class="muted">Paste this entry into <code>PUZZLES</code> in puzzles.js, change the id and title
+      if you like, then link it from a difficulty button in index.html.</p>
+    <textarea id="export-text" readonly></textarea>
+    <div class="row" style="margin-top:8px;"><button id="copy-btn" class="alt">Copy</button><span class="muted" id="copy-note"></span></div>
+  </section>
+
+</div>
+
+<script src="puzzles.js"></script>
+<script src="shapes.js"></script>
+<script src="solver.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
+// Puzzles on offer: everything in puzzles.js, plus any loaded from the finder
+const puzzles = Object.assign({}, PUZZLES);
+let currentKey = Object.keys(puzzles)[0];
+let analysis = null;     // last analyzePuzzle() result for currentKey
+let view = [];           // indices into analysis.tilings currently being stepped through
+let viewPos = 0;
+let worker = null;       // the running job, if any
+
+/* ═══════════════════════════════════════════════════════════════════
+   PUZZLE → SOLVER CONFIG
+   Hidden blocked squares are simply part of `blocked` (they're only
+   hidden from players). The dotted outline becomes `dotted`.
+═══════════════════════════════════════════════════════════════════ */
+function solverConfig(p){
+  return {
+    rows: p.rows, cols: p.cols,
+    blocked: p.blocked || [],
+    dotted: p.hintOutline || [],
+    pieces: p.pieces.map(d=>({ name: d.name, cells: d.cells })),
+  };
+}
+function colorOf(p, name){
+  const d = p.pieces.find(q=>q.name === name);
+  return d && d.color || ParitySolver.pentomino(name).color;
+}
+
+function renderSelect(){
+  const sel = $('puzzle-select');
+  sel.innerHTML = '';
+  Object.keys(puzzles).forEach(k=>{
+    const o = document.createElement('option');
+    o.value = k; o.textContent = puzzles[k].title + '  (' + k + ')';
+    sel.appendChild(o);
+  });
+  sel.value = currentKey;
+}
+
+function renderPuzzleInfo(){
+  const p = puzzles[currentKey];
+  const open = p.rows*p.cols - (p.blocked || []).length;
+  const empty = open - 5*p.pieces.length;
+  const extras = [];
+  if(p.hiddenBlocked && p.hiddenBlocked.length) extras.push(p.hiddenBlocked.length + ' of them hidden from players');
+  if(p.hintOutline && p.hintOutline.length) extras.push('has a dotted outline (pieces can’t cross it)');
+  $('puzzle-info').textContent =
+    `${p.rows}×${p.cols} board · ${(p.blocked||[]).length} blocked squares` + (extras.length ? ' (' + extras.join('; ') + ')' : '') +
+    ` · pieces ${p.pieces.map(d=>d.name).join(' ')} · ${open} open squares − 5×${p.pieces.length} = ${empty} empty cell${empty===1?'':'s'} in every tiling`;
+}
+
+function selectPuzzle(key){
+  if(worker) stopWorker();
+  currentKey = key;
+  analysis = null;
+  $('results').hidden = true;
+  $('export').hidden = !puzzles[key].fromFinder;
+  if(puzzles[key].fromFinder) $('export-text').value = exportEntry(key);
+  $('finder-n').value = puzzles[key].pieces.length;
+  renderSelect();
+  renderPuzzleInfo();
+  $('progress-text').textContent = '';
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   WORKER JOBS
+   Each job gets a fresh worker (ParitySolver.createWorker builds it from
+   solver.js's own source as a Blob URL, so no file is fetched). Cancel
+   simply terminates it.
+═══════════════════════════════════════════════════════════════════ */
+function runJob(message, ui, onResult){
+  stopWorker();
+  worker = ParitySolver.createWorker();
+  ui.start();
+  worker.onmessage = e=>{
+    const m = e.data;
+    if(m.type === 'progress') ui.progress(m);
+    else if(m.type === 'result'){ stopWorker(); ui.end(); onResult(m.result); }
+    else if(m.type === 'error'){ stopWorker(); ui.end('Error: ' + m.message); }
+  };
+  worker.onerror = e=>{ stopWorker(); ui.end('Worker error: ' + (e.message || 'unknown')); };
+  worker.postMessage(message);
+}
+function stopWorker(){
+  if(worker){ worker.terminate(); worker = null; }
+}
+
+function progressUI(barId, textId, buttonIds, cancelId, describe){
+  const bar = $(barId), fill = bar.firstElementChild, text = $(textId);
+  return {
+    start(){
+      bar.hidden = false; fill.style.width = '0%'; text.textContent = 'Starting…';
+      buttonIds.forEach(id=>$(id).disabled = true); $(cancelId).hidden = false;
+    },
+    progress(m){ fill.style.width = Math.round(m.fraction*100) + '%'; text.textContent = describe(m); },
+    end(msg){
+      bar.hidden = true; text.textContent = msg || '';
+      buttonIds.forEach(id=>$(id).disabled = false); $(cancelId).hidden = true;
+    },
+  };
+}
+const analyzeUI = progressUI('progress', 'progress-text', ['analyze-btn','find-btn'], 'cancel-btn',
+  m=>`${m.solutions.toLocaleString()} tilings found · ${Math.round(m.fraction*100)}%`);
+const findUI = progressUI('find-progress', 'find-text', ['analyze-btn','find-btn'], 'find-cancel-btn',
+  m=>`${m.checked} / ${m.combinations} combinations · ${m.found} qualify so far`);
+
+$('cancel-btn').onclick = ()=>{ stopWorker(); analyzeUI.end('Cancelled.'); };
+$('find-cancel-btn').onclick = ()=>{ stopWorker(); findUI.end('Cancelled.'); };
+
+/* ═══════════════════════════════════════════════════════════════════
+   ANALYZE
+═══════════════════════════════════════════════════════════════════ */
+$('analyze-btn').onclick = ()=>{
+  const key = currentKey;
+  runJob({ type:'analyze', config: solverConfig(puzzles[key]) }, analyzeUI, result=>{
+    if(key !== currentKey) return;
+    analysis = result;
+    showResults();
+  });
+};
+
+function verdictText(n){
+  if(n === 1) return ['good', 'Good puzzle: exactly one tiling passes parity.'];
+  if(n === 0) return ['bad', 'Not a good puzzle: no tiling passes parity, so it can’t be solved.'];
+  return ['bad', `Not a good puzzle: ${n.toLocaleString()} tilings pass parity, so the answer isn’t unique.`];
+}
+
+function showResults(){
+  $('results').hidden = false;
+  $('stat-total').textContent = analysis.totalTilings.toLocaleString();
+  $('stat-pass').textContent = analysis.paritySolutions.toLocaleString();
+  $('stat-time').textContent = analysis.solveTimeMs < 1000 ? analysis.solveTimeMs + ' ms' : (analysis.solveTimeMs/1000).toFixed(1) + ' s';
+  const [cls, text] = verdictText(analysis.paritySolutions);
+  $('verdict').className = 'verdict ' + cls;
+  $('verdict').textContent = text;
+  $('truncated-note').hidden = !analysis.tilingsTruncated;
+  $('truncated-note').textContent = `Only the first ${analysis.tilings.length.toLocaleString()} tilings are kept for stepping through and download; the counts above include all of them.`;
+  // Default to the parity-passing ones when there are any
+  $('parity-only').checked = analysis.paritySolutions > 0;
+  rebuildView();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STEPPING THROUGH TILINGS
+═══════════════════════════════════════════════════════════════════ */
+function rebuildView(){
+  const only = $('parity-only').checked;
+  view = analysis.tilings.map((t,i)=>i).filter(i=>!only || analysis.tilings[i].parity);
+  viewPos = 0;
+  showTiling();
+}
+$('parity-only').onchange = ()=>{ if(analysis) rebuildView(); };
+$('prev-btn').onclick = ()=>{ if(viewPos > 0){ viewPos--; showTiling(); } };
+$('next-btn').onclick = ()=>{ if(viewPos < view.length-1){ viewPos++; showTiling(); } };
+document.addEventListener('keydown', e=>{
+  if(!analysis || e.target.matches('input, select, textarea')) return;
+  if(e.key === 'ArrowLeft') $('prev-btn').click();
+  if(e.key === 'ArrowRight') $('next-btn').click();
+});
+
+function boardCellSize(p){
+  const avail = Math.min(560, document.querySelector('.wrap').clientWidth - 80);
+  return Math.max(22, Math.min(64, Math.floor(avail / Math.max(p.rows, p.cols)) - 4));
+}
+
+function showTiling(){
+  const p = puzzles[currentKey];
+  const box = $('board-box'), list = $('placement-list');
+  box.innerHTML = ''; list.innerHTML = '';
+  $('prev-btn').disabled = viewPos <= 0;
+  $('next-btn').disabled = viewPos >= view.length-1;
+
+  if(!view.length){
+    $('step-label').textContent = 'No tilings to show';
+    $('tiling-status').textContent = $('parity-only').checked ? 'No tiling passes parity. Untick the filter to see the others.' : 'The pieces can’t be placed at all.';
+    box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell:boardCellSize(p), gaps:p.blocked, dotted:p.hintOutline }));
+    $('legend').innerHTML = '';
+    return;
+  }
+
+  const t = analysis.tilings[view[viewPos]];
+  $('step-label').textContent = `Tiling ${viewPos+1} of ${view.length.toLocaleString()}` + ($('parity-only').checked ? ' (parity-passing)' : '') + ` · #${t.index}`;
+
+  // Solver placements are absolute cells; miniBoard wants cells relative to a top-left row/col
+  const pieces = t.placements.map(pl=>{
+    const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));
+    return { color: colorOf(p, pl.piece), row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
+  });
+  box.appendChild(miniBoard({
+    rows: p.rows, cols: p.cols, cell: boardCellSize(p),
+    pieces, gaps: p.blocked, dotted: p.hintOutline,
+    show: 'odd', markEmpty: true,
+  }));
+
+  const rc = arr=>arr.map(n=>n).join(', ');
+  $('tiling-status').innerHTML = t.parity
+    ? '<span class="pass">Passes parity</span>: every row and column is even.'
+    : '<span class="fail">Fails parity</span>' +
+      (t.failingRows.length ? ` · odd row${t.failingRows.length>1?'s':''} ${rc(t.failingRows)}` : '') +
+      (t.failingCols.length ? ` · odd column${t.failingCols.length>1?'s':''} ${rc(t.failingCols)}` : '') +
+      ' <span class="muted">(numbered from 0, top / left)</span>';
+  t.placements.forEach(pl=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="swatch" style="background:${colorOf(p, pl.piece)}"></span><b>${pl.piece}</b> <span class="muted">${pl.cells.map(c=>'['+c+']').join(' ')}</span>`;
+    list.appendChild(li);
+  });
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="muted">Empty cells: ${t.gaps.map(c=>'['+c+']').join(' ') || 'none'}</span>`;
+  list.appendChild(li);
+  $('legend').innerHTML =
+    '<svg width="18" height="18"><circle cx="9" cy="9" r="6" class="rb-empty"/></svg> empty cell &nbsp; ' +
+    '<svg width="34" height="14"><rect x="0" y="2" width="34" height="10" rx="2" class="rb-hl rb-odd"/></svg> odd row / column &nbsp; ' +
+    'numbers = filled squares per row (right) and column (below)';
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DOWNLOAD JSON
+═══════════════════════════════════════════════════════════════════ */
+$('download-btn').onclick = ()=>{
+  if(!analysis) return;
+  const blob = new Blob([JSON.stringify(analysis, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `analysis-${currentKey}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   PUZZLE FINDER
+═══════════════════════════════════════════════════════════════════ */
+$('find-btn').onclick = ()=>{
+  const base = puzzles[currentKey];
+  const n = Math.max(1, Math.min(12, parseInt($('finder-n').value, 10) || 6));
+  const board = { rows: base.rows, cols: base.cols, blocked: base.blocked || [], dotted: base.hintOutline || [] };
+  $('finder-list').hidden = true;
+  runJob({ type:'find', board, n }, findUI, result=>{
+    findUI.end(`${result.qualifying.length} of ${result.combinationsChecked} combinations have exactly one parity solution · ${(result.solveTimeMs/1000).toFixed(1)} s`);
+    renderFinder(result, base);
+  });
+};
+
+function renderFinder(result, base){
+  const body = $('finder-body');
+  body.innerHTML = '';
+  $('finder-list').hidden = !result.qualifying.length;
+  result.qualifying.forEach((q, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td><b>${q.pieces.join(' ')}</b></td><td>${q.totalTilings.toLocaleString()}</td>`;
+    tr.onclick = ()=>loadFound(q, base);
+    body.appendChild(tr);
+  });
+}
+
+// Make a puzzle from a finder result: same board as `base`, these pieces
+function loadFound(q, base){
+  const key = 'found-' + q.pieces.join('').toLowerCase() + '-' + base.rows + 'x' + base.cols;
+  puzzles[key] = {
+    title: 'Found: ' + q.pieces.join(' '),
+    rows: base.rows, cols: base.cols,
+    blocked: (base.blocked || []).map(rc=>rc.slice()),
+    hiddenBlocked: base.hiddenBlocked ? base.hiddenBlocked.map(rc=>rc.slice()) : undefined,
+    hintOutline: base.hintOutline ? base.hintOutline.map(rc=>rc.slice()) : undefined,
+    hintText: base.hintText,
+    pieces: q.pieces.map(name=>{ const d = ParitySolver.pentomino(name); return { name, color: d.color, cells: d.cells.map(c=>c.slice()) }; }),
+    fromFinder: true,
+  };
+  selectPuzzle(key);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('analyze-btn').click();
+}
+
+// A ready-to-paste puzzles.js entry for a found puzzle
+function exportEntry(key){
+  const p = puzzles[key];
+  const cells = arr=>'[' + arr.map(c=>'[' + c.join(',') + ']').join(',') + ']';
+  const lines = [
+    `  '${key}': {`,
+    `    title: '${p.title.replace(/'/g, "\\'")}',`,
+    `    rows: ${p.rows}, cols: ${p.cols},`,
+    `    blocked: ${cells(p.blocked)},`,
+  ];
+  if(p.hiddenBlocked) lines.push(`    hiddenBlocked: ${cells(p.hiddenBlocked)},`);
+  if(p.hintOutline) lines.push(`    hintOutline: ${cells(p.hintOutline)},`);
+  if(p.hintText) lines.push(`    hintText: '${p.hintText.replace(/'/g, "\\'")}',`);
+  lines.push('    pieces: [');
+  p.pieces.forEach(d=>lines.push(`      { name:'${d.name}', color:'${d.color}', cells:${cells(d.cells)} },`));
+  lines.push('    ]', '  },');
+  return lines.join('\n');
+}
+$('copy-btn').onclick = ()=>{
+  const ta = $('export-text');
+  ta.select();
+  const done = ok=>{ $('copy-note').textContent = ok ? 'Copied.' : 'Select the text and copy it with Cmd+C.'; };
+  if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(()=>done(true), ()=>done(document.execCommand('copy')));
+  else done(document.execCommand('copy'));
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   START
+   analyzer.html?puzzle=<key> preselects a puzzle.
+═══════════════════════════════════════════════════════════════════ */
+$('puzzle-select').onchange = e=>selectPuzzle(e.target.value);
+const wanted = new URLSearchParams(location.search).get('puzzle');
+if(wanted && puzzles[wanted]) currentKey = wanted;
+selectPuzzle(currentKey);
+window.addEventListener('resize', ()=>{ if(analysis) showTiling(); });
+</script>
+</body>
+</html>

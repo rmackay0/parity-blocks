@@ -159,3 +159,130 @@ function buildHighlighterPath(x0, y0, x1, y1, thickness, seed){
     + ' Q' + pt(am, h + rand()*wob*2) + ' ' + pt(a0, h + rand()*wob)
     + ' Z';
 }
+
+/* ── Static board pictures ──
+   Used by the rules popup (rules.js) and the puzzle analyzer
+   (analyzer.html). Styled by the rb-* classes in rules.css. */
+function svgEl(tag, attrs, parent){
+  const el = document.createElementNS(SVG_NS, tag);
+  Object.entries(attrs || {}).forEach(([k,v])=>el.setAttribute(k, v));
+  if(parent) parent.appendChild(el);
+  return el;
+}
+
+function drawPiece(parent, cells, color, x, y, cell, gap){
+  const g = svgEl('g', { transform:`translate(${x},${y})` }, parent);
+  svgEl('path', { d: buildFillPath(cells, cell, gap), fill: color }, g);
+  const div = buildDividers(cells, cell, gap);
+  if(div) svgEl('path', { d: div, class:'rb-divider' }, g);
+  svgEl('path', { d: buildOutlinePath(cells, cell, gap), class:'rb-outline' }, g);
+  return g;
+}
+
+// The red "not allowed" mark: a circle with a cross through it
+function drawNoMark(parent, cx, cy, radius){
+  svgEl('circle', { cx, cy, r: radius, class:'rb-no' }, parent);
+  const k = radius * 0.5;
+  svgEl('path', { d:`M${cx-k},${cy-k} L${cx+k},${cy+k} M${cx+k},${cy-k} L${cx-k},${cy+k}`, class:'rb-no-x' }, parent);
+}
+
+/* A picture of a board, as an <svg>.
+   opts:
+     rows, cols, cell   board size and square size in px
+     pieces             [{cells, color, row, col}]
+     gaps               [[r,c]] blocked squares (drawn with an X)
+     show               'rows' | 'cols': green/red highlighter on every row or
+                        column, with counts.  'solved': counts only.
+                        'odd': red highlighter on odd rows AND columns only,
+                        counts on both sides (used by the analyzer).
+     markEmpty          true: draw a ring in every open square no piece covers
+     dotted             [[r,c]] region to trace with a dotted line
+     noMarkOn           a piece to draw the red "not allowed" mark over */
+function miniBoard(opts){
+  const { rows, cols, cell, pieces = [], gaps = [], show = null, dotted = null } = opts;
+  const gap = 3, pad = 6, label = 26;   // label = space for the row/column counts
+  const step = cell + gap;
+  const boardW = cols*cell + (cols-1)*gap + 2*pad;
+  const boardH = rows*cell + (rows-1)*gap + 2*pad;
+  const rightLabels  = show === 'rows' || show === 'solved' || show === 'odd';
+  const bottomLabels = show === 'cols' || show === 'solved' || show === 'odd';
+  // Room for counts on both sides whenever any are shown, so pictures
+  // side by side are the same size and their captions line up
+  // m = margin around the board so highlighter strokes can run past its edge
+  const m = show ? 8 : 0;
+  const w = boardW + (show ? label : 0) + 2*m;
+  const h = boardH + (show ? label : 0) + 2*m;
+  const outer = svgEl('svg', { width: w, height: h, viewBox:`0 0 ${w} ${h}`, 'aria-hidden':'true' });
+  const svg = svgEl('g', { transform:`translate(${m},${m})` }, outer);
+
+  svgEl('rect', { x:0, y:0, width:boardW, height:boardH, rx:8, class:'rb-frame' }, svg);
+  const isGap = (r,c)=>gaps.some(([gr,gc])=>gr===r && gc===c);
+  for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
+    const x = pad + c*step, y = pad + r*step;
+    if(isGap(r,c)){
+      svgEl('rect', { x:x+0.5, y:y+0.5, width:cell-1, height:cell-1, rx:3, class:'rb-gap' }, svg);
+      const k = cell*0.28;
+      svgEl('path', { d:`M${x+cell/2-k},${y+cell/2-k} L${x+cell/2+k},${y+cell/2+k} M${x+cell/2+k},${y+cell/2-k} L${x+cell/2-k},${y+cell/2+k}`, class:'rb-gap-x' }, svg);
+    } else {
+      svgEl('rect', { x, y, width:cell, height:cell, rx:3, class:'rb-cell' }, svg);
+    }
+  }
+
+  pieces.forEach(p=>drawPiece(svg, p.cells, p.color, pad + p.col*step, pad + p.row*step, cell, gap));
+
+  if(opts.markEmpty){
+    const covered = new Set();
+    pieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
+    for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
+      if(isGap(r,c) || covered.has(r+','+c)) continue;
+      svgEl('circle', { cx: pad + c*step + cell/2, cy: pad + r*step + cell/2, r: cell*0.22, class:'rb-empty' }, svg);
+    }
+  }
+
+  if(dotted){
+    const minR = Math.min(...dotted.map(c=>c[0])), minC = Math.min(...dotted.map(c=>c[1]));
+    const rel = dotted.map(([r,c])=>[r-minR, c-minC]);
+    svgEl('path', { d: buildOutlinePath(rel, cell, gap), class:'rb-dotted', transform:`translate(${pad + minC*step},${pad + minR*step})` }, svg);
+  }
+
+  // Count filled blocks per row/column and mark each green (even) or red (odd)
+  if(show){
+    const filled = new Set();
+    pieces.forEach(p=>p.cells.forEach(([r,c])=>filled.add((p.row+r)+','+(p.col+c))));
+    const rowCount = r=>{ let n=0; for(let c=0;c<cols;c++) if(filled.has(r+','+c)) n++; return n; };
+    const colCount = c=>{ let n=0; for(let r=0;r<rows;r++) if(filled.has(r+','+c)) n++; return n; };
+    const cls = n=>(n % 2 ? 'rb-odd' : 'rb-even');
+
+    // Highlighter strokes, same look as the game (buildHighlighterPath in
+    // shapes.js), running a little past the board's edge
+    const thick = cell * 0.65, over = m;
+    const rowMark = r=>{ const y = pad + r*step + cell/2;
+      svgEl('path', { d: buildHighlighterPath(-over, y, boardW+over, y, thick, r+1), class:'rb-hl '+cls(rowCount(r)) }, svg); };
+    const colMark = c=>{ const x = pad + c*step + cell/2;
+      svgEl('path', { d: buildHighlighterPath(x, -over, x, boardH+over, thick, c+11), class:'rb-hl '+cls(colCount(c)) }, svg); };
+    if(show === 'rows')   for(let r=0; r<rows; r++) rowMark(r);
+    if(show === 'cols')   for(let c=0; c<cols; c++) colMark(c);
+    if(show === 'odd'){
+      for(let r=0; r<rows; r++) if(rowCount(r) % 2) rowMark(r);
+      for(let c=0; c<cols; c++) if(colCount(c) % 2) colMark(c);
+    }
+    // 'solved' draws no strokes, just the all-green counts
+
+    if(rightLabels) for(let r=0; r<rows; r++){
+      const t = svgEl('text', { x: boardW + m + label/2, y: pad + r*step + cell/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(rowCount(r)) }, svg);
+      t.textContent = rowCount(r);
+    }
+    if(bottomLabels) for(let c=0; c<cols; c++){
+      const t = svgEl('text', { x: pad + c*step + cell/2, y: boardH + m + label/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(colCount(c)) }, svg);
+      t.textContent = colCount(c);
+    }
+  }
+
+  if(opts.noMarkOn){
+    const p = opts.noMarkOn, b = bounds(p.cells);
+    const cx = pad + p.col*step + (b.cols*step - gap)/2;
+    const cy = pad + p.row*step + (b.rows*step - gap)/2;
+    drawNoMark(svg, cx, cy, cell*0.8);
+  }
+  return outer;
+}

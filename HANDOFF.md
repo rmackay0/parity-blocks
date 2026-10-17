@@ -53,6 +53,34 @@ reference below to `index.html` now means `sandbox.html`.
 - **`shapes.js`** holds the shared piece geometry + SVG drawing
   (`rotateCells`, `reflectCells`, `buildOutlinePath`, `buildPieceShape`…),
   used by play.html and rules.js. The sandbox still has its own copy.
+- **Solver + analyzer (built 2026-10-17)** — supersedes the "Solver (not
+  built yet)" plan further down (it ended up in-browser on an admin page,
+  not a Node-only script, at the user's request).
+  - `solver.js`: pure JS, no deps, heavily commented for learning. DLX
+    (Algorithm X): one PRIMARY column per piece (exactly once), one
+    SECONDARY column per open cell (at most once → empty cells allowed),
+    fewest-options heuristic, enumerates ALL tilings, then parity-checks
+    each. Hidden blocked cells are just `blocked`; placements crossing a
+    `hintOutline` are excluded (matches the game). `findPuzzles` tries
+    every C(12,n) pentomino set on a board. Wrapped in one function
+    (`ParitySolverModule`) so `createWorker()` can build a Web Worker
+    from its own source via a Blob URL (works from file://, offline).
+    Exports for Node (`require`) and as `window.ParitySolver`.
+  - `analyzer.html`: admin page (not linked from the game). Analyze with
+    progress/cancel, summary + verdict, step through tilings (parity-only
+    filter, empty cells ringed, odd rows/cols highlighted), Download JSON
+    in the user's format, puzzle finder (click to load; shows a
+    paste-ready `puzzles.js` entry). Terminology: the JSON says "gaps",
+    the screen says "empty cells", because the game/rules popup already
+    uses "gap" for an X square.
+  - `miniBoard`/`svgEl`/`drawPiece` moved from rules.js to shapes.js
+    (shared with the analyzer); new `show:'odd'` and `markEmpty` options.
+  - Tests: `node tests/solver.test.js` (46 checks: orientations, parity,
+    tiny hand-checkable boards, the Hard puzzle = 74 tilings / 1 parity
+    solution with exact placements, finder = 74 qualifying sets of 924).
+  - Findings: Hard = 74 tilings, 1 parity solution. Medium has only ONE
+    tiling at all (30 open cells, 30 piece cells), so its parity rule
+    never actually decides anything.
 - **`puzzles.js`** holds `PUZZLES` (moved out of the sandbox 2026-10-16) and
   is loaded by both `play.html` and `sandbox.html` via `<script src>` —
   edit puzzles there only.
