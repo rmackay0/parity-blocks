@@ -54,6 +54,8 @@
     --color-invalid-bg:   #5a3838;
     --color-blocked-x:    #e05252;   /* the X on a blocked square */
     --color-select:       #f2c48a;   /* ring around a selected piece at the top */
+    --color-highlight:    #e0484f;   /* highlighter over an uneven row/column */
+    --color-status:       #ef8a8a;   /* "Uneven rows" message above the board */
     --color-reflect:      #7d5a78;   /* Reflect button */
     --color-rotate:       #4f8a8b;   /* Rotate button */
     --color-button-text:  #ffffff;
@@ -70,9 +72,15 @@
     --button-width:    170px;  /* each of Reflect / Rotate */
     --button-height:   56px;
     --button-radius:   14px;
+
+    /* Highlighter marks on uneven rows/columns */
+    --highlight-opacity:   0.55;  /* 0 = invisible, 1 = solid */
+    --highlight-thickness: 0.7;   /* stroke width, as a fraction of one square */
+    --highlight-overhang:  18px;  /* how far it runs past the grid's edge */
   }
   @media (max-width: 480px) {
     :root { --tray-cell: 13px; --tray-gap: 6px; --button-width: 140px; }
+    .status { font-size: 1.15rem; }
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -186,15 +194,28 @@
   }
   .board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid); }
   .board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid); }
-  /* Every piece placed but this row/column has an odd count */
-  .board-cell.parity-odd { box-shadow: inset 0 0 0 3px var(--color-invalid); }
-
-  #pieces-layer, #hint-overlay {
+  #pieces-layer, #hint-overlay, #mark-overlay {
     position: absolute;
     inset: var(--board-pad);
     pointer-events: none;
   }
   #hint-overlay { z-index: 5; }
+
+  /* Highlighter marks over uneven rows/columns once every piece is placed.
+     Drawn above the pieces, running a little past the edge of the grid. */
+  #mark-overlay { z-index: 6; overflow: visible; }
+  .highlight { fill: var(--color-highlight); opacity: var(--highlight-opacity); }
+
+  /* [CONTENT] Message above the board ("Uneven rows" etc.). Its space is
+     always reserved so the board doesn't jump when it appears. */
+  .status {
+    flex: 0 0 auto;
+    min-height: 1.6rem;
+    font-size: 1.4rem;
+    line-height: 1.6rem;
+    color: var(--color-status);
+    text-align: center;
+  }
 
   .placed-piece { position: absolute; }
   .placed-piece .blk { pointer-events: auto; cursor: grab; touch-action: none; }
@@ -296,11 +317,14 @@
 
   <div class="tray" id="tray" aria-label="Available pieces"></div>
 
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
   <div class="board-wrap" id="board-wrap">
     <div id="board-outer">
       <div id="board"></div>
       <div id="pieces-layer"></div>
       <div id="hint-overlay"></div>
+      <svg id="mark-overlay" aria-hidden="true"></svg>
     </div>
   </div>
 
@@ -356,6 +380,7 @@ const rotateBtn     = document.getElementById('rotate-btn');
 function cssPx(name){
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
 }
+const cssNum = cssPx;   // same parsing; for unitless settings like --highlight-thickness
 
 let CELL = 48;   // board square size, recomputed by fitBoard() to fill the space
 let GAP = 4;
@@ -493,13 +518,19 @@ function renderTray(){
   });
 }
 
+function boardFull(){ return placedPieces.length === puzzle.pieces.length; }
+
 function renderBoardPieces(){
   piecesLayerEl.querySelectorAll('.placed-piece').forEach(el=>el.remove());
+  // A bad drop glows red while you're still placing pieces. Once every
+  // piece is down, nothing glows: the message above the board and the
+  // highlighter marks explain what's wrong instead (see checkSolved).
+  const showInvalid = !boardFull();
   placedPieces.forEach(p=>{
     const wrap = document.createElement('div');
     wrap.className = 'placed-piece'
       + (selection && selection.kind==='board' && selection.id===p.id ? ' selected' : '')
-      + (invalidIds.has(p.id) ? ' invalid' : '');
+      + (showInvalid && invalidIds.has(p.id) ? ' invalid' : '');
     wrap.style.left = pxPos(p.col) + 'px';
     wrap.style.top = pxPos(p.row) + 'px';
     wrap.dataset.id = p.id;
@@ -677,23 +708,76 @@ function onPointerUp(e){
 
 /* ═══════════════════════════════════════════════════════════════════
    WIN CHECK
-   Solved = every piece placed, none overlapping/off-grid/on a blocked
-   square, and every row and column has an even number of filled squares.
-   Once all pieces are down but some row/column is odd, those are outlined
-   in red.
+   Solved = every piece placed, none overlapping/off-grid/on a gap/across
+   a dotted line, and every row and column has an even number of filled
+   squares.
+   Once every piece is down but it isn't solved: uneven rows/columns get a
+   red highlighter mark, and the message above the board says what's wrong
+   ("Uneven rows and column", "A piece is on a gap", ...).
 ═══════════════════════════════════════════════════════════════════ */
+const statusEl = document.getElementById('status');
+const markOverlayEl = document.getElementById('mark-overlay');
+
+// [CONTENT] Messages for a piece that breaks a placement rule
+const PROBLEM_TEXT = {
+  overlap: 'Pieces overlap',
+  off:     'A piece is off the board',
+  gap:     'A piece is on a gap',
+  dotted:  'A piece crosses a dotted line',
+};
+
 function formatElapsed(ms){
   const s = Math.max(0, Math.floor(ms/1000));
   return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
 }
 
-function checkSolved(){
-  boardEl.querySelectorAll('.parity-odd').forEach(el=>el.classList.remove('parity-odd'));
-  if(solved) return;
-  if(placedPieces.length !== puzzle.pieces.length || invalidIds.size) return;
+// "Uneven row", "Uneven rows", "Uneven row and columns", ...
+function unevenMessage(rowCount, colCount){
+  const parts = [];
+  if(rowCount) parts.push(rowCount === 1 ? 'row' : 'rows');
+  if(colCount) parts.push(colCount === 1 ? 'column' : 'columns');
+  return parts.length ? 'Uneven ' + parts.join(' and ') : '';
+}
 
+// Which placement rule a piece breaks (null if it's fine)
+function pieceProblem(p){
+  const occ = occupiedExcept(p.id);
+  const abs = p.cells.map(([r,c])=>[p.row+r, p.col+c]);
+  if(abs.some(([r,c])=>!inBounds(r,c))) return 'off';
+  if(abs.some(([r,c])=>isBlocked(r,c))) return 'gap';
+  if(abs.some(([r,c])=>occ.has(r+','+c))) return 'overlap';
+  if(crossesDottedLine(p.cells, p.row, p.col)) return 'dotted';
+  return null;
+}
+
+function drawUnevenMarks(oddRows, oddCols){
+  markOverlayEl.innerHTML = '';
+  const w = puzzle.cols*CELL + (puzzle.cols-1)*GAP;
+  const h = puzzle.rows*CELL + (puzzle.rows-1)*GAP;
+  markOverlayEl.setAttribute('width', w);
+  markOverlayEl.setAttribute('height', h);
+  const thick = CELL * cssNum('--highlight-thickness');
+  const over = cssPx('--highlight-overhang');
+  oddRows.forEach(r=>{
+    const y = pxPos(r) + CELL/2;
+    markOverlayEl.appendChild(svgPath(buildHighlighterPath(-over, y, w+over, y, thick, r+1), { class:'highlight' }));
+  });
+  oddCols.forEach(c=>{
+    const x = pxPos(c) + CELL/2;
+    markOverlayEl.appendChild(svgPath(buildHighlighterPath(x, -over, x, h+over, thick, c+11), { class:'highlight' }));
+  });
+}
+
+function checkSolved(){
+  markOverlayEl.innerHTML = '';
+  if(solved) return;
+  if(!boardFull()){ statusEl.textContent = ''; return; }
+
+  // Count filled squares on the board (overlapping squares count once)
   const filled = new Set();
-  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>filled.add((p.row+r)+','+(p.col+c))));
+  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
+    if(inBounds(p.row+r, p.col+c)) filled.add((p.row+r)+','+(p.col+c));
+  }));
   const oddRows = [], oddCols = [];
   for(let r=0; r<puzzle.rows; r++){
     let n = 0;
@@ -706,14 +790,18 @@ function checkSolved(){
     if(n % 2) oddCols.push(c);
   }
 
-  if(!oddRows.length && !oddCols.length){
+  const problems = [...new Set(placedPieces.map(pieceProblem).filter(Boolean))];
+
+  if(!oddRows.length && !oddCols.length && !problems.length){
     solved = true;
+    statusEl.textContent = '';
     document.getElementById('solved-time').textContent = 'Your time: ' + formatElapsed(Date.now() - startTime);
     document.getElementById('solved-popup').hidden = false;
     return;
   }
-  oddRows.forEach(r=>boardEl.querySelectorAll(`.board-cell[data-r="${r}"]`).forEach(el=>el.classList.add('parity-odd')));
-  oddCols.forEach(c=>boardEl.querySelectorAll(`.board-cell[data-c="${c}"]`).forEach(el=>el.classList.add('parity-odd')));
+  drawUnevenMarks(oddRows, oddCols);
+  statusEl.textContent = [unevenMessage(oddRows.length, oddCols.length), ...problems.map(k=>PROBLEM_TEXT[k])]
+    .filter(Boolean).join(' · ');
 }
 document.getElementById('solved-close').addEventListener('click', ()=>{
   document.getElementById('solved-popup').hidden = true;

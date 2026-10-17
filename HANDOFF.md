@@ -33,6 +33,19 @@ reference below to `index.html` now means `sandbox.html`.
   pentominoes — deliberately not a real puzzle so the pictures never spoil
   a solution. Wording lives in `RULES_TEXT` at the top of rules.js. The
   old splash (i) button and its popup were removed.
+- **Mistake display in play.html (2026-10-16, user request)**: while
+  placing, a bad drop still glows red. Once **every piece is placed**,
+  pieces never glow red (the user found the last-placed piece glowing
+  misleading — it looked like "the" problem). Instead: uneven rows/columns
+  get a red **highlighter stroke** (`buildHighlighterPath` in shapes.js —
+  chisel ends, slight wobble, drawn over the pieces, overhanging the grid by
+  `--highlight-overhang`), and `#status` above the board says
+  "Uneven row/rows/column/columns", joined with "and", plus any placement
+  problem ("Pieces overlap", "A piece is on a gap", "A piece crosses a
+  dotted line", "A piece is off the board") without saying which piece.
+  The rules popup's Check pictures use the same strokes (green lighter
+  than red; the solved picture shows only green counts). The old
+  cell-outline `.parity-odd` style is gone.
 - **Dotted perimeter is now a real rule in play.html** (was only a visual
   hint): a piece must sit wholly inside or wholly outside
   `puzzle.hintOutline`, else it's invalid/red (`crossesDottedLine`). The

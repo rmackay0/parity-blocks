@@ -92,9 +92,12 @@ function miniBoard(opts){
   const bottomLabels = show === 'cols' || show === 'solved';
   // Room for counts on both sides whenever any are shown, so pictures
   // side by side are the same size and their captions line up
-  const w = boardW + (show ? label : 0);
-  const h = boardH + (show ? label : 0);
-  const svg = svgEl('svg', { width: w, height: h, viewBox:`0 0 ${w} ${h}`, 'aria-hidden':'true' });
+  // m = margin around the board so highlighter strokes can run past its edge
+  const m = show ? 8 : 0;
+  const w = boardW + (show ? label : 0) + 2*m;
+  const h = boardH + (show ? label : 0) + 2*m;
+  const outer = svgEl('svg', { width: w, height: h, viewBox:`0 0 ${w} ${h}`, 'aria-hidden':'true' });
+  const svg = svgEl('g', { transform:`translate(${m},${m})` }, outer);
 
   svgEl('rect', { x:0, y:0, width:boardW, height:boardH, rx:8, class:'rb-frame' }, svg);
   const isGap = (r,c)=>gaps.some(([gr,gc])=>gr===r && gc===c);
@@ -125,13 +128,16 @@ function miniBoard(opts){
     const colCount = c=>{ let n=0; for(let r=0;r<rows;r++) if(filled.has(r+','+c)) n++; return n; };
     const cls = n=>(n % 2 ? 'rb-odd' : 'rb-even');
 
-    if(show === 'rows') for(let r=0; r<rows; r++){
-      svgEl('rect', { x:pad-3, y:pad + r*step - 1.5, width:boardW - 2*pad + 6, height:cell+3, rx:4, class:'rb-band '+cls(rowCount(r)) }, svg);
-    }
-    if(show === 'cols') for(let c=0; c<cols; c++){
-      svgEl('rect', { x:pad + c*step - 1.5, y:pad-3, width:cell+3, height:boardH - 2*pad + 6, rx:4, class:'rb-band '+cls(colCount(c)) }, svg);
-    }
-    if(show === 'solved') svgEl('rect', { x:1.5, y:1.5, width:boardW-3, height:boardH-3, rx:7, class:'rb-solved' }, svg);
+    // Highlighter strokes, same look as the game (buildHighlighterPath in
+    // shapes.js), running a little past the board's edge
+    const thick = cell * 0.65, over = m;
+    const rowMark = r=>{ const y = pad + r*step + cell/2;
+      svgEl('path', { d: buildHighlighterPath(-over, y, boardW+over, y, thick, r+1), class:'rb-hl '+cls(rowCount(r)) }, svg); };
+    const colMark = c=>{ const x = pad + c*step + cell/2;
+      svgEl('path', { d: buildHighlighterPath(x, -over, x, boardH+over, thick, c+11), class:'rb-hl '+cls(colCount(c)) }, svg); };
+    if(show === 'rows')   for(let r=0; r<rows; r++) rowMark(r);
+    if(show === 'cols')   for(let c=0; c<cols; c++) colMark(c);
+    // 'solved' draws no strokes, just the all-green counts
 
     if(rightLabels) for(let r=0; r<rows; r++){
       const t = svgEl('text', { x: boardW + label/2, y: pad + r*step + cell/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(rowCount(r)) }, svg);
@@ -149,7 +155,7 @@ function miniBoard(opts){
     const cy = pad + p.row*step + (b.rows*step - gap)/2;
     drawNoMark(svg, cx, cy, cell*0.8);
   }
-  return svg;
+  return outer;
 }
 
 function pieceOnly(cells, color, cell){
