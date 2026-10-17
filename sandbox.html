@@ -234,6 +234,7 @@
       <button class="btn primary" id="analyze-btn">Analyze puzzle</button>
       <button class="btn" id="cancel-btn" hidden>Cancel</button>
     </div>
+    <p class="note">Analyzes the pieces you've put on the board (positions don't matter). With an empty board, it uses every selected piece.</p>
     <div class="progress" id="progress" hidden><div></div></div>
     <p class="note" id="progress-text"></p>
     <div id="results" hidden>
@@ -243,6 +244,7 @@
         <div class="stat">Time<b id="stat-time"></b></div>
       </div>
       <p class="verdict" id="verdict" style="margin-top:8px;"></p>
+      <p class="note" id="analyzed-pieces" style="margin-top:4px;"></p>
       <h2 style="margin-top:14px;">Solutions on the board</h2>
       <label><input type="checkbox" id="parity-only"> Parity-passing only</label>
       <div class="stepper" style="margin-top:6px;">
@@ -575,11 +577,32 @@ function endProgress(msg){
   $('cancel-btn').hidden = true;
 }
 
+/* Which pieces to analyze: the ones ON THE BOARD (in the order they're
+   listed at the top), so pieces you've selected but not used don't count.
+   If the board is empty, fall back to every selected piece. */
+let analyzedKey = null;    // the piece set the current results are for
+function piecesToAnalyze(){
+  const onBoard = new Set(placedPieces.map(p=>p.name));
+  const used = draft.pieces.filter(d=>onBoard.has(d.name));
+  return used.length ? { pieces: used, fromBoard: true } : { pieces: draft.pieces, fromBoard: false };
+}
+const pieceSetKey = list => list.map(d=>d.name).join(' ');
+
+// Results go stale (and are cleared) when you add or remove a piece on the board
+gameHooks.onChange = ()=>{
+  if(analysis && analyzedKey !== null && pieceSetKey(piecesToAnalyze().pieces) !== analyzedKey) invalidateAnalysis();
+};
+
 $('analyze-btn').onclick = ()=>{
   invalidateAnalysis();
+  const chosen = piecesToAnalyze();
+  analyzedKey = pieceSetKey(chosen.pieces);
+  $('analyzed-pieces').textContent = chosen.fromBoard
+    ? `Pieces on the board: ${analyzedKey} (${chosen.pieces.length}).`
+    : `Nothing on the board, so all ${chosen.pieces.length} selected pieces: ${analyzedKey}.`;
   const config = {
     rows: draft.rows, cols: draft.cols, blocked: draft.blocked, dotted: draft.hintOutline,
-    pieces: draft.pieces.map(d=>({ name:d.name, cells:d.cells })),
+    pieces: chosen.pieces.map(d=>({ name:d.name, cells:d.cells })),
   };
   worker = ParitySolver.createWorker();
   $('progress').hidden = false; $('progress').firstElementChild.style.width = '0%';
