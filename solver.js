@@ -94,7 +94,10 @@ function orientations(cells){
 
 /* ───────────────────────────────────────────────────────────────────────
    3. THE BOARD
-   config: { rows, cols, blocked: [[r,c],...], removed?: [[r,c],...], dotted?: [[r,c],...] }
+   config: { rows, cols, blocked: [[r,c],...], removed?: [[r,c],...], prefilled?: [[r,c],...], dotted?: [[r,c],...] }
+   `prefilled` squares are covered by pieces that start on the board and
+   can't move (the tutorial uses these): no piece can go there, but they
+   DO count as filled blocks for the parity check.
    `removed` squares aren't part of the board at all (irregular shapes).
    For solving they behave exactly like blocked squares: no piece can
    go there, and they never count as filled.
@@ -107,7 +110,8 @@ function makeBoard(config){
   const { rows, cols } = config;
   if(!(rows > 0 && cols > 0)) throw new Error('Board needs rows and cols');
   const key = (r,c)=>r*cols + c;
-  const blocked = new Set((config.blocked || []).concat(config.removed || []).map(([r,c])=>key(r,c)));
+  const blocked = new Set((config.blocked || []).concat(config.removed || [], config.prefilled || []).map(([r,c])=>key(r,c)));
+  const prefilled = (config.prefilled || []).map(rc=>rc.slice());
   const dotted  = new Set((config.dotted  || []).map(([r,c])=>key(r,c)));
   const openIndex = new Map();     // cell key → open-cell index
   const openCells = [];            // open-cell index → [r,c]
@@ -116,7 +120,7 @@ function makeBoard(config){
     openIndex.set(key(r,c), openCells.length);
     openCells.push([r,c]);
   }
-  return { rows, cols, key, blocked, dotted, openIndex, openCells };
+  return { rows, cols, key, blocked, dotted, openIndex, openCells, prefilled };
 }
 
 /* ───────────────────────────────────────────────────────────────────────
@@ -370,7 +374,7 @@ function analyzePuzzle(config, opts){
     const placements = rowIds.map(id=>rowInfo[id]).sort((a,b)=>a.piece - b.piece);
     const used = new Set();
     placements.forEach(pl=>pl.cells.forEach(i=>used.add(i)));
-    const filled = [...used].map(i=>board.openCells[i]);
+    const filled = [...used].map(i=>board.openCells[i]).concat(board.prefilled);
     const parity = checkParity(board.rows, board.cols, filled);
     if(parity.pass) passing++;
     if(tilings.length < maxStored){
@@ -400,6 +404,7 @@ function analyzePuzzle(config, opts){
     tilings,
   };
   if(config.removed && config.removed.length) result.removed = config.removed.map(rc=>rc.slice());
+  if(config.prefilled && config.prefilled.length) result.prefilled = config.prefilled.map(rc=>rc.slice());
   if(config.dotted && config.dotted.length) result.dotted = config.dotted.map(rc=>rc.slice());
   if(total > tilings.length) result.tilingsTruncated = true;
   return result;
@@ -453,7 +458,7 @@ function findPuzzles(boardConfig, n, opts){
     let total = 0, passing = 0;
     dlx.search(rowIds=>{
       total++;
-      const filled = [];
+      const filled = board.prefilled.slice();
       rowIds.forEach(id=>rowCells[id].forEach(i=>filled.push(board.openCells[i])));
       if(checkParity(board.rows, board.cols, filled).pass) passing++;
       return passing > 1;          // stop: this combination can't qualify

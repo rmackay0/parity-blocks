@@ -27,6 +27,7 @@ let viewTiling = null;        // {pieces:[{name,color,cells,row,col}], status, o
 const gameHooks = {
   onCellClick: null,          // edit mode: (r, c) => {}
   onChange: null,             // after any move by the player
+  onSolved: null,             // (timeStr) => {}  replaces the "Solved!" popup (the tutorial uses this)
 };
 
 const boardWrapEl   = document.getElementById('board-wrap');
@@ -68,11 +69,16 @@ function loadPuzzle(p, opts){
   p.pieces.forEach(def=>{
     trayCells[def.name] = (opts.keep && oldTray[def.name]) ? oldTray[def.name] : def.cells.map(c=>c.slice());
   });
+  // Pieces that start on the board and can't be moved (puzzle.fixedPieces:
+  // [{name, color, cells, row, col}]). They count as filled blocks.
+  const fixed = (p.fixedPieces || []).map((f,i)=>({ id:'fixed'+i, name:f.name, color:f.color,
+    cells:f.cells.map(c=>c.slice()), row:f.row, col:f.col, locked:true }));
   if(opts.keep){
-    placedPieces = placedPieces.filter(q=>names.has(q.name));
-    placedPieces.forEach(q=>{ q.color = p.pieces.find(d=>d.name===q.name).color; });
+    const mine = placedPieces.filter(q=>!q.locked && names.has(q.name));
+    mine.forEach(q=>{ q.color = p.pieces.find(d=>d.name===q.name).color; });
+    placedPieces = fixed.concat(mine);
   } else {
-    placedPieces = [];
+    placedPieces = fixed;
     startTime = Date.now();
   }
   if(selection && ((selection.kind==='tray' && !names.has(selection.name)) ||
@@ -253,7 +259,7 @@ function renderHint(){
 ═══════════════════════════════════════════════════════════════════ */
 function renderTray(){
   const size = cssPx('--tray-cell');
-  const used = new Set(placedPieces.map(p=>p.name));
+  const used = new Set(placedPieces.filter(p=>!p.locked).map(p=>p.name));
   trayEl.innerHTML = '';
   puzzle.pieces.forEach(def=>{
     const cells = trayCells[def.name];
@@ -273,7 +279,7 @@ function renderTray(){
   });
 }
 
-function boardFull(){ return placedPieces.length === puzzle.pieces.length; }
+function boardFull(){ return placedPieces.filter(p=>!p.locked).length === puzzle.pieces.length; }
 
 function renderBoardPieces(){
   piecesLayerEl.querySelectorAll('.placed-piece').forEach(el=>el.remove());
@@ -285,7 +291,8 @@ function renderBoardPieces(){
     const wrap = document.createElement('div');
     wrap.className = 'placed-piece'
       + (selection && selection.kind==='board' && selection.id===p.id ? ' selected' : '')
-      + (showInvalid && invalidIds.has(p.id) ? ' invalid' : '');
+      + (showInvalid && invalidIds.has(p.id) ? ' invalid' : '')
+      + (p.locked ? ' locked' : '');
     wrap.style.left = pxPos(p.col) + 'px';
     wrap.style.top = pxPos(p.row) + 'px';
     wrap.dataset.id = p.id;
@@ -367,7 +374,7 @@ function transformSource(source, fn){
     if(trayCells[source.name]) trayCells[source.name] = fn(trayCells[source.name]);
   } else {
     const p = placedPieces.find(pp=>pp.id===source.id);
-    if(p) p.cells = fn(p.cells);
+    if(p && !p.locked) p.cells = fn(p.cells);
   }
   renderAll();
 }
@@ -421,6 +428,7 @@ let press = null;   // {source, startX, startY, grabDR, grabDC, dragging, ghost,
 function onPiecePointerDown(e, source){
   if(gameMode !== 'play') return;
   if(e.button !== undefined && e.button !== 0) return;
+  if(source.kind === 'board' && (placedPieces.find(q=>q.id===source.id) || {}).locked) return;   // fixed piece
   e.preventDefault();
   e.stopPropagation();
   // A different piece's click is still waiting: apply its rotate first
@@ -571,7 +579,7 @@ const SHOW_UNEVEN_MARKS = false;
 const PROBLEM_TEXT = {
   overlap: 'Pieces overlap',
   off:     'A piece is off the board',
-  gap:     'A piece is on a gap',
+  gap:     'A piece is on a fixed gap',
   dotted:  'A piece crosses a dotted line',
 };
 
@@ -646,7 +654,9 @@ function checkSolved(){
   if(!oddRows.length && !oddCols.length && !problems.length && !onHiddenGap){
     solved = true;
     statusEl.textContent = '';
-    document.getElementById('solved-time').textContent = 'Your time: ' + formatElapsed(Date.now() - startTime);
+    const time = formatElapsed(Date.now() - startTime);
+    if(gameHooks.onSolved){ gameHooks.onSolved(time); return; }
+    document.getElementById('solved-time').textContent = 'Your time: ' + time;
     document.getElementById('solved-popup').hidden = false;
     return;
   }
@@ -654,7 +664,8 @@ function checkSolved(){
   statusEl.textContent = [unevenMessage(oddRows.length, oddCols.length), ...problems.map(k=>PROBLEM_TEXT[k])]
     .filter(Boolean).join(' · ');
 }
-document.getElementById('solved-close').addEventListener('click', ()=>{
+const solvedCloseBtn = document.getElementById('solved-close');
+if(solvedCloseBtn) solvedCloseBtn.addEventListener('click', ()=>{
   document.getElementById('solved-popup').hidden = true;
 });
 

@@ -21,18 +21,19 @@
 const RULES_TEXT = {
   title: 'How to Play',
   goalsHeading: 'Goals',
-  goal1: 'Place every piece.',
+  goal1: 'Fit all of the pieces onto the grid.',
   goal2: 'Make sure that every row and every column has an even number of blocks in it.',
-  goal2Hint: 'Hint: pay more attention to the evenness of the empty blocks.',
+  goal2Hint: 'Hint: pay attention to the gaps (empty squares) too. On an even-sized grid, an even number of gaps means an even number of blocks.',
   checkRows: 'Check rows',
   checkCols: 'Check columns',
   allEven: 'All even: solved!',
   rulesHeading: 'Rules',
   reflect: 'Pieces can be reflected: double-click one.',
   rotate: 'Pieces can be rotated: click one.',
-  gap: 'You can’t place a piece on a gap.',
+  gap: 'You can’t place a piece on a fixed gap.',
   dotted: 'You can’t place a piece across a dotted perimeter.',
   ok: 'Got it',
+  tutorial: 'Play the tutorial',
 };
 
 // [BEHAVIOR] Remembers that this visitor has seen the rules, so the popup
@@ -171,6 +172,16 @@ function build(){
     figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],
       dotted:[[1,1],[1,2],[2,1],[2,2]], noMarkOn: crossing })),
   ]);
+
+  // On the puzzle page, offer the interactive tutorial (play.html defines window.openTutorial)
+  if(typeof window.openTutorial === 'function'){
+    const tut = document.createElement('button');
+    tut.type = 'button';
+    tut.className = 'rules-ok rules-tutorial';
+    tut.textContent = T.tutorial;
+    tut.addEventListener('click', ()=>{ closeRules(); window.openTutorial(); });
+    popup.appendChild(tut);
+  }
 
   const ok = document.createElement('button');
   ok.type = 'button';

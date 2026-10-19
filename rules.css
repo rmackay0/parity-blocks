@@ -176,6 +176,8 @@
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
 }
 .rules-ok:hover { filter: brightness(1.1); }
+/* "Play the tutorial" button (puzzle page only) */
+.rules-tutorial { background: var(--rules-panel-border); margin-bottom: 8px; }
 .rules-ok:focus-visible, .rules-close:focus-visible { outline: 3px solid #f2c48a; outline-offset: 2px; }
 
 /* ── Picture parts (SVG classes used by rules.js) ── */

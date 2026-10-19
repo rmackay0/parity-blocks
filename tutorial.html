@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════
+  PARITY BLOCKS: INTERACTIVE TUTORIAL
+  ═══════════════════════════════════════════════════════════════════════
+  Shown in a popup (an <iframe>) the first time someone opens a puzzle,
+  and from "Play the tutorial" in the Rules popup. It can also be opened
+  on its own: tutorial.html.
+
+  Four slides:
+    1  Game objectives + the 12 pentominoes        (no task: Next is ready)
+    2  Drag pieces on, click/tap to rotate; what pieces can't go over;
+       on solving, the leftover squares are introduced as "gaps"
+    3  Double-click / tap twice to reflect
+    4  Make every row and column even (the parity puzzle). Last button
+       says "Finish"
+  Slides 2-4 are real mini puzzles running on the game's own code
+  (game.js / game.css), with some pieces fixed in place. Next turns green
+  when the slide's puzzle is solved.
+
+  Words used everywhere (see HANDOFF.md):
+    block      one square of a piece        piece      a pentomino
+    fixed gap  a square with a red X        gap        an empty square left between pieces
+
+  [CONTENT] All wording is in SLIDES below. "Tap" vs "Click" is chosen
+  automatically (touchscreen vs mouse).
+  ═══════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parity Blocks: Tutorial</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geo&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rules.css">
+<link rel="stylesheet" href="game.css">
+<style>
+  :root {
+    --color-next-ready: #6fae5a;     /* [COLORS] Next / Finish once the slide is done */
+    --color-close:      #c94a4a;     /* [COLORS] the X button */
+    --tut-board:        min(360px, 40vh, 86vw);   /* [POSITIONING] board area size */
+  }
+  body { overflow: hidden; }
+  .tut {
+    height: 100vh; height: 100dvh;
+    display: flex; flex-direction: column;
+    background: var(--color-panel);
+  }
+
+  /* ── Header: title, progress dots, close X ── */
+  .tut-head { position: relative; flex: 0 0 auto; padding: 14px 60px 8px; text-align: center; }
+  .tut-head h1 { font-size: 1.9rem; font-weight: 400; color: var(--color-accent); line-height: 1; }
+  .dots { display: flex; justify-content: center; gap: 9px; margin-top: 10px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--color-cell-border); transition: background 0.2s, transform 0.2s; }
+  .dot.done { background: var(--color-text-dim); }
+  .dot.now  { background: var(--color-accent); transform: scale(1.25); }
+  .close-x {
+    position: absolute; top: 12px; right: 14px;
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: var(--color-close); color: #fff;
+    font: 700 1.3rem/1 system-ui, sans-serif; cursor: pointer;
+  }
+  .close-x:hover { filter: brightness(1.15); }
+
+  /* ── Slide area ── */
+  .tut-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px 20px 12px; }
+  .note { font-size: 1.25rem; line-height: 1.35; color: var(--color-text); }
+  .note b { color: var(--color-accent); font-weight: 400; }
+
+  /* Slide 1 */
+  .intro { max-width: 640px; margin: 0 auto; padding-top: 6px; }
+  .intro h2 { font-size: 1.6rem; font-weight: 400; color: var(--color-accent); margin-bottom: 8px; }
+  .intro ol { padding-left: 26px; margin-bottom: 14px; }
+  .intro li { font-size: 1.3rem; line-height: 1.4; margin-bottom: 4px; }
+  .intro p { font-size: 1.15rem; line-height: 1.45; color: var(--color-text); margin-bottom: 14px; }
+  .intro .fun { color: var(--color-text-dim); }
+  .twelve { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px 10px; justify-items: center; align-items: center;
+            background: var(--color-board-bg); border-radius: 14px; padding: 16px 10px; }
+  @media (max-width: 520px) { .twelve { grid-template-columns: repeat(4, 1fr); } }
+
+  /* Slides 2-4: notes sit beside the parts they describe */
+  .play {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas:
+      "trayl tray  trayr"
+      ".     stat  ."
+      "boardl board boardr"
+      "below below below";
+    align-items: center;
+    column-gap: 22px;
+    row-gap: 8px;
+  }
+  .play .tray { grid-area: tray; max-width: 460px; min-height: 60px; }
+  .play .status { grid-area: stat; }
+  .play .board-wrap { grid-area: board; width: var(--tut-board); height: var(--tut-board); }
+  .n-trayl  { grid-area: trayl;  justify-self: end; text-align: right; display: flex; align-items: center; }
+  .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; }
+  .n-below  { grid-area: below; justify-self: center; text-align: center; max-width: 720px; }
+  .arrow { display: inline-block; color: var(--color-accent); font-size: 1.6rem; margin-left: 6px; vertical-align: -2px; }
+  .big-note { font-size: 1.7rem; line-height: 1.3; color: var(--color-accent); border-left: 4px solid var(--color-accent); padding-left: 14px; }
+  .hint { font-size: 1.15rem; line-height: 1.4; color: var(--color-text-dim); margin-top: 6px; }
+  .solved-note { font-size: 1.2rem; line-height: 1.4; color: var(--color-valid); margin-top: 10px; }
+  .dont { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 22px; margin-top: 8px; }
+  .dont figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
+  .dont figcaption { font-size: 1.05rem; color: var(--color-text-dim); }
+  .play .hint-caption, .play .controls { display: none; }   /* not used in the tutorial */
+
+  @media (max-width: 760px) {
+    .play {
+      grid-template-columns: 1fr;
+      grid-template-areas: "trayl" "tray" "stat" "board" "boardr" "below";
+      justify-items: center;
+    }
+    .n-trayl, .n-boardr { justify-self: center; text-align: center; max-width: none; }
+    .arrow { transform: rotate(90deg); }
+    .big-note { border-left: none; padding-left: 0; font-size: 1.45rem; }
+  }
+
+  /* ── Footer: Back, Next/Finish ── */
+  .tut-foot { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 10px 18px 16px; }
+  .foot-btn {
+    height: 50px; min-width: 130px; padding: 0 22px; border: none; border-radius: 14px;
+    font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 0.04em; cursor: pointer;
+    background: var(--color-cell-border); color: var(--color-text-dim);
+    transition: background 0.2s, color 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+  .foot-btn.back { min-width: 0; background: transparent; }
+  .foot-btn.back:hover { color: var(--color-text); }
+  .foot-btn.next[aria-disabled="true"] { cursor: default; }
+  .foot-btn.next.ready { background: var(--color-next-ready); color: #fff; box-shadow: 0 0 0 4px rgba(111, 174, 90, 0.25), 0 4px 0 rgba(0,0,0,0.35); }
+  .foot-btn.next.ready:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="tut">
+  <header class="tut-head">
+    <h1>Tutorial</h1>
+    <div class="dots" id="dots"></div>
+    <button class="close-x" id="close-x" aria-label="Close tutorial" title="Close">&#10005;</button>
+  </header>
+
+  <main class="tut-body">
+    <!-- Slide 1 -->
+    <section class="intro" id="intro"></section>
+
+    <!-- Slides 2-4: the game, with notes placed around it -->
+    <section class="play" id="play" hidden>
+      <div class="note n-trayl" id="n-trayl"></div>
+      <div class="tray" id="tray" aria-label="Pieces to place"></div>
+      <div class="note n-trayr" id="n-trayr" style="grid-area:trayr"></div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <div class="board-wrap" id="board-wrap">
+        <div id="board-outer">
+          <div id="board"></div>
+          <div id="pieces-layer"></div>
+          <div id="hint-overlay"></div>
+          <svg id="mark-overlay" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <div class="note n-boardr" id="n-boardr"></div>
+      <div class="n-below" id="n-below"></div>
+      <p class="hint-caption" id="hint-caption" hidden></p>
+      <div class="controls"><button type="button" id="reflect-btn" disabled>Reflect</button><button type="button" id="rotate-btn" disabled>Rotate</button></div>
+    </section>
+  </main>
+
+  <footer class="tut-foot">
+    <button class="foot-btn back" id="back-btn">&larr; Back</button>
+    <button class="foot-btn next" id="next-btn" aria-disabled="true">Next</button>
+  </footer>
+</div>
+
+<script src="shapes.js"></script>
+<script src="game.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   WORDING HELPERS
+═══════════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+const tapOrClick = TOUCH ? 'Tap' : 'Click';
+const tapTwice   = TOUCH ? 'Tap a piece twice' : 'Double-click a piece';
+
+/* ═══════════════════════════════════════════════════════════════════
+   PIECES AND PUZZLES
+   Fixed pieces are written with their real board squares and converted
+   to the game's {cells, row, col} form. Each puzzle was checked with
+   solver.js: slides 2 and 3 have one way to fit the pieces; slide 4 has
+   6 ways but only one with every row and column even.
+═══════════════════════════════════════════════════════════════════ */
+const COLOR = { I:'#5f9e8f', F:'#a8714a', W:'#a44e6b', N:'#7d6aa8', P:'#b8923f', Y:'#8c6a4a', U:'#a85c4a', V:'#8a9c5a' };
+function fixedPiece(name, absCells, color){
+  const r0 = Math.min(...absCells.map(c=>c[0])), c0 = Math.min(...absCells.map(c=>c[1]));
+  return { name, color: color || COLOR[name], row: r0, col: c0, cells: absCells.map(([r,c])=>[r-r0, c-c0]) };
+}
+const trayPiece = (name, cells) => ({ name, color: COLOR[name], cells });
+
+const PUZZLE_2 = {
+  title: 'Tutorial 1', rows: 6, cols: 6,
+  blocked: [[0,0],[0,4],[3,0],[4,4]],
+  hintOutline: [[1,2],[2,1],[2,2],[2,3],[3,3]],
+  fixedPieces: [
+    fixedPiece('W', [[0,1],[0,2],[1,0],[1,1],[2,0]]),
+    fixedPiece('N', [[0,3],[1,3],[1,4],[2,4],[3,4]]),
+    fixedPiece('P', [[3,1],[4,0],[4,1],[5,0],[5,1]]),
+    fixedPiece('Y', [[4,3],[5,2],[5,3],[5,4],[5,5]]),
+  ],
+  pieces: [ trayPiece('I', [[0,0],[0,1],[0,2],[0,3],[0,4]]), trayPiece('F', [[0,1],[0,2],[1,0],[1,1],[2,1]]) ],
+};
+const PUZZLE_3 = {
+  title: 'Tutorial 2', rows: 6, cols: 6,
+  blocked: [[0,5],[3,3],[3,5],[4,3]],
+  hintOutline: [[1,3],[2,2],[2,3],[2,4],[3,2]],
+  fixedPieces: [
+    fixedPiece('I', [[0,0],[1,0],[2,0],[3,0],[4,0]]),
+    fixedPiece('W', [[0,3],[0,4],[1,4],[1,5],[2,5]]),
+    fixedPiece('P', [[3,4],[4,4],[4,5],[5,4],[5,5]]),
+    fixedPiece('Y', [[4,2],[5,0],[5,1],[5,2],[5,3]]),
+  ],
+  pieces: [ trayPiece('F', [[0,1],[0,2],[1,0],[1,1],[2,1]]), trayPiece('N', [[0,0],[1,0],[2,0],[2,1],[3,1]]) ],
+};
+const PUZZLE_4 = {
+  title: 'Tutorial 3', rows: 6, cols: 6,
+  blocked: [[3,4]],
+  hintOutline: [[3,1],[3,2],[4,2],[4,3],[4,4],[4,5],[3,5],[5,3],[5,4],[5,5]],
+  fixedPieces: [
+    fixedPiece('U', [[0,4],[0,5],[1,5],[2,4],[2,5]]),
+    fixedPiece('F', [[1,2],[2,1],[2,2],[2,3],[3,3]]),
+  ],
+  pieces: [
+    trayPiece('W', [[0,0],[0,1],[1,1],[1,2],[2,2]]),
+    trayPiece('P', [[0,0],[1,0],[1,1],[2,0],[2,1]]),
+    trayPiece('N', [[0,0],[1,0],[2,0],[2,1],[3,1]]),
+    trayPiece('V', [[0,0],[1,0],[2,0],[2,1],[2,2]]),
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   LITTLE PICTURES
+═══════════════════════════════════════════════════════════════════ */
+// The 12 pentominoes (slide 1)
+const TWELVE = [
+  ['#9c7350', [[0,1],[0,2],[1,0],[1,1],[2,1]]], ['#5f9e8f', [[0,0],[1,0],[2,0],[3,0],[4,0]]],
+  ['#c9a877', [[0,0],[1,0],[2,0],[3,0],[3,1]]], ['#7d6aa8', [[0,1],[1,1],[2,0],[2,1],[3,0]]],
+  ['#b8923f', [[0,0],[0,1],[1,0],[1,1],[2,0]]], ['#6b8a9c', [[0,0],[0,1],[0,2],[1,1],[2,1]]],
+  ['#a85c4a', [[0,0],[0,2],[1,0],[1,1],[1,2]]], ['#8a9c5a', [[0,0],[1,0],[2,0],[2,1],[2,2]]],
+  ['#a44e6b', [[0,0],[1,0],[1,1],[2,1],[2,2]]], ['#4f8a7a', [[0,1],[1,0],[1,1],[1,2],[2,1]]],
+  ['#8c6a4a', [[0,1],[1,0],[1,1],[2,1],[3,1]]], ['#8a5a7a', [[0,0],[0,1],[1,1],[2,1],[2,2]]],
+];
+function pieceSvg(cells, color, cell){
+  const gap = 2, b = bounds(cells);
+  const w = b.cols*cell + (b.cols-1)*gap, h = b.rows*cell + (b.rows-1)*gap;
+  const svg = svgEl('svg', { width:w+4, height:h+4, viewBox:`-2 -2 ${w+4} ${h+4}`, 'aria-hidden':'true' });
+  drawPiece(svg, cells, color, 0, 0, cell, gap);
+  return svg;
+}
+
+// "Don't place a piece over…" pictures: a tiny 3×4 board, a piece in the
+// wrong place, and the red not-allowed mark
+function dontPicture(kind){
+  const cell = 18, gap = 2, pad = 5, rows = 3, cols = 4, step = cell + gap, m = 18;
+  const W = cols*cell + (cols-1)*gap + 2*pad, H = rows*cell + (rows-1)*gap + 2*pad;
+  const svg = svgEl('svg', { width: W + 2*m, height: H + 2*m, viewBox:`${-m} ${-m} ${W + 2*m} ${H + 2*m}`, 'aria-hidden':'true' });
+  svgEl('rect', { x:0, y:0, width:W, height:H, rx:6, class:'rb-frame' }, svg);
+  const xAt = c => pad + c*step, yAt = r => pad + r*step;
+  const fixedGapAt = [1,1];
+  for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
+    if(kind === 'gap' && r === fixedGapAt[0] && c === fixedGapAt[1]){
+      svgEl('rect', { x:xAt(c)+0.5, y:yAt(r)+0.5, width:cell-1, height:cell-1, rx:2, class:'rb-gap' }, svg);
+    } else svgEl('rect', { x:xAt(c), y:yAt(r), width:cell, height:cell, rx:2, class:'rb-cell' }, svg);
+  }
+  const X = (r,c)=>{ const k = cell*0.28, cx = xAt(c)+cell/2, cy = yAt(r)+cell/2;
+    svgEl('path', { d:`M${cx-k},${cy-k} L${cx+k},${cy+k} M${cx+k},${cy-k} L${cx-k},${cy+k}`, class:'rb-gap-x' }, svg); };
+  let markR = 1, markC = 1.5;
+  if(kind === 'dotted'){
+    svgEl('path', { d: buildOutlinePath([[0,0],[0,1],[1,0],[1,1]], cell, gap), class:'rb-dotted', transform:`translate(${pad},${pad})` }, svg);
+    drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.I, xAt(1), yAt(1), cell, gap);
+    markR = 1; markC = 2;
+  } else if(kind === 'edge'){
+    drawPiece(svg, [[0,0],[0,1],[1,1]], COLOR.P, xAt(3), yAt(1), cell, gap);
+    markR = 1.5; markC = 3.5;
+  } else if(kind === 'piece'){
+    drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.N, xAt(0), yAt(1), cell, gap);
+    const g = drawPiece(svg, [[0,0],[1,0],[2,0]], COLOR.U, xAt(1), yAt(0), cell, gap);
+    g.setAttribute('opacity', '0.85');
+    markR = 1; markC = 1;
+  } else if(kind === 'gap'){
+    const g = drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.V, xAt(0), yAt(1), cell, gap);
+    g.setAttribute('opacity', '0.7');
+    X(1,1);
+    markR = 1; markC = 1;
+  }
+  drawNoMark(svg, xAt(markC) + cell/2, yAt(markR) + cell/2, cell*0.95);
+  return svg;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   [CONTENT] THE SLIDES
+═══════════════════════════════════════════════════════════════════ */
+const SLIDES = [
+  { kind: 'intro' },
+  { kind: 'play', puzzle: PUZZLE_2,
+    trayLeft: `Drag these pieces onto the grid<span class="arrow">&#10148;</span>`,
+    boardRight: `${tapOrClick} a piece to <b>rotate</b> it.`,
+    below: 'dont',
+    solvedNote: `The empty squares left over are called <b>gaps</b>. They work just like fixed gaps, except you decide where they go.` },
+  { kind: 'play', puzzle: PUZZLE_3,
+    boardRight: `${tapTwice} to <b>reflect</b> it.`,
+    solvedNote: 'Nice! Rotating and reflecting together let a piece face any way.' },
+  { kind: 'play', puzzle: PUZZLE_4,
+    boardRight: `<div class="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>`,
+    belowHtml: `<p class="hint">Hint: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
+    solvedNote: 'Every row and column is even. You’re ready to play!' },
+];
+
+function renderIntro(){
+  const box = $('intro');
+  box.innerHTML = `
+    <h2>Game objectives</h2>
+    <ol>
+      <li>Fit all of the pieces onto the grid.</li>
+      <li>Every row and column contains an even (parity) number of blocks.</li>
+    </ol>
+    <p>All of the pieces are made up of five blocks each.</p>
+    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b>. Dominoes are made of two blocks, and tetrominoes are made of four (the origin of the name Tetris).</p>
+    <div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>`;
+  TWELVE.forEach(([color, cells])=>$('twelve').appendChild(pieceSvg(cells, color, 15)));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════════════ */
+let current = 0;
+const done = SLIDES.map(s=>s.kind === 'intro');   // slide 1 has no task
+const solvedView = {};                            // slide index → what the solved board looked like
+
+function renderDots(){
+  const dots = $('dots');
+  dots.innerHTML = '';
+  SLIDES.forEach((s,i)=>{
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === current ? ' now' : done[i] ? ' done' : '');
+    d.setAttribute('aria-label', `Step ${i+1} of ${SLIDES.length}` + (i === current ? ' (current)' : ''));
+    dots.appendChild(d);
+  });
+}
+
+function updateNext(){
+  const last = current === SLIDES.length - 1;
+  const btn = $('next-btn');
+  btn.textContent = last ? 'Finish ✓' : 'Next →';
+  btn.classList.toggle('ready', done[current]);
+  btn.setAttribute('aria-disabled', done[current] ? 'false' : 'true');
+  $('back-btn').style.visibility = current === 0 ? 'hidden' : 'visible';
+}
+
+function showSlide(i){
+  current = i;
+  const s = SLIDES[i];
+  $('intro').hidden = s.kind !== 'intro';
+  $('play').hidden = s.kind !== 'play';
+  if(s.kind === 'intro') renderIntro();
+  else {
+    $('n-trayl').innerHTML = s.trayLeft || '';
+    $('n-trayr').innerHTML = '';
+    $('n-boardr').innerHTML = s.boardRight || '';
+    const below = $('n-below');
+    below.innerHTML = '';
+    if(s.below === 'dont'){
+      below.innerHTML = '<p class="note">Don’t place a piece over:</p><div class="dont" id="dont"></div>';
+      [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece'], ['gap','a fixed gap']].forEach(([k, label])=>{
+        const f = document.createElement('figure');
+        f.appendChild(dontPicture(k));
+        const c = document.createElement('figcaption'); c.textContent = label; f.appendChild(c);
+        $('dont').appendChild(f);
+      });
+    }
+    if(s.belowHtml) below.insertAdjacentHTML('beforeend', s.belowHtml);
+    // The "solved" note sits beside the board (under its note) so it's always in view
+    if(done[i] && s.solvedNote) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
+    setGameMode('play');
+    loadPuzzle(s.puzzle);
+    if(done[i] && solvedView[i]){ setViewTiling(solvedView[i]); setGameMode('view'); }
+  }
+  renderDots();
+  updateNext();
+  $('play').parentElement.scrollTop = 0;
+}
+
+// A tutorial puzzle got solved: freeze it, ring the gaps, light up Next
+gameHooks.onSolved = ()=>{
+  const covered = new Set();
+  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
+  const empty = [];
+  for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++)
+    if(!covered.has(r+','+c) && !isBlocked(r,c) && inBounds(r,c)) empty.push([r,c]);
+  solvedView[current] = { pieces: placedPieces.map(p=>({ name:p.name, color:p.color, cells:p.cells, row:p.row, col:p.col })),
+                          oddRows: [], oddCols: [], empty, status: 'Solved!', good: true };
+  done[current] = true;
+  setViewTiling(solvedView[current]);
+  setGameMode('view');
+  const s = SLIDES[current];
+  if(s.solvedNote) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
+  renderDots();
+  updateNext();
+};
+
+function closeTutorial(finished){
+  // Inside the popup on a puzzle page: ask that page to close it
+  if(window.parent !== window) window.parent.postMessage({ type:'pb-tutorial-close', finished: !!finished }, '*');
+  else location.href = 'index.html';
+}
+
+$('next-btn').onclick = ()=>{
+  if(!done[current]) return;
+  if(current === SLIDES.length - 1) closeTutorial(true);
+  else showSlide(current + 1);
+};
+$('back-btn').onclick = ()=>{ if(current > 0) showSlide(current - 1); };
+$('close-x').onclick = ()=>closeTutorial(false);
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeTutorial(false); });
+
+showSlide(0);
+</script>
+</body>
+</html>

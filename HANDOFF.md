@@ -1,5 +1,43 @@
 # Polyomino Playground — Handoff Notes
 
+## Words to use (user's decision, 2026-10-19) — in ALL player-facing text
+
+| Word | Means |
+|---|---|
+| **block** | one square of a piece |
+| **piece** | a pentomino |
+| **fixed gap** | a square with a red X (code: `blocked`; `hiddenBlocked` = hidden fixed gap) |
+| **gap** | an empty open square left between pieces (solver JSON: `gaps`) |
+
+Don't say "cell", "empty square/cell" or "blocked square" to players.
+
+## Working style with this user
+
+The user is learning bash: make file changes with the Edit/Write tools
+(small readable diffs), keep Bash commands short and single-purpose, and
+put test scripts in files rather than long inline commands. Explain any
+unusual command syntax (pipes, redirects) when you use it.
+
+## Interactive tutorial (2026-10-19)
+
+`tutorial.html` replaces the rules popup as the first-visit popup on the
+puzzle page. play.html shows it in an `<iframe>` overlay when
+`localStorage.pb_tutorialSeen` isn't set (set on X / Esc / Finish; the
+iframe posts `{type:'pb-tutorial-close'}` to the parent). The Rules popup
+gets a "Play the tutorial" button wherever `window.openTutorial` exists.
+Four slides: objectives + the 12 pentominoes; drag/rotate + "don't place
+over" pictures (the word **gap** is introduced when slide 2 is solved, next
+to the ringed gaps); reflect; the parity puzzle (button says "Finish ✓",
+same green). Slides 2–4 run on game.js itself, using two new features:
+`puzzle.fixedPieces` (pre-placed, unmovable pieces that count as filled)
+and `gameHooks.onSolved` (replaces the Solved! popup). "Tap" vs "Click"
+wording is chosen with `(hover: none) and (pointer: coarse)`. Each
+tutorial puzzle is verified with solver.js, which now accepts `prefilled`
+squares (can't be covered, but count as filled for parity).
+Future (not built): save players' progress with no data collection
+beyond what progress needs; the suggested approach is browser-only
+(localStorage), no accounts.
+
 ## Parity Blocks redesign (started 2026-10-16) — read first
 
 The site now launches on a **splash screen** (`index.html`): logo, an info

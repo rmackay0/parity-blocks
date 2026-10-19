@@ -84,6 +84,12 @@
   </div>
 </div>
 
+<!-- The interactive tutorial (tutorial.html) appears in this popup the first
+     time someone opens a puzzle, and from the Rules popup's button -->
+<div class="tutorial-overlay" id="tutorial-overlay" hidden>
+  <iframe id="tutorial-frame" title="Tutorial"></iframe>
+</div>
+
 <!-- [CONTENT] "Are you sure?" before Reset clears the board -->
 <div class="popup-backdrop" id="reset-popup" hidden>
   <div class="popup" role="dialog" aria-modal="true" aria-labelledby="reset-title">
@@ -107,8 +113,8 @@
 
 <script src="puzzles.js"></script>
 <script src="shapes.js"></script>
-<!-- data-auto-open: show the rules here automatically for first-time players -->
-<script src="rules.js" data-auto-open></script>
+<!-- Rules popup (opens from the Rules button; first-time players get the tutorial instead) -->
+<script src="rules.js"></script>
 <script src="published.js"></script>
 <script src="game.js"></script>
 <script>
@@ -121,6 +127,28 @@ const params = new URLSearchParams(location.search);
 const level = params.get('level');
 const wantedPuzzle = level ? (PUBLISHED[level] && PUBLISHED[level].puzzle) : PUZZLES[params.get('puzzle')];
 
+/* ── Tutorial popup ──
+   Opens automatically once per browser (remembered in localStorage as
+   'pb_tutorialSeen' when it's closed or finished). rules.js shows a
+   "Play the tutorial" button whenever window.openTutorial exists. */
+const TUTORIAL_SEEN_KEY = 'pb_tutorialSeen';
+const tutorialOverlay = document.getElementById('tutorial-overlay');
+const tutorialFrame = document.getElementById('tutorial-frame');
+window.openTutorial = ()=>{
+  tutorialFrame.src = 'tutorial.html';
+  tutorialOverlay.hidden = false;
+  tutorialFrame.focus();
+};
+// The tutorial asks to be closed (X button, Esc, or Finish)
+window.addEventListener('message', e=>{
+  if(e.source !== tutorialFrame.contentWindow || !e.data || e.data.type !== 'pb-tutorial-close') return;
+  tutorialOverlay.hidden = true;
+  tutorialFrame.src = 'about:blank';
+  try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(err){}
+});
+let tutorialSeen = false;
+try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch(err){}
+
 // Reset: asks first, then clears the board and restarts the timer
 document.getElementById('reset-btn').onclick = ()=>{ document.getElementById('reset-popup').hidden = false; };
 document.getElementById('reset-cancel').onclick = ()=>{ document.getElementById('reset-popup').hidden = true; };
@@ -131,6 +159,7 @@ document.getElementById('reset-confirm').onclick = ()=>{
 if(wantedPuzzle){
   document.title = 'Parity Blocks: ' + wantedPuzzle.title;
   loadPuzzle(wantedPuzzle);
+  if(!tutorialSeen) window.openTutorial();
 } else {
   document.querySelector('.game').hidden = true;
   document.getElementById('missing-popup').hidden = false;

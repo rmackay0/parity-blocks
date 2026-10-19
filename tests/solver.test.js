@@ -62,6 +62,14 @@ check('I on a 1x6 with the last square removed: only 1 tiling left',
 check('removed squares appear in the JSON as "removed"',
   S.analyzePuzzle({ rows:1, cols:6, removed:[[0,5]], pieces:[piece('I')] }).removed, [[0,5]]);
 
+/* ── Pre-placed (prefilled) blocks ── */
+console.log('Prefilled blocks');
+// 1x6 row: block [0,0] already filled. I fits only at cols 1-5 → row has 6 filled → passes parity.
+const pre = S.analyzePuzzle({ rows:1, cols:6, prefilled:[[0,0]], pieces:[piece('I')] });
+check('prefilled square can\u2019t be covered: 1 tiling', pre.totalTilings, 1);
+check('prefilled block counts toward its row: 6 blocks, row is even (would be 5 and odd if not counted)', pre.tilings[0].failingRows, []);
+check('each column has 1 block, so every column is odd', pre.tilings[0].failingCols, [0,1,2,3,4,5]);
+
 /* ── The real test case (Hard puzzle) ── */
 console.log('Test puzzle: 6x6, blocked [1,1] [1,5] [5,0] [5,5], pieces L I X N P U');
 const hardBoard = { rows:6, cols:6, blocked:[[1,1],[1,5],[5,0],[5,5]] };

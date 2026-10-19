@@ -215,7 +215,7 @@
     <div class="segmented" id="mode-seg">
       <button data-mode="play" class="on">Play</button>
       <button data-mode="shape">Shape</button>
-      <button data-mode="block">Block</button>
+      <button data-mode="block" title="Fixed gaps">Fixed gap</button>
       <button data-mode="dotted">Dotted</button>
     </div>
     <p class="note" id="mode-note"></p>
@@ -258,7 +258,7 @@
         <button class="btn" id="show-btn">Show on board</button>
         <button class="btn" id="copy-tiling-btn" title="Put this tiling's pieces on the board to play with">Place these pieces</button>
       </div>
-      <p class="note">Arrow keys flip through solutions while they're shown. Rings mark empty squares; red strokes mark odd rows/columns.</p>
+      <p class="note">Arrow keys flip through solutions while they're shown. Rings mark gaps; red strokes mark odd rows/columns.</p>
     </div>
   </section>
 
@@ -305,8 +305,8 @@
     <p class="modal-note">Nothing in the archive is affected.</p>
     <div class="levels">
       <div class="level-opt" id="clear-pieces"><span>Clear pieces</span><small>take every piece off the board</small></div>
-      <div class="level-opt" id="clear-board"><span>Clear board</span><small>restore cut-out squares; remove blocked squares,
-hidden gaps and the dotted area (keeps size and pieces)</small></div>
+      <div class="level-opt" id="clear-board"><span>Clear board</span><small>restore cut-out squares; remove fixed gaps
+(hidden ones too) and the dotted area (keeps size and pieces)</small></div>
     </div>
     <div class="popup-buttons"><button type="button" class="secondary" id="clear-cancel">Cancel</button></div>
   </div>
@@ -469,9 +469,9 @@ function renderPanel(){
   const empty = open - 5*draft.pieces.length;
   $('board-note').textContent =
     (draft.removed.length ? `${draft.removed.length} cut out · ` : '') +
-    `${draft.blocked.length} blocked (${draft.hiddenBlocked.length} hidden) · ${open} open · ` +
+    `${draft.blocked.length} fixed gap${draft.blocked.length===1?'':'s'} (${draft.hiddenBlocked.length} hidden) · ${open} open · ` +
     `${draft.pieces.length} pieces cover ${5*draft.pieces.length} · ` +
-    (empty >= 0 ? `${empty} empty square${empty===1?'':'s'}` : `${-empty} too few squares!`);
+    (empty >= 0 ? `${empty} gap${empty===1?'':'s'}` : `${-empty} too few squares!`);
   $('hint-text').value = draft.hintText || '';
   renderPicker();
 }
@@ -493,7 +493,7 @@ let clickMode = 'play';
 const MODE_NOTES = {
   play: 'Drag pieces onto the board to play-test, just like the game.',
   shape: 'Click a square to cut it out of the board; click a dashed spot to put it back. To add squares past the edge, raise Rows/Columns first, then cut away what you don\u2019t want.',
-  block: 'Click a square to cycle it: open → blocked (X) → hidden gap (blocked, but players see a normal square) → open.',
+  block: 'Click a square to cycle it: open → fixed gap (X) → hidden fixed gap (players see a normal square) → open.',
   dotted: 'Click squares to add or remove them from the dotted area. Pieces must sit wholly inside it or wholly outside it.',
 };
 function setMode(mode){

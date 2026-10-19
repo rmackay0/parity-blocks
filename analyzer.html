@@ -152,7 +152,7 @@
   <!-- ── 3. Puzzle finder ── -->
   <section class="panel">
     <h2>Puzzle finder</h2>
-    <p class="muted">Uses the selected puzzle's board and blocked squares. Tries every combination of
+    <p class="muted">Uses the selected puzzle's board and fixed gaps. Tries every combination of
       pentominoes and lists the ones with exactly one parity solution, most tilings (hardest) first.
       Click one to load it.</p>
     <div class="row" style="margin-top:10px;">
@@ -237,8 +237,8 @@ function renderPuzzleInfo(){
   if(p.hiddenBlocked && p.hiddenBlocked.length) extras.push(p.hiddenBlocked.length + ' of them hidden from players');
   if(p.hintOutline && p.hintOutline.length) extras.push('has a dotted outline (pieces can’t cross it)');
   $('puzzle-info').textContent =
-    `${p.rows}×${p.cols} board` + ((p.removed||[]).length ? ` (${p.removed.length} squares cut out)` : '') + ` · ${(p.blocked||[]).length} blocked squares` + (extras.length ? ' (' + extras.join('; ') + ')' : '') +
-    ` · pieces ${p.pieces.map(d=>d.name).join(' ')} · ${open} open squares − 5×${p.pieces.length} = ${empty} empty cell${empty===1?'':'s'} in every tiling`;
+    `${p.rows}×${p.cols} board` + ((p.removed||[]).length ? ` (${p.removed.length} squares cut out)` : '') + ` · ${(p.blocked||[]).length} fixed gaps` + (extras.length ? ' (' + extras.join('; ') + ')' : '') +
+    ` · pieces ${p.pieces.map(d=>d.name).join(' ')} · ${open} open squares − 5×${p.pieces.length} = ${empty} gap${empty===1?'':'s'} in every tiling`;
 }
 
 function selectPuzzle(key){
@@ -397,10 +397,10 @@ function showTiling(){
     list.appendChild(li);
   });
   const li = document.createElement('li');
-  li.innerHTML = `<span class="muted">Empty cells: ${t.gaps.map(c=>'['+c+']').join(' ') || 'none'}</span>`;
+  li.innerHTML = `<span class="muted">Gaps: ${t.gaps.map(c=>'['+c+']').join(' ') || 'none'}</span>`;
   list.appendChild(li);
   $('legend').innerHTML =
-    '<svg width="18" height="18"><circle cx="9" cy="9" r="6" class="rb-empty"/></svg> empty cell &nbsp; ' +
+    '<svg width="18" height="18"><circle cx="9" cy="9" r="6" class="rb-empty"/></svg> gap &nbsp; ' +
     '<svg width="34" height="14"><rect x="0" y="2" width="34" height="10" rx="2" class="rb-hl rb-odd"/></svg> odd row / column &nbsp; ' +
     'numbers = filled squares per row (right) and column (below)';
 }
