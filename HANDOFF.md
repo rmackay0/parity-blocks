@@ -25,6 +25,9 @@ puzzle page. play.html shows it in an `<iframe>` overlay when
 `localStorage.pb_tutorialSeen` isn't set (set on X / Esc / Finish; the
 iframe posts `{type:'pb-tutorial-close'}` to the parent). The Rules popup
 gets a "Play the tutorial" button wherever `window.openTutorial` exists.
+On the splash, the button under Easy/Medium/Hard is **Tutorial** (a link to
+tutorial.html as a full page; ✕/Finish return to index.html and set
+`pb_tutorialSeen`); Rules stays in the top-right corner.
 Four slides: objectives + the 12 pentominoes; drag/rotate + "don't place
 over" pictures (the word **gap** is introduced when slide 2 is solved, next
 to the ringed gaps); reflect; the parity puzzle (button says "Finish ✓",

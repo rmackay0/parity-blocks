@@ -211,9 +211,9 @@
   .difficulty-btn[data-difficulty="medium"] { background: var(--color-medium); }
   .difficulty-btn[data-difficulty="hard"]   { background: var(--color-hard); }
 
-  /* ── [POSITIONING] Rules buttons ──────────────────────────────
-     Their look (colors, font) and the popup itself are in rules.css.
-     Top one: pinned to the top-right corner. Bottom one: under the
+  /* ── [POSITIONING] Rules (top-right) and Tutorial (bottom) buttons ──
+     Their look (colors, font) comes from .rules-btn in rules.css.
+     Rules: pinned to the top-right corner. Tutorial: under the
      difficulty buttons, same width as them. */
   .rules-top {
     position: fixed;
@@ -227,6 +227,10 @@
     height: 48px;
     margin-top: -8px;              /* sits a little closer to the buttons above */
     background: transparent;
+    display: flex;                 /* it's a link, so center its text like a button */
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
   }
 
   .difficulty-btn:focus-visible {
@@ -282,8 +286,9 @@
     <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
   </nav>
 
-  <!-- [CONTENT] Second Rules button, at the bottom -->
-  <button class="rules-btn rules-bottom" type="button" data-open-rules>Rules</button>
+  <!-- [CONTENT] Tutorial button, at the bottom (opens tutorial.html; its
+       ✕ and Finish buttons come back here). Rules stay in the top-right corner. -->
+  <a class="rules-btn rules-bottom" href="tutorial.html">Tutorial</a>
 
 </main>
 

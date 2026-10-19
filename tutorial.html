@@ -413,7 +413,12 @@ gameHooks.onSolved = ()=>{
 function closeTutorial(finished){
   // Inside the popup on a puzzle page: ask that page to close it
   if(window.parent !== window) window.parent.postMessage({ type:'pb-tutorial-close', finished: !!finished }, '*');
-  else location.href = 'index.html';
+  else {
+    // Opened as its own page (the splash screen's Tutorial button): remember
+    // it's been seen, so it won't pop up again on the first puzzle, then go back
+    try { localStorage.setItem('pb_tutorialSeen', '1'); } catch(e){}
+    location.href = 'index.html';
+  }
 }
 
 $('next-btn').onclick = ()=>{
