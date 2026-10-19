@@ -208,6 +208,7 @@ function solverConfig(p){
   return {
     rows: p.rows, cols: p.cols,
     blocked: p.blocked || [],
+    removed: p.removed || [],
     dotted: p.hintOutline || [],
     pieces: p.pieces.map(d=>({ name: d.name, cells: d.cells })),
   };
@@ -230,13 +231,13 @@ function renderSelect(){
 
 function renderPuzzleInfo(){
   const p = puzzles[currentKey];
-  const open = p.rows*p.cols - (p.blocked || []).length;
+  const open = p.rows*p.cols - (p.blocked || []).length - (p.removed || []).length;
   const empty = open - 5*p.pieces.length;
   const extras = [];
   if(p.hiddenBlocked && p.hiddenBlocked.length) extras.push(p.hiddenBlocked.length + ' of them hidden from players');
   if(p.hintOutline && p.hintOutline.length) extras.push('has a dotted outline (pieces can’t cross it)');
   $('puzzle-info').textContent =
-    `${p.rows}×${p.cols} board · ${(p.blocked||[]).length} blocked squares` + (extras.length ? ' (' + extras.join('; ') + ')' : '') +
+    `${p.rows}×${p.cols} board` + ((p.removed||[]).length ? ` (${p.removed.length} squares cut out)` : '') + ` · ${(p.blocked||[]).length} blocked squares` + (extras.length ? ' (' + extras.join('; ') + ')' : '') +
     ` · pieces ${p.pieces.map(d=>d.name).join(' ')} · ${open} open squares − 5×${p.pieces.length} = ${empty} empty cell${empty===1?'':'s'} in every tiling`;
 }
 
@@ -364,7 +365,7 @@ function showTiling(){
   if(!view.length){
     $('step-label').textContent = 'No tilings to show';
     $('tiling-status').textContent = $('parity-only').checked ? 'No tiling passes parity. Untick the filter to see the others.' : 'The pieces can’t be placed at all.';
-    box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell:boardCellSize(p), gaps:p.blocked, dotted:p.hintOutline }));
+    box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell:boardCellSize(p), gaps:p.blocked, removed:p.removed, dotted:p.hintOutline }));
     $('legend').innerHTML = '';
     return;
   }
@@ -379,7 +380,7 @@ function showTiling(){
   });
   box.appendChild(miniBoard({
     rows: p.rows, cols: p.cols, cell: boardCellSize(p),
-    pieces, gaps: p.blocked, dotted: p.hintOutline,
+    pieces, gaps: p.blocked, removed: p.removed, dotted: p.hintOutline,
     show: 'odd', markEmpty: true,
   }));
 
@@ -423,7 +424,7 @@ $('download-btn').onclick = ()=>{
 $('find-btn').onclick = ()=>{
   const base = puzzles[currentKey];
   const n = Math.max(1, Math.min(12, parseInt($('finder-n').value, 10) || 6));
-  const board = { rows: base.rows, cols: base.cols, blocked: base.blocked || [], dotted: base.hintOutline || [] };
+  const board = { rows: base.rows, cols: base.cols, blocked: base.blocked || [], removed: base.removed || [], dotted: base.hintOutline || [] };
   $('finder-list').hidden = true;
   runJob({ type:'find', board, n }, findUI, result=>{
     findUI.end(`${result.qualifying.length} of ${result.combinationsChecked} combinations have exactly one parity solution · ${(result.solveTimeMs/1000).toFixed(1)} s`);
@@ -450,6 +451,7 @@ function loadFound(q, base){
     title: 'Found: ' + q.pieces.join(' '),
     rows: base.rows, cols: base.cols,
     blocked: (base.blocked || []).map(rc=>rc.slice()),
+    removed: base.removed ? base.removed.map(rc=>rc.slice()) : undefined,
     hiddenBlocked: base.hiddenBlocked ? base.hiddenBlocked.map(rc=>rc.slice()) : undefined,
     hintOutline: base.hintOutline ? base.hintOutline.map(rc=>rc.slice()) : undefined,
     hintText: base.hintText,
@@ -471,6 +473,7 @@ function exportEntry(key){
     `    rows: ${p.rows}, cols: ${p.cols},`,
     `    blocked: ${cells(p.blocked)},`,
   ];
+  if(p.removed && p.removed.length) lines.push(`    removed: ${cells(p.removed)},`);
   if(p.hiddenBlocked) lines.push(`    hiddenBlocked: ${cells(p.hiddenBlocked)},`);
   if(p.hintOutline) lines.push(`    hintOutline: ${cells(p.hintOutline)},`);
   if(p.hintText) lines.push(`    hintText: '${p.hintText.replace(/'/g, "\\'")}',`);

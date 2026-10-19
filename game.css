@@ -320,3 +320,26 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
   cursor: pointer;
 }
 .reset-btn:hover { color: var(--color-text); border-color: var(--color-text-dim); }
+
+/* ── Irregular boards (puzzle.removed) ── */
+/* A removed square keeps its place in the grid but isn't drawn */
+.board-cell.removed { visibility: hidden; }
+/* The frame follows the board's shape instead of being a rectangle */
+#board-outer.irregular { background: transparent; box-shadow: none; }
+#board-frame {
+  position: absolute;
+  left: var(--board-pad);
+  top: var(--board-pad);
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 0 14px rgba(0, 0, 0, 0.5));
+}
+#board-outer.irregular #board { position: relative; }
+.frame-shape { fill: var(--color-board-bg); stroke: var(--color-board-bg); }
+/* Sandbox "Shape" mode: removed squares show as dashed ghosts you can click to restore */
+body.shaping .board-cell.removed {
+  visibility: visible;
+  background: transparent;
+  border: 2px dashed var(--color-cell-border);
+  opacity: 0.7;
+}

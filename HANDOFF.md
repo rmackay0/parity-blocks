@@ -56,6 +56,16 @@ reference below to `index.html` now means `sandbox.html`.
 - **`shapes.js`** holds the shared piece geometry + SVG drawing
   (`rotateCells`, `reflectCells`, `buildOutlinePath`, `buildPieceShape`…),
   used by play.html and rules.js. The sandbox still has its own copy.
+- **Irregular boards (2026-10-19)**: optional `puzzle.removed: [[r,c]]`
+  = squares cut out of the board entirely (not the same as `blocked`, which
+  is an X square that's still part of the board). game.js treats them as
+  out of bounds (`inBounds`), hides them (`.board-cell.removed`) and draws
+  the frame as an SVG that hugs the remaining squares (`renderFrame`,
+  `#board-frame`, `#board-outer.irregular`). solver.js merges `removed`
+  into blocked (and echoes it in the JSON); `miniBoard` takes `removed` too.
+  Sandbox: new **Shape** click mode (click to cut / click a dashed ghost to
+  restore; to extend past the edge raise Rows/Columns, then cut). Clear
+  board also restores cut squares. Carried through save/publish/export.
 - **Publishing, archive, reset (2026-10-17, user decisions: publish via
   GitHub, archive in the browser, reset on the game page)**:
   - **`published.js`** holds `PUBLISHED = {easy, medium, hard}`, each

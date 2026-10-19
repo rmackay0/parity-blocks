@@ -214,8 +214,9 @@
     <h2>Clicking the board</h2>
     <div class="segmented" id="mode-seg">
       <button data-mode="play" class="on">Play</button>
-      <button data-mode="block">Block squares</button>
-      <button data-mode="dotted">Dotted area</button>
+      <button data-mode="shape">Shape</button>
+      <button data-mode="block">Block</button>
+      <button data-mode="dotted">Dotted</button>
     </div>
     <p class="note" id="mode-note"></p>
     <div id="hint-text-row" hidden>
@@ -304,8 +305,8 @@
     <p class="modal-note">Nothing in the archive is affected.</p>
     <div class="levels">
       <div class="level-opt" id="clear-pieces"><span>Clear pieces</span><small>take every piece off the board</small></div>
-      <div class="level-opt" id="clear-board"><span>Clear board</span><small>remove all blocked squares, hidden gaps
-and the dotted area (keeps size and pieces)</small></div>
+      <div class="level-opt" id="clear-board"><span>Clear board</span><small>restore cut-out squares; remove blocked squares,
+hidden gaps and the dotted area (keeps size and pieces)</small></div>
     </div>
     <div class="popup-buttons"><button type="button" class="secondary" id="clear-cancel">Cancel</button></div>
   </div>
@@ -403,7 +404,7 @@ const DRAFT_KEY = 'pb_sandboxDraft';
 const key = (r,c) => r + ',' + c;
 
 function blankDraft(){
-  return { title:'Sandbox puzzle', rows:6, cols:6, blocked:[], hiddenBlocked:[], hintOutline:[], hintText:'',
+  return { title:'Sandbox puzzle', rows:6, cols:6, removed:[], blocked:[], hiddenBlocked:[], hintOutline:[], hintText:'',
            pieces: ['L','I','X','N','P','U'].map(catalogPiece) };
 }
 function catalogPiece(name){
@@ -413,6 +414,7 @@ function catalogPiece(name){
 function copyPuzzle(p){
   return {
     title: p.title, rows: p.rows, cols: p.cols,
+    removed: (p.removed || []).map(c=>c.slice()),
     blocked: (p.blocked || []).map(c=>c.slice()),
     hiddenBlocked: (p.hiddenBlocked || []).map(c=>c.slice()),
     hintOutline: (p.hintOutline || []).map(c=>c.slice()),
@@ -424,6 +426,7 @@ function copyPuzzle(p){
 let draft;
 try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch(e){}
 if(!draft || !draft.pieces) draft = blankDraft();
+if(!draft.removed) draft.removed = [];   // drafts saved before irregular boards existed
 // Colors/shapes remembered per piece name, so toggling a piece off and on keeps its puzzle color
 const pieceMemory = {};
 draft.pieces.forEach(d=>{ pieceMemory[d.name] = d; });
@@ -462,9 +465,10 @@ $('start-btn').onclick = ()=>{
 function renderPanel(){
   $('rows-input').value = draft.rows;
   $('cols-input').value = draft.cols;
-  const open = draft.rows*draft.cols - draft.blocked.length;
+  const open = draft.rows*draft.cols - draft.blocked.length - draft.removed.length;
   const empty = open - 5*draft.pieces.length;
   $('board-note').textContent =
+    (draft.removed.length ? `${draft.removed.length} cut out · ` : '') +
     `${draft.blocked.length} blocked (${draft.hiddenBlocked.length} hidden) · ${open} open · ` +
     `${draft.pieces.length} pieces cover ${5*draft.pieces.length} · ` +
     (empty >= 0 ? `${empty} empty square${empty===1?'':'s'}` : `${-empty} too few squares!`);
@@ -477,6 +481,7 @@ $('rows-input').onchange = $('cols-input').onchange = ()=>{
   const cols = Math.max(3, Math.min(12, parseInt($('cols-input').value,10) || draft.cols));
   const inside = ([r,c])=>r < rows && c < cols;
   draft.rows = rows; draft.cols = cols;
+  draft.removed = draft.removed.filter(inside);
   draft.blocked = draft.blocked.filter(inside);
   draft.hiddenBlocked = draft.hiddenBlocked.filter(inside);
   draft.hintOutline = draft.hintOutline.filter(inside);
@@ -487,6 +492,7 @@ $('rows-input').onchange = $('cols-input').onchange = ()=>{
 let clickMode = 'play';
 const MODE_NOTES = {
   play: 'Drag pieces onto the board to play-test, just like the game.',
+  shape: 'Click a square to cut it out of the board; click a dashed spot to put it back. To add squares past the edge, raise Rows/Columns first, then cut away what you don\u2019t want.',
   block: 'Click a square to cycle it: open → blocked (X) → hidden gap (blocked, but players see a normal square) → open.',
   dotted: 'Click squares to add or remove them from the dotted area. Pieces must sit wholly inside it or wholly outside it.',
 };
@@ -495,6 +501,7 @@ function setMode(mode){
   document.querySelectorAll('#mode-seg button').forEach(b=>b.classList.toggle('on', b.dataset.mode === mode));
   $('mode-note').textContent = MODE_NOTES[mode];
   $('hint-text-row').hidden = mode !== 'dotted';
+  document.body.classList.toggle('shaping', mode === 'shape');
   setGameMode(mode === 'play' ? 'play' : 'edit');
   $('show-btn').textContent = 'Show on board';
 }
@@ -503,7 +510,14 @@ document.querySelectorAll('#mode-seg button').forEach(b=>b.onclick = ()=>setMode
 gameHooks.onCellClick = (r, c)=>{
   const has = (list)=>list.some(([a,b])=>a===r && b===c);
   const without = (list)=>list.filter(([a,b])=>!(a===r && b===c));
-  if(clickMode === 'block'){
+  if(clickMode === 'shape'){
+    if(has(draft.removed)) draft.removed = without(draft.removed);                          // put it back
+    else {                                                                                   // cut it out
+      draft.removed.push([r,c]);
+      draft.blocked = without(draft.blocked); draft.hiddenBlocked = without(draft.hiddenBlocked);
+      draft.hintOutline = without(draft.hintOutline);
+    }
+  } else if(clickMode === 'block'){
     if(!has(draft.blocked)){ draft.blocked.push([r,c]); }                                    // open → X
     else if(!has(draft.hiddenBlocked)){ draft.hiddenBlocked.push([r,c]); }                   // X → hidden
     else { draft.blocked = without(draft.blocked); draft.hiddenBlocked = without(draft.hiddenBlocked); }  // hidden → open
@@ -553,7 +567,7 @@ $('clear-cancel').onclick = ()=>{ $('clear-modal').hidden = true; };
 $('clear-pieces').onclick = ()=>{ $('clear-modal').hidden = true; clearPieces(); };
 $('clear-board').onclick = ()=>{
   $('clear-modal').hidden = true;
-  draft.blocked = []; draft.hiddenBlocked = []; draft.hintOutline = []; draft.hintText = '';
+  draft.removed = []; draft.blocked = []; draft.hiddenBlocked = []; draft.hintOutline = []; draft.hintText = '';
   draftChanged();
 };
 
@@ -602,7 +616,7 @@ $('analyze-btn').onclick = ()=>{
     ? `Pieces on the board: ${analyzedKey} (${chosen.pieces.length}).`
     : `Nothing on the board, so all ${chosen.pieces.length} selected pieces: ${analyzedKey}.`;
   const config = {
-    rows: draft.rows, cols: draft.cols, blocked: draft.blocked, dotted: draft.hintOutline,
+    rows: draft.rows, cols: draft.cols, blocked: draft.blocked, removed: draft.removed, dotted: draft.hintOutline,
     pieces: chosen.pieces.map(d=>({ name:d.name, cells:d.cells })),
   };
   worker = ParitySolver.createWorker();
@@ -715,6 +729,7 @@ $('export-btn').onclick = ()=>{
     `    rows: ${draft.rows}, cols: ${draft.cols},`,
     `    blocked: ${cells(draft.blocked)},`,
   ];
+  if(draft.removed.length) lines.push(`    removed: ${cells(draft.removed)},`);
   if(draft.hiddenBlocked.length) lines.push(`    hiddenBlocked: ${cells(draft.hiddenBlocked)},`);
   if(draft.hintOutline.length) lines.push(`    hintOutline: ${cells(draft.hintOutline)},`);
   if(draft.hintText) lines.push(`    hintText: '${draft.hintText.replace(/'/g, "\\'")}',`);
@@ -918,7 +933,7 @@ function openSolution(entry){
     showSolution();
   };
   solutionWorker.postMessage({ type:'analyze', config: {
-    rows:p.rows, cols:p.cols, blocked:p.blocked, dotted:p.hintOutline || [],
+    rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed || [], dotted:p.hintOutline || [],
     pieces:p.pieces.map(d=>({ name:d.name, cells:d.cells })) } });
 }
 
@@ -932,7 +947,7 @@ function showSolution(){
     const d = p.pieces.find(q=>q.name === pl.piece);
     return { color: d ? d.color : '#888', row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
   }) : [];
-  box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, pieces, gaps:p.blocked, dotted:p.hintOutline,
+  box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, pieces, gaps:p.blocked, removed:p.removed, dotted:p.hintOutline,
                               show: t ? 'solved' : null, markEmpty: !!t }));
   $('solution-stepper').hidden = solutionList.length < 2;
   $('solution-label').textContent = `${solutionPos+1} of ${solutionList.length.toLocaleString()}`;
@@ -1049,7 +1064,7 @@ function openPublish(entry){
       : `⚠ This puzzle has ${n} solutions, so it isn’t unique. You can still publish it.`;
   };
   checkWorker.postMessage({ type:'analyze', maxStored: 1, config: {
-    rows:p.rows, cols:p.cols, blocked:p.blocked, dotted:p.hintOutline || [], pieces:p.pieces.map(d=>({name:d.name, cells:d.cells})) } });
+    rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed || [], dotted:p.hintOutline || [], pieces:p.pieces.map(d=>({name:d.name, cells:d.cells})) } });
 }
 function updatePublishButton(){
   $('publish-go').disabled = !publishLevel || !ghSettings().token;

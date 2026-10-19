@@ -191,6 +191,8 @@ function drawNoMark(parent, cx, cy, radius){
      rows, cols, cell   board size and square size in px
      pieces             [{cells, color, row, col}]
      gaps               [[r,c]] blocked squares (drawn with an X)
+     removed            [[r,c]] squares that aren't part of the board (left
+                        out; the frame follows the board's shape)
      show               'rows' | 'cols': green/red highlighter on every row or
                         column, with counts.  'solved': counts only.
                         'odd': red highlighter on odd rows AND columns only,
@@ -200,6 +202,7 @@ function drawNoMark(parent, cx, cy, radius){
      noMarkOn           a piece to draw the red "not allowed" mark over */
 function miniBoard(opts){
   const { rows, cols, cell, pieces = [], gaps = [], show = null, dotted = null } = opts;
+  const removed = new Set((opts.removed || []).map(([r,c])=>r+','+c));
   const gap = 3, pad = 6, label = 26;   // label = space for the row/column counts
   const step = cell + gap;
   const boardW = cols*cell + (cols-1)*gap + 2*pad;
@@ -215,10 +218,19 @@ function miniBoard(opts){
   const outer = svgEl('svg', { width: w, height: h, viewBox:`0 0 ${w} ${h}`, 'aria-hidden':'true' });
   const svg = svgEl('g', { transform:`translate(${m},${m})` }, outer);
 
-  svgEl('rect', { x:0, y:0, width:boardW, height:boardH, rx:8, class:'rb-frame' }, svg);
+  if(removed.size){
+    // irregular board: a frame that hugs the existing squares
+    const present = [];
+    for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) if(!removed.has(r+','+c)) present.push([r,c]);
+    if(present.length) svgEl('path', { d: buildFillPath(present, cell, gap), class:'rb-frame', stroke:'currentColor',
+      'stroke-width': 2*pad, 'stroke-linejoin':'round', transform:`translate(${pad},${pad})`, style:'color:var(--rules-board)' }, svg);
+  } else {
+    svgEl('rect', { x:0, y:0, width:boardW, height:boardH, rx:8, class:'rb-frame' }, svg);
+  }
   const isGap = (r,c)=>gaps.some(([gr,gc])=>gr===r && gc===c);
   for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
     const x = pad + c*step, y = pad + r*step;
+    if(removed.has(r+','+c)) continue;
     if(isGap(r,c)){
       svgEl('rect', { x:x+0.5, y:y+0.5, width:cell-1, height:cell-1, rx:3, class:'rb-gap' }, svg);
       const k = cell*0.28;
@@ -234,7 +246,7 @@ function miniBoard(opts){
     const covered = new Set();
     pieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
     for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
-      if(isGap(r,c) || covered.has(r+','+c)) continue;
+      if(isGap(r,c) || removed.has(r+','+c) || covered.has(r+','+c)) continue;
       svgEl('circle', { cx: pad + c*step + cell/2, cy: pad + r*step + cell/2, r: cell*0.22, class:'rb-empty' }, svg);
     }
   }

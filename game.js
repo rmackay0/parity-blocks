@@ -61,6 +61,7 @@ function loadPuzzle(p, opts){
   opts = opts || {};
   puzzle = p;
   dottedRegion = new Set((p.hintOutline || []).map(([r,c])=>r+','+c));
+  removedSet = new Set((p.removed || []).map(([r,c])=>r+','+c));
   const names = new Set(p.pieces.map(d=>d.name));
   const oldTray = trayCells;
   trayCells = {};
@@ -108,7 +109,7 @@ function isVisiblyBlocked(r, c){
   if(!isBlocked(r, c)) return false;
   return !(puzzle.hiddenBlocked || []).some(([hr,hc])=>hr===r && hc===c);
 }
-function inBounds(r, c){ return r>=0 && c>=0 && r<puzzle.rows && c<puzzle.cols; }
+function inBounds(r, c){ return r>=0 && c>=0 && r<puzzle.rows && c<puzzle.cols && !removedSet.has(r+','+c); }
 
 function occupiedExcept(excludeId){
   const set = new Set();
@@ -121,6 +122,9 @@ function occupiedExcept(excludeId){
 // A dotted outline (puzzle.hintOutline) is a wall: a piece must sit
 // entirely inside it or entirely outside it, never across it.
 let dottedRegion = new Set();   // set by loadPuzzle
+// Squares cut out of the board (puzzle.removed), for irregular shapes.
+// They aren't part of the board at all: a piece there is off the board.
+let removedSet = new Set();
 function crossesDottedLine(cells, row, col){
   if(!dottedRegion.size) return false;
   const inside = cells.map(([r,c])=>dottedRegion.has((row+r)+','+(col+c)));
@@ -179,13 +183,41 @@ function setupBoard(){
     // Hidden gaps look like open squares in the game; the sandbox shows
     // them (class hidden-gap) everywhere except while play-testing
     const hidden = isBlocked(r,c) && !isVisiblyBlocked(r,c);
-    cell.className = 'board-cell' + (isVisiblyBlocked(r,c) ? ' blocked' : '')
+    cell.className = 'board-cell' + (removedSet.has(r+','+c) ? ' removed' : '')
+      + (isVisiblyBlocked(r,c) ? ' blocked' : '')
       + (hidden && gameMode !== 'play' ? ' hidden-gap' : '');
     cell.dataset.r = r;
     cell.dataset.c = c;
     boardEl.appendChild(cell);
   }
+  renderFrame();
   renderHint();
+}
+
+/* Irregular boards: instead of a rectangle, the dark frame is drawn as the
+   outline of the squares that exist, widened by the frame thickness
+   (a thick stroke with rounded joins), so it hugs the board's shape. */
+function renderFrame(){
+  const outer = document.getElementById('board-outer');
+  let frame = document.getElementById('board-frame');
+  const irregular = removedSet.size > 0;
+  outer.classList.toggle('irregular', irregular);
+  if(!irregular){ if(frame) frame.remove(); return; }
+  if(!frame){
+    frame = document.createElementNS(SVG_NS, 'svg');
+    frame.id = 'board-frame';
+    frame.setAttribute('aria-hidden', 'true');
+    outer.insertBefore(frame, outer.firstChild);
+  }
+  const cells = [];
+  for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++) if(!removedSet.has(r+','+c)) cells.push([r,c]);
+  const pad = cssPx('--board-pad');
+  frame.setAttribute('width', puzzle.cols*CELL + (puzzle.cols-1)*GAP);
+  frame.setAttribute('height', puzzle.rows*CELL + (puzzle.rows-1)*GAP);
+  frame.innerHTML = '';
+  if(cells.length) frame.appendChild(svgPath(buildFillPath(cells, CELL, GAP), {
+    class: 'frame-shape', 'stroke-width': 2*pad, 'stroke-linejoin': 'round',
+  }));
 }
 
 // Edit mode: clicking a square hands it to the sandbox

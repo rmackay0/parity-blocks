@@ -53,6 +53,15 @@ check('dotted outline: I on 1x6 must stay inside cols 0-4 → 1 tiling',
 check('dotted outline on cols 0-2: the I always crosses it → 0 tilings',
   count({ rows:1, cols:6, dotted:[[0,0],[0,1],[0,2]], pieces:[piece('I')] }), 0);
 
+/* ── Irregular boards (removed squares) ── */
+console.log('Irregular boards');
+check('X on a 3x3 with a corner removed: still 1 tiling (X never uses corners)',
+  count({ rows:3, cols:3, removed:[[0,0]], pieces:[piece('X')] }), 1);
+check('I on a 1x6 with the last square removed: only 1 tiling left',
+  count({ rows:1, cols:6, removed:[[0,5]], pieces:[piece('I')] }), 1);
+check('removed squares appear in the JSON as "removed"',
+  S.analyzePuzzle({ rows:1, cols:6, removed:[[0,5]], pieces:[piece('I')] }).removed, [[0,5]]);
+
 /* ── The real test case (Hard puzzle) ── */
 console.log('Test puzzle: 6x6, blocked [1,1] [1,5] [5,0] [5,5], pieces L I X N P U');
 const hardBoard = { rows:6, cols:6, blocked:[[1,1],[1,5],[5,0],[5,5]] };

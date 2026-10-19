@@ -94,7 +94,10 @@ function orientations(cells){
 
 /* ───────────────────────────────────────────────────────────────────────
    3. THE BOARD
-   config: { rows, cols, blocked: [[r,c],...], dotted?: [[r,c],...] }
+   config: { rows, cols, blocked: [[r,c],...], removed?: [[r,c],...], dotted?: [[r,c],...] }
+   `removed` squares aren't part of the board at all (irregular shapes).
+   For solving they behave exactly like blocked squares: no piece can
+   go there, and they never count as filled.
    `dotted` is a puzzle's dotted outline (puzzles.js `hintOutline`): a
    piece must sit entirely inside it or entirely outside it.
    Every OPEN cell gets an index 0..openCells.length-1; those indices
@@ -104,7 +107,7 @@ function makeBoard(config){
   const { rows, cols } = config;
   if(!(rows > 0 && cols > 0)) throw new Error('Board needs rows and cols');
   const key = (r,c)=>r*cols + c;
-  const blocked = new Set((config.blocked || []).map(([r,c])=>key(r,c)));
+  const blocked = new Set((config.blocked || []).concat(config.removed || []).map(([r,c])=>key(r,c)));
   const dotted  = new Set((config.dotted  || []).map(([r,c])=>key(r,c)));
   const openIndex = new Map();     // cell key → open-cell index
   const openCells = [];            // open-cell index → [r,c]
@@ -396,6 +399,7 @@ function analyzePuzzle(config, opts){
     solveTimeMs: Date.now() - t0,
     tilings,
   };
+  if(config.removed && config.removed.length) result.removed = config.removed.map(rc=>rc.slice());
   if(config.dotted && config.dotted.length) result.dotted = config.dotted.map(rc=>rc.slice());
   if(total > tilings.length) result.tilingsTruncated = true;
   return result;
