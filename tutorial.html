@@ -41,6 +41,7 @@
   :root {
     --color-next-ready: #6fae5a;     /* [COLORS] Next / Finish once the slide is done */
     --color-close:      #c94a4a;     /* [COLORS] the X button */
+    --color-tut-title:  #6fb5b0;     /* [COLORS] the "Tutorial" title (teal, like the logo / Easy button) */
     --tut-board:        min(360px, 40vh, 86vw);   /* [POSITIONING] board area size */
   }
   body { overflow: hidden; }
@@ -52,7 +53,7 @@
 
   /* ── Header: title, progress dots, close X ── */
   .tut-head { position: relative; flex: 0 0 auto; padding: 14px 60px 8px; text-align: center; }
-  .tut-head h1 { font-family: var(--font-display); font-size: 1.9rem; font-weight: 400; color: var(--color-accent); line-height: 1; }
+  .tut-head h1 { font-family: var(--font-display); font-size: 1.9rem; font-weight: 400; color: var(--color-tut-title); line-height: 1; }
   .dots { display: flex; justify-content: center; gap: 9px; margin-top: 10px; }
   .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--color-cell-border); transition: background 0.2s, transform 0.2s; }
   .dot.done { background: var(--color-text-dim); }
