@@ -5,8 +5,12 @@
    EDIT GUIDE: search for [FONTS] [COLORS] [POSITIONING] [CONTENT]
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
-  /* [FONTS] */
+  /* [FONTS] Two fonts: Geo for buttons, titles and headings (short, bold
+     labels); Nunito for everything you read (messages, notes, popups).
+     To try another reading font, e.g. Roboto, change --font-text here and
+     add the font to the Google Fonts <link> in each page's <head>. */
   --font-display: 'Geo', 'Segoe UI', sans-serif;
+  --font-text:    'Nunito', 'Segoe UI', sans-serif;
   --button-size:  1.5rem;
 
   /* [COLORS] (same palette as the splash screen) */
@@ -49,7 +53,7 @@
 }
 @media (max-width: 480px) {
   :root { --tray-cell: 13px; --tray-gap: 6px; --button-width: 140px; }
-  .status { font-size: 1.15rem; }
+  .status { font-size: 1rem; }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +61,7 @@ html, body { height: 100%; }
 body {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-display);
+  font-family: var(--font-text);
   overflow: hidden;              /* whole game fits on screen; no scrolling */
   user-select: none;
   -webkit-user-select: none;
@@ -89,6 +93,7 @@ body {
   border: 2px solid var(--color-cell-border);
   background: var(--color-panel);
   color: var(--color-text);
+  font-family: var(--font-display);
   font-size: 1.6rem;
   line-height: 1;
   display: flex;
@@ -180,7 +185,8 @@ body {
 .status {
   flex: 0 0 auto;
   min-height: 1.6rem;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
   line-height: 1.6rem;
   color: var(--color-status);
   text-align: center;
@@ -203,7 +209,7 @@ body {
   max-width: 520px;
   text-align: center;
   color: var(--color-accent);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 /* ── Reflect (left) / Rotate (right) ── */
@@ -254,8 +260,8 @@ body {
   padding: 26px 24px 22px;
   text-align: center;
 }
-.popup h2 { color: var(--color-accent); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
-.popup p  { font-size: 1.2rem; margin-bottom: 18px; }
+.popup h2 { font-family: var(--font-display); color: var(--color-accent); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
+.popup p  { font-size: 1.05rem; line-height: 1.45; margin-bottom: 18px; }
 .popup-buttons { display: flex; gap: 10px; }
 .popup-buttons a, .popup-buttons button {
   flex: 1;

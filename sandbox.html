@@ -27,7 +27,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geo&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geo&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="rules.css">
 <link rel="stylesheet" href="game.css">
 <style>
@@ -52,6 +52,7 @@
     .game { height: 100vh; height: 100dvh; }
   }
 
+  .builder h1, .builder h2 { font-family: var(--font-display); }
   .builder h1 { font-size: 1.7rem; font-weight: 400; color: var(--color-accent); line-height: 1; }
   .builder h1 small { display: block; font-size: 0.95rem; color: var(--color-text-dim); margin-top: 4px; }
   .builder h2 { font-size: 1.2rem; font-weight: 400; color: var(--color-accent); margin-bottom: 8px; }
@@ -70,7 +71,7 @@
   .builder select { flex: 1; min-width: 0; }
 
   .btn {
-    font: inherit; font-size: 1.15rem; letter-spacing: 0.03em;
+    font: inherit; font-family: var(--font-display); font-size: 1.15rem; letter-spacing: 0.03em;
     border: none; border-radius: 10px; padding: 7px 14px;
     background: var(--color-cell-border); color: var(--color-text);
     cursor: pointer;
@@ -82,7 +83,7 @@
   /* Click mode: a segmented control */
   .segmented { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--color-cell-border); }
   .segmented button {
-    flex: 1; font: inherit; font-size: 1.05rem; padding: 7px 4px; border: none;
+    flex: 1; font: inherit; font-family: var(--font-display); font-size: 1.05rem; padding: 7px 4px; border: none;
     background: var(--color-bg); color: var(--color-text-dim); cursor: pointer;
   }
   .segmented button.on { background: var(--color-accent); color: #1c1714; }
