@@ -1,4 +1,86 @@
-# Polyomino Playground — Handoff Notes
+# Parity Blocks — Handoff Notes
+
+## START HERE (updated 2026-10-19)
+
+**What this is:** a static site (no build, no server). Repo
+`rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
+`main` → live at https://parity-blocks.vercel.app (user may also attach a
+Namecheap domain). The older `rmackay0/polyominoes-app` repo is the
+previous project; don't push there.
+
+**File map**
+| File | What it is |
+|---|---|
+| `index.html` | Splash: logo, title, Easy/Medium/Hard (→ `play.html?level=…`), Tutorial button (→ tutorial.html), Rules (top-right) |
+| `play.html` | The puzzle page. Loads `published.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first) |
+| `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html |
+| `tutorial.html` | Interactive 5-slide tutorial (real mini puzzles via game.js) |
+| `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
+| `puzzles.js` | `PUZZLES` registry (test puzzles; analyzer/sandbox read it) |
+| `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter) |
+| `rules.js` / `rules.css` | Rules popup (Rules button); "Play the tutorial" button on puzzle pages |
+| `solver.js` | DLX exact-cover solver + parity check + puzzle finder (pure JS; Node + browser + Worker) |
+| `sandbox.html` | Admin puzzle builder: archive (localStorage), notes, publish, analyze & flip through solutions, Shape/Fixed gap/Dotted editing |
+| `analyzer.html` | Admin analyzer + puzzle finder |
+| `sandbox-classic.html` | The original free-form sandbox (old, mostly described further down) |
+| `tests/solver.test.js` | `node tests/solver.test.js` — 52 checks |
+
+**Rules for working with this user (follow these)**
+- **Pushing:** commits are fine without asking, but **every push needs the
+  user's explicit OK**, each time. They often say "before you push: …" —
+  that means keep committing, don't push yet.
+- **Before committing:** `git fetch` and check `git log HEAD..origin/main`.
+  The sandbox's Publish button commits `published.js` straight to GitHub,
+  so origin can be ahead; rebase local commits on top (`git pull --rebase`
+  or `git rebase origin/main`) — never force-push.
+- **Readable work:** the user is learning bash. Use Edit/Write for file
+  changes, short single-purpose Bash commands with plain descriptions,
+  test scripts in files (not long inline commands); explain pipes etc.
+- **Specs come as PDFs** ("instructions v1/v2/v3") with notes beside
+  screenshots; follow them closely, flag any typos/ambiguities briefly.
+- Vocabulary below (block / piece / fixed gap / gap) is mandatory.
+
+**Current state (end of 2026-10-19 session)**
+- Everything below is committed and pushed (end of 2026-10-19). Always
+  re-check with `git log origin/main..HEAD` / `git log HEAD..origin/main`.
+- **Large text** (2026-10-19): a "Large text" button (bold label) at the
+  top left of the tutorial and the rules popup; turns on
+  `html.large-text` (bigger reading text only) and becomes "Standard
+  text". Shared setting `localStorage.pb_largeText`. Styles: rules.css
+  (`.text-size-btn`, rules popup sizes) and tutorial.html (`html.large-text …`).
+  The rules' rotate/reflect lines also say "tap" on touchscreens now.
+- **Tutorial v3 + new game features** (all tested; committed & pushed
+  together with Large text — see git log):
+  game.js — keyboard shortcuts (R rotate, E reflect — F/T no longer
+  reflect; piece letters F I L N P T U V W X Y Z call that piece to the
+  grid centre or select it; arrow keys move the selection; R/E also work
+  while holding/dragging a piece; shortcuts ignored in text boxes and with
+  Cmd/Ctrl/Alt), box select (mouse click-drag on empty board → group that
+  moves/rotates/reflects/drags together), hooks `onPlace`,
+  `onMultiSelect`, finished-board gaps drawn dark (`.gap-dark`), ring
+  pulse animation (`.pulse`). tutorial.html — rotate note glows only
+  after a piece is placed; gaps popup centred on the gaps, static
+  pictures, rings pulse twice then OK turns green; going Back resets a
+  slide but Next stays green; reflect slide's "Nice!" removed; final
+  slide has a tray note (glows until rotate AND reflect) and, on
+  computers only, a left note about box select (glows until used) with
+  an "Optional shortcuts" <details> dropdown.
+- Not built yet (user's future wish): save players' progress, collecting
+  no data beyond what's needed (suggested: browser localStorage only).
+
+**Testing** — there's no test suite beyond tests/solver.test.js. Browser
+checks use Playwright scripts kept in the session scratchpad (they don't
+persist between sessions; rewrite as needed): `tutorial_test.js` (plays
+the whole tutorial on desktop + phone), `play_test.js` (solves Easy/Hard
+through the UI), `click_test.js` (click = rotate, double-click = reflect),
+`game_features_test.js` (keys, hold+R/E, box select, group moves),
+`rules_text_test.js` (rules popup + Large text on laptop/phone; shared
+with the tutorial), `fonts_screens.js` (screenshots). `LARGE=1 node
+tutorial_test.js` replays the tutorial with Large text on. The user wants
+both laptop and phone checked before pushes. Tips: mark the tutorial seen with
+`localStorage.setItem('pb_tutorialSeen','1')` in an init script before
+testing play.html; game state (`placedPieces`, `trayCells`, `puzzle`,
+`selection`, `groupIds`, `CELL`) are globals readable via page.evaluate.
 
 ## Words to use (user's decision, 2026-10-19) — in ALL player-facing text
 

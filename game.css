@@ -307,6 +307,22 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
 }
 /* View mode: ring on an open square no piece covers */
 .empty-ring { fill: none; stroke: var(--color-select); stroke-width: 3; }
+/* A gap in a finished board: the same dark background as a fixed gap */
+.board-cell.gap-dark { background: var(--color-bg); border-style: dashed; }
+/* Two pulses of glowing light on a ring (the tutorial uses this) */
+@keyframes ringPulse {
+  0%, 100% { filter: none; }
+  50%      { filter: drop-shadow(0 0 4px #ffd9a0) drop-shadow(0 0 9px #f2c48a); stroke: #fff2dc; }
+}
+.empty-ring.pulse, .rb-empty.pulse { animation: ringPulse 0.8s ease-in-out 2; }
+
+/* Box select: the rectangle drawn while click-dragging on empty board */
+.marquee {
+  position: fixed; display: none; z-index: 1500; pointer-events: none;
+  border: 1.5px dashed rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
 /* View mode: the message above the board when a tiling passes parity */
 .status.good { color: var(--color-valid); }
 

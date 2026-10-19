@@ -18,6 +18,9 @@
 ═══════════════════════════════════════════════════════════════════ */
 (function(){
 
+// "Tap" on touchscreens, "click" with a mouse (same check as the tutorial)
+const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
 const RULES_TEXT = {
   title: 'How to Play',
   goalsHeading: 'Goals',
@@ -28,8 +31,8 @@ const RULES_TEXT = {
   checkCols: 'Check columns',
   allEven: 'All even: solved!',
   rulesHeading: 'Rules',
-  reflect: 'Pieces can be reflected: double-click one.',
-  rotate: 'Pieces can be rotated: click one.',
+  reflect: TOUCH ? 'Pieces can be reflected: tap one twice.' : 'Pieces can be reflected: double-click one.',
+  rotate: TOUCH ? 'Pieces can be rotated: tap one.' : 'Pieces can be rotated: click one.',
   gap: 'You can’t place a piece on a fixed gap.',
   dotted: 'You can’t place a piece across a dotted perimeter.',
   ok: 'Got it',
@@ -131,6 +134,13 @@ function build(){
   close.addEventListener('click', closeRules);
   popup.appendChild(close);
 
+  // Top-left: switch between large and standard text (shared with the tutorial)
+  const sizeBtn = document.createElement('button');
+  sizeBtn.type = 'button';
+  sizeBtn.className = 'text-size-btn';
+  sizeBtn.addEventListener('click', ()=>setLargeText(!isLargeText()));
+  popup.appendChild(sizeBtn);
+
   const h2 = document.createElement('h2');
   h2.id = 'rules-title';
   h2.textContent = T.title;
@@ -195,8 +205,27 @@ function build(){
   document.body.appendChild(backdrop);
 }
 
+/* ── Large text ── (same setting as the tutorial's button: 'pb_largeText') */
+const LARGE_TEXT_KEY = 'pb_largeText';
+function isLargeText(){ try { return localStorage.getItem(LARGE_TEXT_KEY) === '1'; } catch(e){ return false; } }
+function setLargeText(on){
+  try { localStorage.setItem(LARGE_TEXT_KEY, on ? '1' : '0'); } catch(e){}
+  showLargeText();
+}
+function showLargeText(){
+  const on = isLargeText();
+  document.documentElement.classList.toggle('large-text', on);
+  const btn = backdrop && backdrop.querySelector('.text-size-btn');
+  if(btn){
+    btn.textContent = on ? 'Standard text' : 'Large text';
+    btn.classList.toggle('is-large-label', !on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
 function openRules(){
   if(!backdrop) build();
+  showLargeText();          // pick up a change made in the tutorial
   lastFocus = document.activeElement;
   backdrop.hidden = false;
   const popup = backdrop.querySelector('.rules-popup');

@@ -82,7 +82,7 @@
   background: var(--rules-panel);
   border: 1px solid var(--rules-panel-border);
   border-radius: 18px;
-  padding: 26px 26px 22px;
+  padding: 62px 26px 22px;          /* room at the top for the Large text button */
   color: var(--rules-text);
   font-family: var(--rules-text-font);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -120,6 +120,26 @@
   cursor: pointer;
 }
 .rules-close:hover { color: var(--rules-text); background: rgba(255, 255, 255, 0.06); }
+
+/* ── "Large text" / "Standard text" button ──
+   Top-left of the rules popup and the tutorial. Turning it on puts the
+   class "large-text" on the page (<html>) and remembers it in
+   localStorage ('pb_largeText'), so the rules and tutorial share it. */
+.text-size-btn {
+  position: absolute; top: 12px; left: 14px; z-index: 5;
+  height: 38px; padding: 0 16px; border-radius: 999px;
+  border: 2px solid var(--rules-btn-border);
+  background: var(--rules-btn-bg); color: var(--rules-text);
+  font-family: var(--rules-text-font); font-size: 1rem; font-weight: 400;
+  cursor: pointer;
+}
+.text-size-btn:hover { filter: brightness(1.2); }
+.text-size-btn.is-large-label { font-weight: 800; font-size: 1.05rem; }   /* "Large text" in bold */
+.text-size-btn:focus-visible { outline: 3px solid #f2c48a; outline-offset: 2px; }
+
+/* Large text in the rules popup */
+html.large-text .rules-popup { --rules-text-size: 1.45rem; --rules-caption-size: 1.2rem; max-width: 760px; }
+html.large-text .rules-popup .rules-ok { font-size: 1.6rem; height: 56px; }
 
 /* [POSITIONING] Each goal/rule: text, then its picture(s) underneath */
 .rules-item {
