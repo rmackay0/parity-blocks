@@ -7,16 +7,19 @@
   and from "Play the tutorial" in the Rules popup. It can also be opened
   on its own: tutorial.html.
 
-  Four slides:
+  Five slides:
     1  Game objectives + the 12 pentominoes        (no task: Next is ready)
-    2  Drag pieces on, click/tap to rotate; what pieces can't go over;
-       on solving, the leftover squares are introduced as "gaps"
-    3  Double-click / tap twice to reflect
-    4  Make every row and column even (the parity puzzle). Last button
-       says "Finish"
-  Slides 2-4 are real mini puzzles running on the game's own code
+    2  Drag pieces on, click/tap to rotate. The notes glow until the
+       player drags / rotates. On solving, a popup introduces "gaps"
+       (gap + fixed gap pictures animate in, then OK turns green)
+    3  "Don't place a piece over…": four pictures animate one at a time
+    4  Double-click / tap twice to reflect (note glows until they do)
+    5  Make every row and column even (the parity puzzle). On solving,
+       each row then column flashes green and its count appears. Last
+       button says "Finish"
+  Slides 2, 4 and 5 are real mini puzzles running on the game's own code
   (game.js / game.css), with some pieces fixed in place. Next turns green
-  when the slide's puzzle is solved.
+  only once the slide's task (and any animation) is finished.
 
   Words used everywhere (see HANDOFF.md):
     block      one square of a piece        piece      a pentomino
@@ -98,7 +101,7 @@
   .play .tray { grid-area: tray; max-width: 460px; min-height: 60px; }
   .play .status { grid-area: stat; }
   .play .board-wrap { grid-area: board; width: var(--tut-board); height: var(--tut-board); }
-  .n-trayl  { grid-area: trayl;  justify-self: end; text-align: right; display: flex; align-items: center; }
+  .n-trayl  { grid-area: trayl;  justify-self: end; text-align: right; display: flex; align-items: center; white-space: nowrap; }
   .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; }
   .n-below  { grid-area: below; justify-self: center; text-align: center; max-width: 720px; }
   .arrow { display: inline-block; color: var(--color-accent); font-size: 1.6rem; margin-left: 6px; vertical-align: -2px; }
@@ -109,6 +112,67 @@
   .dont figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
   .dont figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
   .play .hint-caption, .play .controls { display: none; }   /* not used in the tutorial */
+  .play { position: relative; }      /* the gaps popup is positioned inside it */
+
+  /* [COLORS] A note that glows until the player does what it says
+     ("Drag these pieces…" fades once a piece is dragged, etc.) */
+  .callout { border-radius: 12px; padding: 8px 12px; transition: background 0.7s, box-shadow 0.7s; }
+  .callout.lit {
+    background: rgba(217, 154, 78, 0.16);
+    box-shadow: 0 0 0 2px rgba(217, 154, 78, 0.7), 0 0 20px rgba(217, 154, 78, 0.35);
+  }
+
+  /* Pop-in animation used by the pictures */
+  @keyframes popIn { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+  @keyframes draw  { to { stroke-dashoffset: 0; } }
+  .anim-in { animation: popIn 0.45s cubic-bezier(.3,1.4,.5,1) both; }
+  .draw { stroke-dasharray: 100; stroke-dashoffset: 100; }
+  .anim-in .draw { animation: draw 0.6s 0.2s ease forwards; }   /* traces itself once its picture pops in */
+
+  /* ── The gaps popup (slide 2, after solving) ── */
+  .gap-pop {
+    position: absolute; z-index: 40; width: 300px;
+    background: var(--color-panel);
+    border: 2px solid var(--color-valid); border-radius: 14px;
+    padding: 14px 16px 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+    animation: popIn 0.3s ease both;
+  }
+  .gap-pop p { font-size: 1rem; line-height: 1.45; color: var(--color-text); }
+  .gap-pop p b { color: var(--color-valid); }
+  .gap-pop .pics { display: flex; justify-content: center; gap: 26px; margin: 12px 0; }
+  .gap-pop figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; opacity: 0; }
+  .gap-pop figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
+  .ok-btn {
+    display: block; width: 100%; height: 42px; border: none; border-radius: 10px;
+    font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em;
+    background: var(--color-cell-border); color: var(--color-text-dim); cursor: default;
+    transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+  }
+  .ok-btn.ready { background: var(--color-next-ready); color: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(111, 174, 90, 0.25); }
+
+  /* ── "Don't place a piece over" slide ── */
+  .dont-slide { max-width: 820px; margin: 0 auto; text-align: center; padding-top: 10px; }
+  .dont-slide h2 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 400; color: var(--color-accent); margin-bottom: 18px; }
+  .dont-slide .dont { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; gap: 18px 28px; }   /* 2 × 2 */
+  .dont-slide figure {
+    padding: 14px 16px 10px; border-radius: 14px;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .dont-slide figure.active {     /* [COLORS] the square behind the picture that's animating */
+    background: rgba(217, 154, 78, 0.14);
+    box-shadow: 0 0 0 2px rgba(217, 154, 78, 0.6);
+  }
+  .dont-slide figcaption { font-size: 1rem; color: var(--color-text); margin-top: 6px; }
+  .mover { transition: transform 0.7s cubic-bezier(.3,.9,.4,1), opacity 0.3s; }
+  .rb-nomark { transition: opacity 0.25s, transform 0.3s cubic-bezier(.3,1.5,.5,1); transform-box: fill-box; transform-origin: center; }
+  .rb-nomark.hide { opacity: 0; transform: scale(0.3); }
+
+  /* ── Final slide: counting the blocks in each row and column ── */
+  #tut-overlay { position: absolute; left: var(--board-pad); top: var(--board-pad); overflow: visible; pointer-events: none; z-index: 7; }
+  .row-glow { fill: var(--color-valid); opacity: 0; transition: opacity 0.12s; }
+  .row-glow.on { opacity: 0.6; }
+  .count { font-family: var(--font-text); font-weight: 700; font-size: 16px; fill: var(--color-valid); }
 
   @media (max-width: 760px) {
     .play {
@@ -116,7 +180,7 @@
       grid-template-areas: "trayl" "tray" "stat" "board" "boardr" "below";
       justify-items: center;
     }
-    .n-trayl, .n-boardr { justify-self: center; text-align: center; max-width: none; }
+    .n-trayl, .n-boardr { justify-self: center; text-align: center; max-width: none; white-space: normal; }
     .arrow { transform: rotate(90deg); }
     .big-note { border-left: none; padding-left: 0; font-size: 1.2rem; }
   }
@@ -149,8 +213,29 @@
     <!-- Slide 1 -->
     <section class="intro" id="intro"></section>
 
-    <!-- Slides 2-4: the game, with notes placed around it -->
+    <!-- Slide 3: "Don't place a piece over…" (animated pictures) -->
+    <section class="dont-slide" id="dont-slide" hidden>
+      <h2>Don&rsquo;t place a piece over:</h2>
+      <div class="dont" id="dont"></div>
+    </section>
+
+    <!-- Slides 2, 4, 5: the game, with notes placed around it -->
     <section class="play" id="play" hidden>
+      <!-- The gaps popup (slide 2, after solving) -->
+      <div class="gap-pop" id="gap-pop" hidden role="dialog" aria-label="Gaps">
+        <p>The empty squares left over are called <b>gaps</b>. They work just like fixed gaps, except you decide where they go.</p>
+        <div class="pics">
+          <figure id="pic-gap"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+            <rect x="2" y="2" width="40" height="40" rx="5" class="rb-cell"/>
+            <circle cx="22" cy="22" r="10" pathLength="100" class="rb-empty draw"/>
+          </svg><figcaption>gap</figcaption></figure>
+          <figure id="pic-fixed"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="39" height="39" rx="5" class="rb-gap"/>
+            <path d="M13,13 L31,31 M31,13 L13,31" pathLength="100" class="rb-gap-x draw"/>
+          </svg><figcaption>fixed gap</figcaption></figure>
+        </div>
+        <button class="ok-btn" id="gap-ok" aria-disabled="true">OK</button>
+      </div>
       <div class="note n-trayl" id="n-trayl"></div>
       <div class="tray" id="tray" aria-label="Pieces to place"></div>
       <div class="note n-trayr" id="n-trayr" style="grid-area:trayr"></div>
@@ -161,6 +246,7 @@
           <div id="pieces-layer"></div>
           <div id="hint-overlay"></div>
           <svg id="mark-overlay" aria-hidden="true"></svg>
+          <svg id="tut-overlay" aria-hidden="true"></svg>
         </div>
       </div>
       <div class="note n-boardr" id="n-boardr"></div>
@@ -261,10 +347,12 @@ function pieceSvg(cells, color, cell){
   return svg;
 }
 
-// "Don't place a piece over…" pictures: a tiny 3×4 board, a piece in the
-// wrong place, and the red not-allowed mark
-function dontPicture(kind){
-  const cell = 18, gap = 2, pad = 5, rows = 3, cols = 4, step = cell + gap, m = 18;
+// "Don't place a piece over…" pictures: a small 3×4 board, a piece in the
+// wrong place, and the red not-allowed sign. With animated = true the
+// piece starts off to one side (invisible) and the sign starts hidden;
+// playDont() then slides the piece in and pops the sign up.
+function dontPicture(kind, animated){
+  const cell = 26, gap = 2, pad = 6, rows = 3, cols = 4, step = cell + gap, m = 24;
   const W = cols*cell + (cols-1)*gap + 2*pad, H = rows*cell + (rows-1)*gap + 2*pad;
   const svg = svgEl('svg', { width: W + 2*m, height: H + 2*m, viewBox:`${-m} ${-m} ${W + 2*m} ${H + 2*m}`, 'aria-hidden':'true' });
   svgEl('rect', { x:0, y:0, width:W, height:H, rx:6, class:'rb-frame' }, svg);
@@ -277,47 +365,74 @@ function dontPicture(kind){
   }
   const X = (r,c)=>{ const k = cell*0.28, cx = xAt(c)+cell/2, cy = yAt(r)+cell/2;
     svgEl('path', { d:`M${cx-k},${cy-k} L${cx+k},${cy+k} M${cx+k},${cy-k} L${cx-k},${cy+k}`, class:'rb-gap-x' }, svg); };
-  let markR = 1, markC = 1.5;
+  // The piece that moves into the wrong spot lives in a "mover" group, so
+  // it can start shifted by (dx, dy) and slide into place
+  const mover = svgEl('g', { class:'mover' });
+  let markR = 1, markC = 1.5, dx = 0, dy = 0;
   if(kind === 'dotted'){
     svgEl('path', { d: buildOutlinePath([[0,0],[0,1],[1,0],[1,1]], cell, gap), class:'rb-dotted', transform:`translate(${pad},${pad})` }, svg);
-    drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.I, xAt(1), yAt(1), cell, gap);
-    markR = 1; markC = 2;
+    svg.appendChild(mover);
+    drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.I, xAt(1), yAt(1), cell, gap);
+    markR = 1; markC = 2; dx = 2*step;                    // slides in from the right
   } else if(kind === 'edge'){
-    drawPiece(svg, [[0,0],[0,1],[1,1]], COLOR.P, xAt(3), yAt(1), cell, gap);
-    markR = 1.5; markC = 3.5;
+    svg.appendChild(mover);
+    drawPiece(mover, [[0,0],[0,1],[1,1]], COLOR.P, xAt(3), yAt(1), cell, gap);
+    markR = 1.5; markC = 3.5; dx = -2*step;               // slides right, off the edge
   } else if(kind === 'piece'){
     drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.N, xAt(0), yAt(1), cell, gap);
-    const g = drawPiece(svg, [[0,0],[1,0],[2,0]], COLOR.U, xAt(1), yAt(0), cell, gap);
-    g.setAttribute('opacity', '0.85');
-    markR = 1; markC = 1;
+    svg.appendChild(mover);
+    drawPiece(mover, [[0,0],[1,0],[2,0]], COLOR.U, xAt(1), yAt(0), cell, gap).setAttribute('opacity', '0.85');
+    markR = 1; markC = 1; dy = -2*step;                   // drops in from above
   } else if(kind === 'gap'){
-    const g = drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.V, xAt(0), yAt(1), cell, gap);
-    g.setAttribute('opacity', '0.7');
+    svg.appendChild(mover);
+    drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.V, xAt(0), yAt(1), cell, gap).setAttribute('opacity', '0.7');
     X(1,1);
-    markR = 1; markC = 1;
+    markR = 1; markC = 1; dy = 2*step;                    // rises from below
   }
-  drawNoMark(svg, xAt(markC) + cell/2, yAt(markR) + cell/2, cell*0.95);
+  const sign = drawNoMark(svg, xAt(markC) + cell/2, yAt(markR) + cell/2, cell*0.95);
+  if(animated){
+    mover.style.transform = `translate(${dx}px, ${dy}px)`;
+    mover.style.opacity = '0';
+    sign.classList.add('hide');
+  }
   return svg;
+}
+
+// Play one picture's animation: slide the piece in, then pop up the sign
+function playDont(svg){
+  const mover = svg.querySelector('.mover');
+  mover.style.transform = 'translate(0px, 0px)';
+  mover.style.opacity = '1';
+  setTimeout(()=>svg.querySelector('.rb-nomark').classList.remove('hide'), 650);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
    [CONTENT] THE SLIDES
 ═══════════════════════════════════════════════════════════════════ */
+/* Options for 'play' slides:
+     trayLeft / boardRight   notes beside the pieces / the board
+     trayGlow                the tray note glows until a piece is dragged
+     boardGlowUntil          the board note glows until 'rotate' or 'reflect'
+     gapPopup                on solving, show the gaps popup; Next waits for its OK
+     countAnimation          on solving, count each row and column; Next waits for it
+     solvedNote              a line added beside the board once it's solved      */
 const SLIDES = [
   { kind: 'intro' },
   { kind: 'play', puzzle: PUZZLE_2,
-    trayLeft: `Drag these pieces onto the grid<span class="arrow">&#10148;</span>`,
-    boardRight: `${tapOrClick} a piece to <b>rotate</b> it.`,
-    below: 'dont',
-    solvedNote: `The empty squares left over are called <b>gaps</b>. They work just like fixed gaps, except you decide where they go.` },
+    trayLeft: `Drag these pieces onto the grid<span class="arrow">&#10148;</span>`, trayGlow: true,
+    boardRight: `${tapOrClick} a piece to <b>rotate</b> it.`, boardGlowUntil: 'rotate',
+    gapPopup: true },
+  { kind: 'dont' },
   { kind: 'play', puzzle: PUZZLE_3,
-    boardRight: `${tapTwice} to <b>reflect</b> it.`,
+    boardRight: `${tapTwice} to <b>reflect</b> it.`, boardGlowUntil: 'reflect',
     solvedNote: 'Nice! Rotating and reflecting together let a piece face any way.' },
   { kind: 'play', puzzle: PUZZLE_4,
     boardRight: `<div class="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>`,
     belowHtml: `<p class="hint">Hint: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
+    countAnimation: true,
     solvedNote: 'Every row and column is even. You’re ready to play!' },
 ];
+const DONT_ITEMS = [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece'], ['gap','a fixed gap']];
 
 function renderIntro(){
   const box = $('intro');
@@ -327,8 +442,7 @@ function renderIntro(){
       <li>Fit all of the pieces onto the grid.</li>
       <li>Every row and column contains an even (parity) number of blocks.</li>
     </ol>
-    <p>All of the pieces are made up of five blocks each.</p>
-    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b>. Dominoes are made of two blocks, and tetrominoes are made of four (the origin of the name Tetris).</p>
+    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b> because they&rsquo;re made of five blocks. Dominoes are made of two, and tetrominoes are made of four (the origin of the name Tetris).</p>
     <div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>`;
   TWELVE.forEach(([color, cells])=>$('twelve').appendChild(pieceSvg(cells, color, 15)));
 }
@@ -360,56 +474,171 @@ function updateNext(){
   $('back-btn').style.visibility = current === 0 ? 'hidden' : 'visible';
 }
 
+/* Animations are timed with setTimeout. Each slide change bumps animRun,
+   and every timed step checks it first, so leaving a slide mid-animation
+   stops that animation. */
+let animRun = 0;
+function later(ms, fn){ const run = animRun; setTimeout(()=>{ if(run === animRun) fn(); }, ms); }
+
+function markDone(){ done[current] = true; renderDots(); updateNext(); }
+
 function showSlide(i){
   current = i;
+  animRun++;
   const s = SLIDES[i];
   $('intro').hidden = s.kind !== 'intro';
+  $('dont-slide').hidden = s.kind !== 'dont';
   $('play').hidden = s.kind !== 'play';
+  $('gap-pop').hidden = true;
+  $('tut-overlay').innerHTML = '';
   if(s.kind === 'intro') renderIntro();
-  else {
+  if(s.kind === 'dont') showDontSlide();
+  if(s.kind === 'play'){
     $('n-trayl').innerHTML = s.trayLeft || '';
     $('n-trayr').innerHTML = '';
     $('n-boardr').innerHTML = s.boardRight || '';
-    const below = $('n-below');
-    below.innerHTML = '';
-    if(s.below === 'dont'){
-      below.innerHTML = '<p class="note">Don’t place a piece over:</p><div class="dont" id="dont"></div>';
-      [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece'], ['gap','a fixed gap']].forEach(([k, label])=>{
-        const f = document.createElement('figure');
-        f.appendChild(dontPicture(k));
-        const c = document.createElement('figcaption'); c.textContent = label; f.appendChild(c);
-        $('dont').appendChild(f);
-      });
-    }
-    if(s.belowHtml) below.insertAdjacentHTML('beforeend', s.belowHtml);
+    // Glowing notes: lit until the player does what they say
+    $('n-trayl').className = 'note n-trayl' + (s.trayGlow ? ' callout' + (done[i] ? '' : ' lit') : '');
+    $('n-boardr').className = 'note n-boardr' + (s.boardGlowUntil ? ' callout' + (done[i] ? '' : ' lit') : '');
+    $('n-below').innerHTML = s.belowHtml || '';
     // The "solved" note sits beside the board (under its note) so it's always in view
     if(done[i] && s.solvedNote) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
     setGameMode('play');
     loadPuzzle(s.puzzle);
-    if(done[i] && solvedView[i]){ setViewTiling(solvedView[i]); setGameMode('view'); }
+    if(done[i] && solvedView[i]){
+      setViewTiling(solvedView[i]);
+      setGameMode('view');
+      if(s.countAnimation) drawCounts(false);   // already watched it: just show the counts
+    }
   }
   renderDots();
   updateNext();
   $('play').parentElement.scrollTop = 0;
 }
 
-// A tutorial puzzle got solved: freeze it, ring the gaps, light up Next
+// The glowing notes fade once the player drags / rotates / reflects
+gameHooks.onDragStart = ()=>{ $('n-trayl').classList.remove('lit'); };
+gameHooks.onTransform = kind=>{ if(SLIDES[current].boardGlowUntil === kind) $('n-boardr').classList.remove('lit'); };
+
+// A tutorial puzzle got solved: freeze it and ring the gaps; then either
+// show the gaps popup, run the counting animation, or light up Next
 gameHooks.onSolved = ()=>{
   const covered = new Set();
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
   const empty = [];
   for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++)
     if(!covered.has(r+','+c) && !isBlocked(r,c) && inBounds(r,c)) empty.push([r,c]);
+  const s = SLIDES[current];
+  // On the counting slide the column counts sit above the board, so no "Solved!" there
   solvedView[current] = { pieces: placedPieces.map(p=>({ name:p.name, color:p.color, cells:p.cells, row:p.row, col:p.col })),
-                          oddRows: [], oddCols: [], empty, status: 'Solved!', good: true };
-  done[current] = true;
+                          oddRows: [], oddCols: [], empty, status: s.countAnimation ? '' : 'Solved!', good: true };
   setViewTiling(solvedView[current]);
   setGameMode('view');
-  const s = SLIDES[current];
-  if(s.solvedNote) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
-  renderDots();
-  updateNext();
+  $('n-trayl').classList.remove('lit'); $('n-boardr').classList.remove('lit');
+  // (On the counting slide, the solved note waits until the counting is done)
+  if(s.solvedNote && !s.countAnimation) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
+  if(s.gapPopup) showGapPopup(empty);
+  else if(s.countAnimation) drawCounts(true);
+  else markDone();
 };
+
+/* ── The gaps popup (slide 2) ──
+   Sits partly over the grid, just right of the ringed gaps. Its two
+   pictures pop in one after the other; then OK turns green; OK closes it
+   and lights up Next. */
+function showGapPopup(empty){
+  const pop = $('gap-pop'), ok = $('gap-ok');
+  ['pic-gap', 'pic-fixed'].forEach(id=>$(id).classList.remove('anim-in'));
+  ok.classList.remove('ready'); ok.setAttribute('aria-disabled', 'true');
+  pop.hidden = false;
+  // Position it: right of the rightmost gap, level with the top gap. On a
+  // narrow screen, centre it just ABOVE the gaps (so the gaps and the OK
+  // button both stay in view) and scroll it into view.
+  const play = $('play').getBoundingClientRect(), board = boardEl.getBoundingClientRect();
+  const maxC = Math.max(...empty.map(c=>c[1])), minR = Math.min(...empty.map(c=>c[0]));
+  if(play.width >= 620){
+    pop.style.left = (board.left - play.left + pxPos(maxC + 1) + 4) + 'px';
+    pop.style.top  = (board.top - play.top + pxPos(minR) - 20) + 'px';
+  } else {
+    pop.style.left = Math.max(0, (play.width - pop.offsetWidth) / 2) + 'px';
+    pop.style.top  = Math.max(0, board.top - play.top + pxPos(minR) - pop.offsetHeight - 8) + 'px';
+    pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  later(500,  ()=>$('pic-gap').classList.add('anim-in'));
+  later(1300, ()=>$('pic-fixed').classList.add('anim-in'));
+  later(2200, ()=>{ ok.classList.add('ready'); ok.setAttribute('aria-disabled', 'false'); });
+}
+$('gap-ok').onclick = ()=>{
+  if(!$('gap-ok').classList.contains('ready')) return;
+  $('gap-pop').hidden = true;
+  markDone();
+};
+
+/* ── "Don't place a piece over" slide ──
+   Plays each picture's animation in turn with a highlighted square behind
+   it; after the last one, Next lights up. Coming back to the slide later
+   shows the finished pictures straight away. */
+function showDontSlide(){
+  const box = $('dont');
+  box.innerHTML = '';
+  const figs = DONT_ITEMS.map(([kind, label])=>{
+    const f = document.createElement('figure');
+    f.appendChild(dontPicture(kind, !done[current]));
+    const c = document.createElement('figcaption'); c.textContent = label; f.appendChild(c);
+    box.appendChild(f);
+    return f;
+  });
+  if(done[current]) return;
+  const STEP = 1300;   // ms per picture
+  figs.forEach((f, i)=>{
+    later(400 + i*STEP,       ()=>{ f.classList.add('active'); playDont(f.querySelector('svg')); });
+    later(400 + i*STEP + 1150, ()=>f.classList.remove('active'));
+  });
+  later(400 + figs.length*STEP, markDone);
+}
+
+/* ── Final slide: count the blocks in every row, then every column ──
+   Each line's blocks flash green one line at a time; its count appears
+   (right of rows, above columns) and stays. Then Finish lights up. With
+   animate = false, just draw all the counts (revisiting the slide). */
+function drawCounts(animate){
+  const svg = $('tut-overlay');
+  svg.innerHTML = '';
+  const w = puzzle.cols*CELL + (puzzle.cols-1)*GAP, h = puzzle.rows*CELL + (puzzle.rows-1)*GAP;
+  svg.setAttribute('width', w); svg.setAttribute('height', h);
+  const pad = cssPx('--board-pad');
+  const filled = new Set();
+  solvedView[current].pieces.forEach(p=>p.cells.forEach(([r,c])=>filled.add((p.row+r)+','+(p.col+c))));
+  const lines = [];
+  for(let r=0; r<puzzle.rows; r++){
+    const cells = []; for(let c=0; c<puzzle.cols; c++) if(filled.has(r+','+c)) cells.push([r,c]);
+    lines.push({ cells, x: w + pad + 14, y: pxPos(r) + CELL/2 });   // count to the right of the row
+  }
+  for(let c=0; c<puzzle.cols; c++){
+    const cells = []; for(let r=0; r<puzzle.rows; r++) if(filled.has(r+','+c)) cells.push([r,c]);
+    lines.push({ cells, x: pxPos(c) + CELL/2, y: -pad - 14 });     // count above the column
+  }
+  const addCount = line=>{
+    const t = svgEl('text', { x: line.x, y: line.y, 'text-anchor':'middle', 'dominant-baseline':'central', class:'count' }, svg);
+    t.textContent = line.cells.length;
+  };
+  if(!animate){ lines.forEach(addCount); return; }
+  const STEP = 230;    // ms per row/column: fairly quick
+  lines.forEach((line, i)=>{
+    later(300 + i*STEP, ()=>{
+      const glows = line.cells.map(([r,c])=>svgEl('rect', { x: pxPos(c), y: pxPos(r), width: CELL, height: CELL, rx: 4, class:'row-glow' }, svg));
+      requestAnimationFrame(()=>glows.forEach(g=>g.classList.add('on')));   // fade in
+      addCount(line);
+      later(STEP * 0.75, ()=>glows.forEach(g=>g.classList.remove('on')));  // fade out
+      later(STEP * 0.75 + 200, ()=>glows.forEach(g=>g.remove()));
+    });
+  });
+  later(300 + lines.length*STEP + 150, ()=>{
+    const note = SLIDES[current].solvedNote;
+    if(note) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${note}</p>`);
+    markDone();
+  });
+}
 
 function closeTutorial(finished){
   // Inside the popup on a puzzle page: ask that page to close it

@@ -28,10 +28,16 @@ gets a "Play the tutorial" button wherever `window.openTutorial` exists.
 On the splash, the button under Easy/Medium/Hard is **Tutorial** (a link to
 tutorial.html as a full page; ✕/Finish return to index.html and set
 `pb_tutorialSeen`); Rules stays in the top-right corner.
-Four slides: objectives + the 12 pentominoes; drag/rotate + "don't place
-over" pictures (the word **gap** is introduced when slide 2 is solved, next
-to the ringed gaps); reflect; the parity puzzle (button says "Finish ✓",
-same green). Slides 2–4 run on game.js itself, using two new features:
+Five slides (v2 of the user's spec, 2026-10-19): objectives + the 12
+pentominoes; drag/rotate (notes glow until the player drags / rotates;
+on solving, a popup next to the ringed gaps introduces **gap** vs **fixed
+gap** with animated pictures and an OK that turns green first); "don't
+place a piece over" as its own animated slide; reflect; the parity puzzle
+(on solving, rows then columns flash green one by one with counts that
+stay; only then "Finish ✓" turns green). game.js has `gameHooks.onDragStart`
+and `gameHooks.onTransform` for the glowing notes. The "not allowed" sign
+(`drawNoMark` in shapes.js) is a circle with ONE diagonal slash, not an X
+(an X reads as a fixed gap). Slides 2–4 run on game.js itself, using two new features:
 `puzzle.fixedPieces` (pre-placed, unmovable pieces that count as filled)
 and `gameHooks.onSolved` (replaces the Solved! popup). "Tap" vs "Click"
 wording is chosen with `(hover: none) and (pointer: coarse)`. Each

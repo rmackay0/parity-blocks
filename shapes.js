@@ -179,11 +179,15 @@ function drawPiece(parent, cells, color, x, y, cell, gap){
   return g;
 }
 
-// The red "not allowed" mark: a circle with a cross through it
+// The red "not allowed" sign: a circle with one diagonal slash (like 🚫).
+// (Not an X, which would look like a fixed gap.) Returns the group so
+// callers can animate it.
 function drawNoMark(parent, cx, cy, radius){
-  svgEl('circle', { cx, cy, r: radius, class:'rb-no' }, parent);
-  const k = radius * 0.5;
-  svgEl('path', { d:`M${cx-k},${cy-k} L${cx+k},${cy+k} M${cx+k},${cy-k} L${cx-k},${cy+k}`, class:'rb-no-x' }, parent);
+  const g = svgEl('g', { class:'rb-nomark' }, parent);
+  svgEl('circle', { cx, cy, r: radius, class:'rb-no' }, g);
+  const k = radius * Math.SQRT1_2;   // where the slash meets the circle
+  svgEl('path', { d:`M${cx-k},${cy-k} L${cx+k},${cy+k}`, class:'rb-no-x' }, g);
+  return g;
 }
 
 /* A picture of a board, as an <svg>.

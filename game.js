@@ -28,6 +28,8 @@ const gameHooks = {
   onCellClick: null,          // edit mode: (r, c) => {}
   onChange: null,             // after any move by the player
   onSolved: null,             // (timeStr) => {}  replaces the "Solved!" popup (the tutorial uses this)
+  onDragStart: null,          // (source) => {}   a piece started being dragged
+  onTransform: null,          // ('rotate' | 'reflect') => {}  a piece was rotated or reflected
 };
 
 const boardWrapEl   = document.getElementById('board-wrap');
@@ -353,6 +355,7 @@ function transformSelection(fn){
     p.cells = fn(p.cells);   // turns in place; goes red if it no longer fits
   }
   renderAll();
+  if(gameHooks.onTransform) gameHooks.onTransform(fn === reflectCells ? 'reflect' : 'rotate');
 }
 reflectBtn.addEventListener('click', ()=>transformSelection(reflectCells));
 rotateBtn.addEventListener('click', ()=>transformSelection(rotateCells));
@@ -377,6 +380,7 @@ function transformSource(source, fn){
     if(p && !p.locked) p.cells = fn(p.cells);
   }
   renderAll();
+  if(gameHooks.onTransform) gameHooks.onTransform(fn === reflectCells ? 'reflect' : 'rotate');
 }
 
 // Do a waiting single-click's rotate right now (e.g. another piece got clicked)
@@ -465,6 +469,7 @@ function beginDrag(){
     press.grabDC = Math.min(press.grabDC, b.cols-1);
   }
   press.dragging = true;
+  if(gameHooks.onDragStart) gameHooks.onDragStart(press.source);
   press.ghost = document.createElement('div');
   press.ghost.className = 'ghost';
   press.ghost.appendChild(buildPieceShape(press.cells, press.color, CELL, GAP));
