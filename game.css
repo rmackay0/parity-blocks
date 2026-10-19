@@ -180,16 +180,27 @@ body {
 #mark-overlay { z-index: 6; overflow: visible; }
 .highlight { fill: var(--color-highlight); opacity: var(--highlight-opacity); }
 
-/* [CONTENT] Message above the board ("Uneven rows" etc.). Its space is
-   always reserved so the board doesn't jump when it appears. */
+/* [CONTENT] Message above the board ("Uneven rows" etc.).
+   The board must NEVER move when a message appears, so:
+   • its space is a fixed height (2 lines), whether or not there's a message;
+   • long messages wrap onto more lines instead of widening anything;
+   • if a message needs a 3rd line, the extra line grows UPWARD into the
+     space above (flex column + justify-content: flex-end), never down
+     over the board. */
 .status {
   flex: 0 0 auto;
-  min-height: 1.6rem;
+  height: calc(2 * var(--status-line));
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   font-size: 1.15rem;
   font-weight: 700;
-  line-height: 1.6rem;
+  line-height: var(--status-line);
   color: var(--color-status);
   text-align: center;
+  --status-line: 1.6rem;   /* [POSITIONING] height of one line of the message */
 }
 
 .placed-piece { position: absolute; }

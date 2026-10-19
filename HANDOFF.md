@@ -65,6 +65,11 @@ previous project; don't push there.
   slide has a tray note (glows until rotate AND reflect) and, on
   computers only, a left note about box select (glows until used) with
   an "Optional shortcuts" <details> dropdown.
+- **The board must never move** (user request 2026-10-19): the message
+  above it (`#status`) has a fixed 2-line height (`--status-line`), wraps
+  long messages, and grows upward if it ever needs a 3rd line; in the
+  tutorial it's exactly the board's width. Don't put anything else
+  between the tray and the board whose size depends on its content.
 - Not built yet (user's future wish): save players' progress, collecting
   no data beyond what's needed (suggested: browser localStorage only).
 

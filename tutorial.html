@@ -102,7 +102,10 @@
     row-gap: 8px;
   }
   .play .tray { grid-area: tray; max-width: 460px; min-height: 60px; }
-  .play .status { grid-area: stat; }
+  /* The message above the board is exactly as wide as the board, so a long
+     message wraps instead of widening the middle column (which would shift
+     the board sideways) */
+  .play .status { grid-area: stat; width: var(--tut-board); max-width: none; justify-self: center; }
   .play .board-wrap { grid-area: board; width: var(--tut-board); height: var(--tut-board); }
   .n-trayl  { grid-area: trayl;  justify-self: end; text-align: right; display: flex; align-items: center; max-width: 320px; }
   .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; }
@@ -228,7 +231,7 @@
   html.large-text .gap-pop p { font-size: 1.35rem; }
   html.large-text .gap-pop figcaption { font-size: 1.15rem; }
   html.large-text .dont-slide figcaption { font-size: 1.35rem; }
-  html.large-text .status { font-size: 1.45rem; line-height: 1.9rem; min-height: 1.9rem; }
+  html.large-text .status { font-size: 1.45rem; --status-line: 1.9rem; }
   @media (max-width: 600px) {
     .text-size-btn { height: 34px; padding: 0 10px; font-size: 0.9rem; }
     .text-size-btn.is-large-label { font-size: 0.95rem; }
