@@ -349,6 +349,16 @@ function renderView(){
 const DOUBLE_CLICK_MS = 280;
 let pendingClick = null;    // { source, timer } while waiting to see if it's a double-click
 
+// Backup for iPhones (the CSS touch-action usually does it): a second tap
+// soon after the first must never zoom the page. Buttons, links and form
+// fields are left alone so tapping them twice still works.
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e=>{
+  const now = Date.now();
+  if(now - lastTouchEnd < 350 && !e.target.closest('button, a, input, select, textarea, summary, label')) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+
 const sameSource = (a, b) => a && b && a.kind === b.kind &&
   (a.kind === 'tray' ? a.name === b.name : a.id === b.id);
 
