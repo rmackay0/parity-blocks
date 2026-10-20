@@ -128,7 +128,7 @@
   .dont { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 22px; margin-top: 8px; }
   .dont figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
   .dont figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
-  .play .hint-caption, .play .controls { display: none; }   /* not used in the tutorial */
+  .play .hint-caption { display: none; }   /* not used in the tutorial */
   .play { position: relative; }      /* the gaps popup is positioned inside it */
 
   /* [COLORS] A note that glows until the player does what it says
@@ -138,6 +138,18 @@
     background: rgba(217, 154, 78, 0.16);
     box-shadow: 0 0 0 2px rgba(217, 154, 78, 0.7), 0 0 20px rgba(217, 154, 78, 0.35);
   }
+  /* The most important message (make every row and column even) glows harder */
+  .callout.strong.lit {
+    background: rgba(217, 154, 78, 0.24);
+    box-shadow: 0 0 0 3px rgba(240, 170, 90, 0.95), 0 0 30px rgba(240, 170, 90, 0.6);
+  }
+  .big-note.callout { padding: 10px 14px; }
+  /* Text that fades in later (the final slide's "Useful strategy" line).
+     It keeps its space while hidden, so nothing moves when it appears. */
+  .reveal-later { opacity: 0; visibility: hidden; transition: opacity 0.8s, visibility 0.8s; }
+  .reveal-later.shown { opacity: 1; visibility: visible; }
+  /* Slide 3's heading: glows just long enough to read, then fades */
+  .dont-slide h2.callout { display: inline-block; padding: 6px 16px; }
 
   /* Pop-in animation used by the pictures */
   @keyframes popIn { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
@@ -295,7 +307,6 @@
       <div class="note n-boardl" id="n-boardl"></div>
       <div class="n-below" id="n-below"></div>
       <p class="hint-caption" id="hint-caption" hidden></p>
-      <div class="controls"><button type="button" id="reflect-btn" disabled>Reflect</button><button type="button" id="rotate-btn" disabled>Rotate</button></div>
     </section>
   </main>
 
@@ -458,15 +469,19 @@ function playDont(svg){
                        or 'turns' (a piece has been rotated AND reflected)
      boardGlowUntil    the right-hand board note glows until 'rotate' / 'reflect'
      boardGlowAfterPlace   ...but only starts glowing once a piece is on the grid
-     boardLeftGlow     the left-hand note glows until several pieces are box-selected
+     bigNoteGlowAfterTurns the orange "Make sure…" note glows extra-strongly
+                       for a few seconds once a piece has been rotated AND
+                       reflected (or a piece is placed, whichever is first);
+                       when the glow fades, the "Useful strategy" line fades in
      gapPopup          on solving, show the gaps popup; Next waits for its OK
      countAnimation    on solving, count each row and column; Next waits for it
      solvedNote        a line added beside the board once it's solved      */
+// Keyboard tips (computers only, no glow): R / E shown straight away, the
+// rest tucked in a collapsed "Optional shortcuts" dropdown
 const SHORTCUTS_NOTE = TOUCH ? '' : `
-  You can click and drag over pieces to select multiple at a time.
+  Keyboard: point at a piece and press <kbd>R</kbd> to rotate it or <kbd>E</kbd> to reflect it, even while you&rsquo;re holding it.
   <details class="shortcuts">
     <summary>Optional shortcuts</summary>
-    <p>You can use the keyboard shortcuts <kbd>R</kbd> to rotate and <kbd>E</kbd> to reflect, even while holding a piece.</p>
     <p>If you want to go totally mouse-less: each piece&rsquo;s letter
       (<kbd>T</kbd> <kbd>U</kbd> <kbd>V</kbd> <kbd>W</kbd> <kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd> <kbd>F</kbd> <kbd>I</kbd> <kbd>L</kbd> <kbd>P</kbd> <kbd>N</kbd>)
       calls that piece to the center of the grid, and the arrow keys move it around.</p>
@@ -484,9 +499,11 @@ const SLIDES = [
     trayLeft: TOUCH ? 'Try tapping and double-tapping a piece before dragging it onto the grid.'
                     : 'Try clicking and double-clicking a piece before dragging it onto the grid.',
     trayGlowUntil: 'turns',
-    boardRight: `<div class="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>`,
-    boardLeft: SHORTCUTS_NOTE, boardLeftGlow: true,
-    belowHtml: `<p class="hint">Hint: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
+    boardRight: `<div class="big-note" id="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>`,
+    bigNoteGlowAfterTurns: true,
+    boardLeft: SHORTCUTS_NOTE,
+    // Hidden at first; fades in once the orange note has finished glowing
+    belowHtml: `<p class="hint reveal-later" id="strategy">Useful strategy: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
     countAnimation: true,
     solvedNote: 'Every row and column is even. You’re ready to play!' },
 ];
@@ -555,6 +572,7 @@ function showSlide(i){
   // green if you've already finished it once)
   if(s.kind === 'play'){
     turned = { rotate: false, reflect: false };
+    bigNoteGlowed = false;
     $('n-trayl').innerHTML = s.trayLeft || '';
     $('n-trayr').innerHTML = '';
     $('n-boardr').innerHTML = s.boardRight || '';
@@ -562,7 +580,8 @@ function showSlide(i){
     // Glowing notes: lit until the player does what they say
     $('n-trayl').className = 'note n-trayl' + (s.trayGlowUntil ? ' callout lit' : '');
     $('n-boardr').className = 'note n-boardr' + (s.boardGlowUntil ? ' callout' + (s.boardGlowAfterPlace ? '' : ' lit') : '');
-    $('n-boardl').className = 'note n-boardl' + (s.boardLeft && s.boardLeftGlow ? ' callout lit' : '');
+    $('n-boardl').className = 'note n-boardl';            // (the keyboard tips never glow)
+    if(s.bigNoteGlowAfterTurns) $('big-note').classList.add('callout', 'strong');   // lit later
     $('n-below').innerHTML = s.belowHtml || '';
     setGameMode('play');
     loadPuzzle(s.puzzle);
@@ -581,14 +600,33 @@ gameHooks.onPlace = ()=>{
   // "Click a piece to rotate it" lights up once a piece is on the grid (unless they've already rotated)
   const s = SLIDES[current];
   if(s.boardGlowAfterPlace && !turned[s.boardGlowUntil]) $('n-boardr').classList.add('lit');
+  if(s.bigNoteGlowAfterTurns) glowBigNote();          // (fallback: they placed a piece without turning one)
 };
 gameHooks.onTransform = kind=>{
   turned[kind] = true;
   const s = SLIDES[current];
+  // e.g. the reflect slide: any reflect turns its note off, at the top or on the grid
   if(s.boardGlowUntil === kind) $('n-boardr').classList.remove('lit');
-  if(s.trayGlowUntil === 'turns' && turned.rotate && turned.reflect) $('n-trayl').classList.remove('lit');
+  if(turned.rotate && turned.reflect){
+    // Rotated AND reflected: the tray tip has done its job, and the most
+    // important message (make every row and column even) gets its turn
+    if(s.trayGlowUntil === 'turns') $('n-trayl').classList.remove('lit');
+    if(s.bigNoteGlowAfterTurns) glowBigNote();
+  }
 };
-gameHooks.onMultiSelect = ()=>{ $('n-boardl').classList.remove('lit'); };
+
+/* Final slide: the orange "Make sure…" note glows strongly for a few
+   seconds, fades, and then the "Useful strategy" line fades in below.
+   Happens once per visit to the slide. */
+const BIG_GLOW_MS = 2500;      // how long the orange note glows
+let bigNoteGlowed = false;
+function glowBigNote(){
+  if(bigNoteGlowed || gameMode === 'view') return;
+  bigNoteGlowed = true;
+  $('big-note').classList.add('lit');
+  later(BIG_GLOW_MS, ()=>$('big-note').classList.remove('lit'));
+  later(BIG_GLOW_MS + 700, ()=>{ if($('strategy')) $('strategy').classList.add('shown'); });   // after the fade
+}
 
 // A tutorial puzzle got solved: freeze it and ring the gaps; then either
 // show the gaps popup, run the counting animation, or light up Next
@@ -604,7 +642,7 @@ gameHooks.onSolved = ()=>{
                           oddRows: [], oddCols: [], empty, status: s.countAnimation ? '' : 'Solved!', good: true };
   setViewTiling(solvedView[current]);
   setGameMode('view');
-  ['n-trayl', 'n-boardr', 'n-boardl'].forEach(id=>$(id).classList.remove('lit'));
+  ['n-trayl', 'n-boardr', 'big-note'].forEach(id=>{ if($(id)) $(id).classList.remove('lit'); });
   // (On the counting slide, the solved note waits until the counting is done)
   if(s.solvedNote && !s.countAnimation) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
   if(s.gapPopup) showGapPopup(empty);
@@ -663,12 +701,19 @@ function showDontSlide(){
     box.appendChild(f);
     return f;
   });
+  // The heading glows just long enough to read, fades (0.7 s, see .callout),
+  // and only then do the pictures start animating
+  const heading = $('dont-slide').querySelector('h2');
+  heading.className = 'callout lit';
+  const READ = 1400;            // ms the heading stays lit
+  const START = READ + 700;     // first animation starts once the fade is over
+  later(READ, ()=>heading.classList.remove('lit'));
   const STEP = 1300;   // ms per picture
   figs.forEach((f, i)=>{
-    later(400 + i*STEP,       ()=>{ f.classList.add('active'); playDont(f.querySelector('svg')); });
-    later(400 + i*STEP + 1150, ()=>f.classList.remove('active'));
+    later(START + i*STEP,        ()=>{ f.classList.add('active'); playDont(f.querySelector('svg')); });
+    later(START + i*STEP + 1150, ()=>f.classList.remove('active'));
   });
-  later(400 + figs.length*STEP, markDone);
+  later(START + figs.length*STEP, markDone);
 }
 
 /* ── Final slide: count the blocks in every row, then every column ──

@@ -293,10 +293,6 @@
     </div>
   </div>
   <p class="hint-caption" id="hint-caption" hidden></p>
-  <div class="controls">
-    <button type="button" id="reflect-btn" disabled>Reflect</button>
-    <button type="button" id="rotate-btn" disabled>Rotate</button>
-  </div>
 </main>
 
 <!-- ═══ CLEAR (top-right button) ═══ -->
@@ -558,7 +554,7 @@ function renderPicker(){
 }
 function clearPieces(){
   if(gameMode === 'view') setMode(clickMode);
-  placedPieces = []; selection = null; solved = false; startTime = Date.now(); renderAll();
+  placedPieces = []; keyPieceId = null; solved = false; startTime = Date.now(); renderAll();
 }
 $('clear-board-btn').onclick = clearPieces;
 

@@ -3,8 +3,7 @@
    Shared by play.html (the game) and sandbox.html (the puzzle builder).
    Needs shapes.js loaded first, and the page markup from play.html
    (#tray, #board-wrap, #board, #pieces-layer, #hint-overlay,
-   #mark-overlay, #status, #hint-caption, #reflect-btn, #rotate-btn,
-   #solved-popup).
+   #mark-overlay, #status, #hint-caption, #solved-popup).
 
    loadPuzzle(puzzle) starts (or restarts) a puzzle. A puzzle is an
    entry shaped like those in puzzles.js.
@@ -31,15 +30,12 @@ const gameHooks = {
   onDragStart: null,          // (source) => {}   a piece started being dragged
   onTransform: null,          // ('rotate' | 'reflect') => {}  a piece was rotated or reflected
   onPlace: null,              // () => {}  a piece was put on the grid from the top
-  onMultiSelect: null,        // (count) => {}  box select picked 2 or more pieces
 };
 
 const boardWrapEl   = document.getElementById('board-wrap');
 const boardEl       = document.getElementById('board');
 const piecesLayerEl = document.getElementById('pieces-layer');
 const trayEl        = document.getElementById('tray');
-const reflectBtn    = document.getElementById('reflect-btn');
-const rotateBtn     = document.getElementById('rotate-btn');
 
 function cssPx(name){
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
@@ -54,7 +50,7 @@ let GAP = 4;
 let trayCells = {};
 let placedPieces = [];        // {id, name, color, cells, row, col}
 let invalidIds = new Set();   // pieces overlapping, off-grid, or on a blocked square
-let selection = null;         // {kind:'board', id} | {kind:'tray', name} | null
+let keyPieceId = null;        // piece just called with its letter key (see KEYBOARD)
 let placedIdCounter = 1;
 let solved = false;
 let startTime = Date.now();
@@ -85,10 +81,7 @@ function loadPuzzle(p, opts){
     placedPieces = fixed;
     startTime = Date.now();
   }
-  if(selection && ((selection.kind==='tray' && !names.has(selection.name)) ||
-                   (selection.kind==='board' && !placedPieces.some(q=>q.id===selection.id)))) selection = null;
-  if(!opts.keep) selection = null;
-  groupIds = new Set();
+  if(!opts.keep || !placedPieces.some(q=>q.id===keyPieceId)) keyPieceId = null;
   solved = false;
   const caption = document.getElementById('hint-caption');
   caption.textContent = p.hintText || '';
@@ -102,7 +95,7 @@ function setGameMode(mode){
   gameMode = mode;
   document.body.classList.toggle('editing', mode === 'edit');
   document.body.classList.toggle('viewing', mode === 'view');
-  if(mode !== 'play') selection = null;
+  if(mode !== 'play') keyPieceId = null;
   if(puzzle){ setupBoard(); renderAll(); }
 }
 
@@ -274,8 +267,7 @@ function renderTray(){
     const slotPx = longest*size + (longest-1)*2;
     const slot = document.createElement('div');
     slot.className = 'tray-slot'
-      + (used.has(def.name) ? ' used' : '')
-      + (selection && selection.kind==='tray' && selection.name===def.name ? ' selected' : '');
+      + (used.has(def.name) ? ' used' : '');
     slot.style.width = slot.style.height = (slotPx + 12) + 'px';
     slot.dataset.name = def.name;
     slot.appendChild(buildPieceShape(cells, def.color, size, 2));
@@ -295,7 +287,6 @@ function renderBoardPieces(){
   placedPieces.forEach(p=>{
     const wrap = document.createElement('div');
     wrap.className = 'placed-piece'
-      + (isSelectedId(p.id) ? ' selected' : '')
       + (showInvalid && invalidIds.has(p.id) ? ' invalid' : '')
       + (p.locked ? ' locked' : '');
     wrap.style.left = pxPos(p.col) + 'px';
@@ -314,7 +305,6 @@ function renderAll(){
   recomputeValidity();
   renderTray();
   renderBoardPieces();
-  reflectBtn.disabled = rotateBtn.disabled = !selection || gameMode !== 'play';
   if(gameMode === 'play') checkSolved();
   else { markOverlayEl.innerHTML = ''; statusEl.textContent = ''; }
   if(gameHooks.onChange) gameHooks.onChange();
@@ -334,7 +324,6 @@ function renderView(){
     wrap.appendChild(buildPieceShape(p.cells, p.color, CELL, GAP));
     piecesLayerEl.appendChild(wrap);
   });
-  reflectBtn.disabled = rotateBtn.disabled = true;
   drawUnevenMarks(t.oddRows, t.oddCols);
   // Gaps in a finished board: dark like a fixed gap, with a ring
   boardEl.querySelectorAll('.gap-dark').forEach(el=>el.classList.remove('gap-dark'));
@@ -348,61 +337,15 @@ function renderView(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SELECT / ROTATE / REFLECT
+   ROTATE / REFLECT
+   There's no "selected piece": you act on a piece by clicking it,
+   dragging it, or pointing at it and pressing a key.
 ═══════════════════════════════════════════════════════════════════ */
-// Several board pieces can be selected at once (box select: click-drag on
-// empty board). groupIds holds them; `selection` still points at one of
-// them so single-piece code keeps working.
-let groupIds = new Set();
-function selectedBoardIds(){
-  if(groupIds.size) return [...groupIds];
-  return selection && selection.kind === 'board' ? [selection.id] : [];
-}
-const isSelectedId = id => groupIds.size ? groupIds.has(id) : !!(selection && selection.kind === 'board' && selection.id === id);
-
-function select(sel){ selection = sel; groupIds = new Set(); renderAll(); }
-
-/* Rotate/reflect several board pieces as ONE rigid shape: each piece turns,
-   and its position moves around the group's shared bounding box using the
-   same point rule rotateCells/reflectCells use for a single piece. */
-function transformPieces(ids, fn){
-  const pieces = ids.map(id=>placedPieces.find(p=>p.id===id)).filter(p=>p && !p.locked);
-  if(pieces.length === 1){ pieces[0].cells = fn(pieces[0].cells); return; }
-  let minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
-  pieces.forEach(p=>{ const b = bounds(p.cells);
-    minR = Math.min(minR, p.row); minC = Math.min(minC, p.col);
-    maxR = Math.max(maxR, p.row + b.rows - 1); maxC = Math.max(maxC, p.col + b.cols - 1); });
-  const gRows = maxR - minR + 1, gCols = maxC - minC + 1, isRotate = fn === rotateCells;
-  pieces.forEach(p=>{
-    const b = bounds(p.cells), lr = p.row - minR, lc = p.col - minC;
-    const corners = [[lr,lc], [lr,lc+b.cols-1], [lr+b.rows-1,lc], [lr+b.rows-1,lc+b.cols-1]];
-    const moved = corners.map(([r,c])=>isRotate ? [c, gRows-1-r] : [r, gCols-1-c]);
-    p.cells = fn(p.cells);
-    p.row = minR + Math.min(...moved.map(x=>x[0]));
-    p.col = minC + Math.min(...moved.map(x=>x[1]));
-  });
-}
-
-function transformSelection(fn){
-  if(!selection) return;
-  if(selection.kind === 'tray'){
-    trayCells[selection.name] = fn(trayCells[selection.name]);
-  } else {
-    if(!placedPieces.some(pp=>pp.id===selection.id)) return;
-    transformPieces(selectedBoardIds(), fn);   // turns in place; goes red if it no longer fits
-  }
-  renderAll();
-  if(gameHooks.onTransform) gameHooks.onTransform(fn === reflectCells ? 'reflect' : 'rotate');
-}
-reflectBtn.addEventListener('click', ()=>transformSelection(reflectCells));
-rotateBtn.addEventListener('click', ()=>transformSelection(rotateCells));
-
 /* [BEHAVIOR] Clicking a piece (at the top or on the board):
      one click    → rotate a quarter turn clockwise
      double-click → reflect (mirror left↔right)
    Every double-click starts with a single click, so a click waits
-   DOUBLE_CLICK_MS to see whether a second one follows before rotating.
-   Clicking also selects the piece, so Reflect/Rotate and R/F still work. */
+   DOUBLE_CLICK_MS to see whether a second one follows before rotating. */
 const DOUBLE_CLICK_MS = 280;
 let pendingClick = null;    // { source, timer } while waiting to see if it's a double-click
 
@@ -414,7 +357,7 @@ function transformSource(source, fn){
     if(trayCells[source.name]) trayCells[source.name] = fn(trayCells[source.name]);
   } else {
     const p = placedPieces.find(pp=>pp.id===source.id);
-    if(p && !p.locked) p.cells = fn(p.cells);
+    if(p && !p.locked) p.cells = fn(p.cells);   // turns in place; goes red if it no longer fits
   }
   renderAll();
   if(gameHooks.onTransform) gameHooks.onTransform(fn === reflectCells ? 'reflect' : 'rotate');
@@ -430,8 +373,6 @@ function flushPendingClick(){
 }
 
 function onPieceClick(source){
-  selection = source;
-  groupIds = new Set();      // clicking one piece leaves any group selection
   if(pendingClick && sameSource(pendingClick.source, source)){
     // second click in time: it's a double-click → reflect instead of rotate
     clearTimeout(pendingClick.timer);
@@ -440,40 +381,64 @@ function onPieceClick(source){
     return;
   }
   flushPendingClick();
-  renderAll();              // show it selected straight away
   pendingClick = { source, timer: setTimeout(()=>{
     pendingClick = null;
     transformSource(source, rotateCells);
   }, DOUBLE_CLICK_MS) };
 }
 
-/* [BEHAVIOR] Keyboard shortcuts
-     R              rotate the selected piece(s)  (also while holding/dragging one)
-     E              reflect the selected piece(s) (also while holding/dragging one)
+/* [BEHAVIOR] Keyboard shortcuts. They act on the piece you're holding or
+   dragging, or else the piece under the mouse. Right after you call a
+   piece with its letter, they act on that piece until the mouse moves
+   (so you can play without the mouse).
+     R              rotate
+     E              reflect
      F I L N P T U V W X Y Z   bring that piece to the centre of the grid
-                    (or select it, if it's already on the grid)
-     arrow keys     move the selected piece(s) one square
-     Esc            deselect
+                    (if it's already on the grid, the keys now act on it)
+     arrow keys     move a piece on the grid one square
    Ignored while typing in a text box, and when Cmd/Ctrl/Alt is held
    (so Cmd+R still reloads the page). */
 const PIECE_KEYS = 'filnptuvwxyz';
 document.addEventListener('keydown', e=>{
   if(e.metaKey || e.ctrlKey || e.altKey) return;
   if(e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
-  if(gameMode !== 'play' || !puzzle){ if(e.key === 'Escape') select(null); return; }
+  if(gameMode !== 'play' || !puzzle) return;
   const k = e.key.toLowerCase();
   const ARROWS = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
   if(k === 'r' || k === 'e'){ e.preventDefault(); keyTransform(k === 'r' ? rotateCells : reflectCells); }
-  else if(ARROWS[e.key]){ if(moveSelection(...ARROWS[e.key])) e.preventDefault(); }
+  else if(ARROWS[e.key]){ if(moveKeyPiece(...ARROWS[e.key])) e.preventDefault(); }
   else if(k.length === 1 && PIECE_KEYS.includes(k)) callPiece(k.toUpperCase());
-  else if(e.key === 'Escape') select(null);
 });
 
+// Where the mouse is, so the keys know which piece it's pointing at. Moving
+// the mouse hands the keys back to "the piece under the mouse".
+let mouseX = null, mouseY = null;
+document.addEventListener('pointermove', e=>{
+  if(e.pointerType !== 'mouse') return;
+  if(e.clientX === mouseX && e.clientY === mouseY) return;   // browsers sometimes send a move without one
+  mouseX = e.clientX; mouseY = e.clientY;
+  keyPieceId = null;
+});
+document.addEventListener('pointerdown', ()=>{ keyPieceId = null; });
+
+// The piece the keys act on (when nothing is being held), as a source
+// like {kind:'board', id} or {kind:'tray', name}, or null
+function keyTarget(){
+  if(keyPieceId && placedPieces.some(q=>q.id===keyPieceId)) return { kind:'board', id: keyPieceId };
+  if(mouseX === null) return null;
+  const el = document.elementFromPoint(mouseX, mouseY);
+  if(!el) return null;
+  const slot = el.closest('.tray-slot');
+  if(slot && !slot.classList.contains('used')) return { kind:'tray', name: slot.dataset.name };
+  const placed = el.closest('.placed-piece');
+  if(placed && placed.dataset.id) return { kind:'board', id: placed.dataset.id };
+  return null;
+}
+
 // R / E: if a piece is being held or dragged, turn THAT piece; otherwise
-// turn the selection
+// the piece the keys act on
 function keyTransform(fn){
   if(press){
-    if(press.group) return;             // (not while dragging a group)
     press.keyUsed = true;               // so letting go doesn't also count as a click
     if(press.dragging){
       press.cells = fn(press.cells);
@@ -491,7 +456,10 @@ function keyTransform(fn){
     return;
   }
   flushPendingClick();
-  transformSelection(fn);
+  const target = keyTarget();
+  if(!target) return;
+  if(target.kind === 'board') keyPieceId = target.id;   // stays the keys' piece even if it turns out from under the mouse
+  transformSource(target, fn);
 }
 function clampGrab(pr){
   const b = bounds(pr.cells);
@@ -499,40 +467,36 @@ function clampGrab(pr){
   pr.grabDC = Math.min(pr.grabDC, b.cols - 1);
 }
 
-// Arrow keys: move the selected board piece(s) one square, as long as each
-// piece keeps at least one block on the grid (so nothing gets lost off the edge)
-function moveSelection(dr, dc){
-  const pieces = selectedBoardIds().map(id=>placedPieces.find(p=>p.id===id)).filter(p=>p && !p.locked);
-  if(!pieces.length) return false;
-  const staysOn = pieces.every(p=>p.cells.some(([r,c])=>inBounds(p.row+dr+r, p.col+dc+c)));
-  if(staysOn){ pieces.forEach(p=>{ p.row += dr; p.col += dc; }); renderAll(); }
+// Arrow keys: move a piece on the grid one square, as long as it keeps at
+// least one block on the grid (so it can't get lost off the edge). The
+// piece keeps being the one the keys act on even once it's moved out
+// from under the mouse.
+function moveKeyPiece(dr, dc){
+  const target = keyTarget();
+  const p = target && target.kind === 'board' && placedPieces.find(q=>q.id===target.id);
+  if(!p || p.locked) return false;
+  keyPieceId = p.id;
+  if(p.cells.some(([r,c])=>inBounds(p.row+dr+r, p.col+dc+c))){ p.row += dr; p.col += dc; renderAll(); }
   return true;
 }
 
 // A piece's letter: bring it from the top to the centre of the grid (it
-// may land somewhere that doesn't fit yet, shown in red), or select it if
-// it's already on the grid
+// may land somewhere that doesn't fit yet, shown in red). Either way the
+// keys now act on it.
 function callPiece(name){
   const def = puzzle.pieces.find(d=>d.name === name);
   if(!def) return;
   flushPendingClick();
   const onBoard = placedPieces.find(p=>!p.locked && p.name === name);
-  if(onBoard){ select({ kind:'board', id: onBoard.id }); return; }
+  if(onBoard){ keyPieceId = onBoard.id; return; }
   const cells = trayCells[name].map(c=>c.slice()), b = bounds(cells);
   const id = 'p' + (placedIdCounter++);
   placedPieces.push({ id, name, color: def.color, cells,
     row: Math.floor((puzzle.rows - b.rows) / 2), col: Math.floor((puzzle.cols - b.cols) / 2) });
-  selection = { kind:'board', id };
-  groupIds = new Set();
+  keyPieceId = id;
   renderAll();
   if(gameHooks.onPlace) gameHooks.onPlace();
 }
-
-// Tapping empty space clears the selection (but not taps on the buttons)
-document.addEventListener('pointerdown', e=>{
-  if(e.target.closest('.tray-slot, .placed-piece, .controls, .popup')) return;
-  if(selection) select(null);
-});
 
 /* ═══════════════════════════════════════════════════════════════════
    DRAG
@@ -565,13 +529,6 @@ function onPiecePointerDown(e, source){
     grabDC = blk ? +blk.dataset.dc : 0;
   }
   press = { source, startX:e.clientX, startY:e.clientY, grabDR, grabDC, cells, color, name, dragging:false, ghost:null };
-  // Grabbing one piece of a group selection drags the whole group
-  if(source.kind === 'board' && groupIds.size > 1 && groupIds.has(source.id)){
-    const me = placedPieces.find(q=>q.id===source.id);
-    press.startRow = me.row; press.startCol = me.col;
-    press.group = [...groupIds].filter(id=>id !== source.id)
-      .map(id=>{ const q = placedPieces.find(pp=>pp.id===id); return { id, row:q.row, col:q.col }; });
-  }
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointercancel', onPointerUp);
@@ -633,11 +590,6 @@ function onPointerMove(e){
   clearHighlights();
   if(overTray(e.clientX, e.clientY)) return;
   const {row, col} = landingSpot(e.clientX, e.clientY, press);
-  // Dragging a group: slide the rest of the group along by the same amount
-  if(press.group) press.group.forEach(g=>{
-    const el = piecesLayerEl.querySelector(`.placed-piece[data-id="${g.id}"]`);
-    if(el){ el.style.left = pxPos(g.col + col - press.startCol) + 'px'; el.style.top = pxPos(g.row + row - press.startRow) + 'px'; }
-  });
   const excludeId = press.source.kind==='board' ? press.source.id : null;
   const ok = fits(press.cells, row, col, excludeId, true);
   press.cells.forEach(([r,c])=>{
@@ -670,8 +622,6 @@ function onPointerUp(e){
     if(!offBoard){
       const id = 'p' + (placedIdCounter++);
       placedPieces.push({ id, name:p.name, color:p.color, cells:p.cells.map(c=>c.slice()), row, col });
-      selection = {kind:'board', id};
-      groupIds = new Set();
       if(gameHooks.onPlace) gameHooks.onPlace();
     } else if(p.keyUsed) trayCells[p.name] = p.cells;   // keep a turn made mid-drag
   } else {
@@ -681,65 +631,12 @@ function onPointerUp(e){
       // Dragged off the board: it goes back to the top, in its current turn
       placedPieces = placedPieces.filter(pp=>pp.id!==piece.id);
       trayCells[piece.name] = piece.cells;
-      groupIds.delete(piece.id);
-      selection = null;
     } else {
       piece.row = row;
       piece.col = col;
-      if(p.group){
-        // The rest of the group moves by the same amount; the group stays selected
-        p.group.forEach(g=>{ const q = placedPieces.find(pp=>pp.id===g.id);
-          if(q){ q.row = g.row + row - p.startRow; q.col = g.col + col - p.startCol; } });
-      } else groupIds = new Set();
-      selection = {kind:'board', id:piece.id};
     }
   }
   renderAll();
-}
-
-/* ── Box select ──
-   With a mouse, click-drag on an empty part of the board to draw a box;
-   every piece with a block inside it gets selected. Two or more become a
-   group that moves, rotates and reflects together. */
-let marquee = null;     // { x0, y0, el }
-const MARQUEE_EL = document.createElement('div');
-MARQUEE_EL.className = 'marquee';
-document.body.appendChild(MARQUEE_EL);
-
-document.getElementById('board-outer').addEventListener('pointerdown', e=>{
-  if(gameMode !== 'play' || e.pointerType === 'touch' || e.button !== 0) return;
-  if(e.target.closest('.placed-piece')) return;           // that's a piece press, not a box
-  marquee = { x0: e.clientX, y0: e.clientY, active: false };
-  window.addEventListener('pointermove', onMarqueeMove);
-  window.addEventListener('pointerup', onMarqueeEnd);
-});
-function marqueeRect(m, e){
-  return { left: Math.min(m.x0, e.clientX), top: Math.min(m.y0, e.clientY),
-           right: Math.max(m.x0, e.clientX), bottom: Math.max(m.y0, e.clientY) };
-}
-function onMarqueeMove(e){
-  if(!marquee) return;
-  if(!marquee.active && Math.hypot(e.clientX - marquee.x0, e.clientY - marquee.y0) < DRAG_THRESHOLD) return;
-  marquee.active = true;
-  const r = marqueeRect(marquee, e);
-  Object.assign(MARQUEE_EL.style, { display:'block', left: r.left+'px', top: r.top+'px', width: (r.right-r.left)+'px', height: (r.bottom-r.top)+'px' });
-}
-function onMarqueeEnd(e){
-  window.removeEventListener('pointermove', onMarqueeMove);
-  window.removeEventListener('pointerup', onMarqueeEnd);
-  MARQUEE_EL.style.display = 'none';
-  const m = marquee; marquee = null;
-  if(!m || !m.active) return;
-  const r = marqueeRect(m, e), board = boardEl.getBoundingClientRect();
-  const hit = placedPieces.filter(p=>!p.locked && p.cells.some(([dr,dc])=>{
-    const x = board.left + pxPos(p.col+dc) + CELL/2, y = board.top + pxPos(p.row+dr) + CELL/2;
-    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-  }));
-  if(!hit.length){ select(null); return; }
-  selection = { kind:'board', id: hit[0].id };
-  groupIds = hit.length > 1 ? new Set(hit.map(p=>p.id)) : new Set();
-  renderAll();
-  if(hit.length > 1 && gameHooks.onMultiSelect) gameHooks.onMultiSelect(hit.length);
 }
 
 /* ═══════════════════════════════════════════════════════════════════

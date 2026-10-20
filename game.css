@@ -123,7 +123,6 @@ body {
   transition: background 0.15s;
 }
 .tray-slot:hover { background: rgba(255, 255, 255, 0.05); }
-.tray-slot.selected { box-shadow: 0 0 0 2px var(--color-select); }
 .tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
 
 /* ── Board ── */
@@ -206,9 +205,6 @@ body {
 .placed-piece { position: absolute; }
 .placed-piece .blk { pointer-events: auto; cursor: grab; touch-action: none; }
 .piece-svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)); }
-.placed-piece.selected .piece-svg {
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 3px rgba(255,255,255,0.85));
-}
 .placed-piece.invalid .piece-svg {
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 4px rgba(220,70,70,0.95)) drop-shadow(0 0 4px rgba(220,70,70,0.95));
 }
@@ -222,33 +218,6 @@ body {
   color: var(--color-accent);
   font-size: 1rem;
 }
-
-/* ── Reflect (left) / Rotate (right) ── */
-.controls {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 16px;
-  position: relative;
-  z-index: 60;     /* stays clickable even if a piece hangs off the board over it */
-}
-.controls button {
-  width: var(--button-width);
-  height: var(--button-height);
-  border: none;
-  border-radius: var(--button-radius);
-  font-family: var(--font-display);
-  font-size: var(--button-size);
-  letter-spacing: 0.04em;
-  color: var(--color-button-text);
-  cursor: pointer;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
-  transition: transform 0.1s, box-shadow 0.1s, filter 0.15s, opacity 0.15s;
-}
-.controls button:not(:disabled):hover  { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
-.controls button:not(:disabled):active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
-.controls button:disabled { opacity: 0.4; cursor: default; }
-#reflect-btn { background: var(--color-reflect); }
-#rotate-btn  { background: var(--color-rotate); }
 
 /* ── Popups ── */
 .popup-backdrop {
@@ -327,13 +296,6 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
 }
 .empty-ring.pulse, .rb-empty.pulse { animation: ringPulse 0.8s ease-in-out 2; }
 
-/* Box select: the rectangle drawn while click-dragging on empty board */
-.marquee {
-  position: fixed; display: none; z-index: 1500; pointer-events: none;
-  border: 1.5px dashed rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-}
 /* View mode: the message above the board when a tiling passes parity */
 .status.good { color: var(--color-valid); }
 

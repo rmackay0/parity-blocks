@@ -53,18 +53,33 @@ previous project; don't push there.
   together with Large text — see git log):
   game.js — keyboard shortcuts (R rotate, E reflect — F/T no longer
   reflect; piece letters F I L N P T U V W X Y Z call that piece to the
-  grid centre or select it; arrow keys move the selection; R/E also work
-  while holding/dragging a piece; shortcuts ignored in text boxes and with
-  Cmd/Ctrl/Alt), box select (mouse click-drag on empty board → group that
-  moves/rotates/reflects/drags together), hooks `onPlace`,
-  `onMultiSelect`, finished-board gaps drawn dark (`.gap-dark`), ring
-  pulse animation (`.pulse`). tutorial.html — rotate note glows only
-  after a piece is placed; gaps popup centred on the gaps, static
-  pictures, rings pulse twice then OK turns green; going Back resets a
-  slide but Next stays green; reflect slide's "Nice!" removed; final
-  slide has a tray note (glows until rotate AND reflect) and, on
-  computers only, a left note about box select (glows until used) with
-  an "Optional shortcuts" <details> dropdown.
+  grid centre; arrow keys move a piece; R/E also work while
+  holding/dragging a piece; shortcuts ignored in text boxes and with
+  Cmd/Ctrl/Alt), hook `onPlace`, finished-board gaps drawn dark
+  (`.gap-dark`), ring pulse animation (`.pulse`).
+  **No selecting at all** (user, 2026-10-19: "i dont want selected or
+  unselected pieces to be a concept at all in this game"). No box select,
+  no outline on a "selected" piece, no Esc, and the Reflect/Rotate
+  buttons under the board were removed (click = rotate, double-click =
+  reflect does that job). Keys act on: the held piece → else
+  `keyPieceId` (the piece just called by letter or just moved/turned by a
+  key; cleared as soon as the mouse moves or anything is pressed) → else
+  the piece under the mouse (`keyTarget()` uses elementFromPoint).
+  sandbox-classic.html still has its own old selection model; untouched.
+  tutorial.html — rotate note glows only after a piece is placed; gaps
+  popup centred on the gaps, static pictures, rings pulse twice then OK
+  turns green; going Back resets a slide but Next stays green; reflect
+  slide's "Nice!" removed. Slide 4's reflect note also stops glowing if
+  they reflect a piece at the top. Slide 3's heading glows ~1.4 s then
+  fades before its animations start. Final slide: tray note glows until
+  the player has rotated AND reflected; then (or as soon as they place a
+  piece, whichever is first) the orange "Make sure that the rows and
+  columns…" note gets an extra-strong glow (`.callout.strong`) for 2.5 s
+  (`BIG_GLOW_MS`) — the user wants that message drilled in most. After the
+  glow fades, the bottom "Useful strategy:" line (not "Hint:") fades in
+  (`.reveal-later` → `.shown`); it never glows. Computers also get a
+  non-glowing left note: "Keyboard: point at a piece and press R… E…",
+  plus a collapsed "Optional shortcuts" dropdown (letters + arrows).
 - **The board must never move** (user request 2026-10-19): the message
   above it (`#status`) has a fixed 2-line height (`--status-line`), wraps
   long messages, and grows upward if it ever needs a 3rd line; in the
@@ -78,14 +93,16 @@ checks use Playwright scripts kept in the session scratchpad (they don't
 persist between sessions; rewrite as needed): `tutorial_test.js` (plays
 the whole tutorial on desktop + phone), `play_test.js` (solves Easy/Hard
 through the UI), `click_test.js` (click = rotate, double-click = reflect),
-`game_features_test.js` (keys, hold+R/E, box select, group moves),
+`game_features_test.js` (letter keys, arrows, R/E incl. while holding
+and pointing),
+`board_still_test.js` (long messages never move the board),
 `rules_text_test.js` (rules popup + Large text on laptop/phone; shared
 with the tutorial), `fonts_screens.js` (screenshots). `LARGE=1 node
 tutorial_test.js` replays the tutorial with Large text on. The user wants
 both laptop and phone checked before pushes. Tips: mark the tutorial seen with
 `localStorage.setItem('pb_tutorialSeen','1')` in an init script before
 testing play.html; game state (`placedPieces`, `trayCells`, `puzzle`,
-`selection`, `groupIds`, `CELL`) are globals readable via page.evaluate.
+`keyPieceId`, `CELL`) are globals readable via page.evaluate.
 
 ## Words to use (user's decision, 2026-10-19) — in ALL player-facing text
 
@@ -277,7 +294,9 @@ reference below to `index.html` now means `sandbox.html`.
   is loaded by both `play.html` and `sandbox.html` via `<script src>` —
   edit puzzles there only.
 - **`play.html`** is the public game page: a standalone, much smaller
-  rewrite rather than the sandbox with things hidden. Layout (per user):
+  rewrite rather than the sandbox with things hidden. (Since 2026-10-19
+  there are no Reflect/Rotate buttons and no selecting — see START HERE.)
+  Original layout (per user):
   pieces at the top with **no labels**, a large centered board (squares sized
   to fill the space between, capped by `--board-max-cell`), and **Reflect
   (left) / Rotate (right)** buttons below. Interaction: drag from the top
