@@ -140,7 +140,10 @@ function crossesDottedLine(cells, row, col){
 // hidden gap is never given away. A piece on a hidden gap still stops the
 // puzzle from counting as solved (see checkSolved).
 function fits(cells, row, col, excludeId, visibleOnly){
-  const occ = occupiedExcept(excludeId);
+  return fitsAgainst(cells, row, col, occupiedExcept(excludeId), visibleOnly);
+}
+// Same check, against a given set of taken squares ("r,c")
+function fitsAgainst(cells, row, col, occ, visibleOnly){
   const blocked = visibleOnly ? isVisiblyBlocked : isBlocked;
   return !crossesDottedLine(cells, row, col) && cells.every(([r,c])=>{
     const rr = row+r, cc = col+c;
@@ -156,7 +159,25 @@ function completelyOffBoard(cells, row, col){
 // Rechecked for every piece after each change, so moving one piece off
 // another clears the red state on both.
 function recomputeValidity(){
-  invalidIds = new Set(placedPieces.filter(p=>!fits(p.cells, p.row, p.col, p.id, true)).map(p=>p.id));
+  invalidIds = new Set(placedPieces.filter(p=>!fitsAgainst(p.cells, p.row, p.col, occupiedBefore(p.id), true)).map(p=>p.id));
+}
+
+/* [BEHAVIOR] When two pieces overlap, only the one moved most recently
+   glows red (it's the one causing the problem). placedPieces is kept in
+   the order pieces were last placed / moved / turned (bringToEnd), and a
+   piece only counts as overlapping the pieces BEFORE it. (The newest piece
+   is also drawn on top.) */
+function occupiedBefore(id){
+  const set = new Set();
+  for(const p of placedPieces){
+    if(p.id === id) break;
+    p.cells.forEach(([r,c])=>set.add((p.row+r)+','+(p.col+c)));
+  }
+  return set;
+}
+function bringToEnd(p){
+  if(!p || p.locked) return;
+  placedPieces = placedPieces.filter(q=>q !== p).concat(p);
 }
 
 function pxPos(i){ return i*(CELL+GAP); }
@@ -373,7 +394,7 @@ function transformSource(source, fn){
     if(trayCells[source.name]) trayCells[source.name] = fn(trayCells[source.name]);
   } else {
     const p = placedPieces.find(pp=>pp.id===source.id);
-    if(p && !p.locked) p.cells = fn(p.cells);   // turns in place; goes red if it no longer fits
+    if(p && !p.locked){ p.cells = fn(p.cells); bringToEnd(p); }   // turns in place; goes red if it no longer fits
   }
   renderAll();
   if(gameHooks.onTransform) gameHooks.onTransform(fn === reflectCells ? 'reflect' : 'rotate');
@@ -492,7 +513,7 @@ function moveKeyPiece(dr, dc){
   const p = target && target.kind === 'board' && placedPieces.find(q=>q.id===target.id);
   if(!p || p.locked) return false;
   keyPieceId = p.id;
-  if(p.cells.some(([r,c])=>inBounds(p.row+dr+r, p.col+dc+c))){ p.row += dr; p.col += dc; renderAll(); }
+  if(p.cells.some(([r,c])=>inBounds(p.row+dr+r, p.col+dc+c))){ p.row += dr; p.col += dc; bringToEnd(p); renderAll(); }
   return true;
 }
 
@@ -650,6 +671,7 @@ function onPointerUp(e){
     } else {
       piece.row = row;
       piece.col = col;
+      bringToEnd(piece);
     }
   }
   renderAll();
@@ -719,7 +741,7 @@ function unevenMessage(rowCount, colCount){
 
 // Which placement rule a piece breaks (null if it's fine)
 function pieceProblem(p){
-  const occ = occupiedExcept(p.id);
+  const occ = occupiedBefore(p.id);      // overlaps count against the newer piece only
   const abs = p.cells.map(([r,c])=>[p.row+r, p.col+c]);
   if(abs.some(([r,c])=>!inBounds(r,c))) return 'off';
   if(abs.some(([r,c])=>isVisiblyBlocked(r,c))) return 'gap';   // hidden gaps stay secret

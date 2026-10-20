@@ -86,11 +86,12 @@ previous project; don't push there.
     "Solved!" in green, then a calm note beside the board introduces
     empty spaces (`showGapNote`). No rings ("o's") on empty spaces in the
     tutorial (`rings: false` in the view tiling).
-  - Slide 3: heading glows 2.5 s, then 2 s per picture; the piece in the
-    permanent-empty-space picture is see-through so the X shows.
+  - Slide 3: heading glows 1.6 s and the first animation starts as the
+    glow fades (~1.9 s; user found 3.2 s too late), then 2 s per picture;
+    the piece in the permanent-empty-space picture is see-through.
   - Final slide: only the orange note ("Make sure there is an even number
-    of blocks in each row AND column.") — it glows strongly for 2.5 s on
-    the first place/turn. The old "Useful strategy" line was replaced by
+    of blocks in each row AND column.") — it glows strongly for 2.5 s as
+    soon as the slide opens (user found waiting for a move too delayed). The old "Useful strategy" line was replaced by
     a **Hint** button: when W and P are both inside the outline (always
     wrong — every such tiling fails, checked with solver.js) it fades in
     glowing; it darkens the page except the permanent empty space(s)
@@ -100,6 +101,19 @@ previous project; don't push there.
   - Refresh resumes: the current slide is in sessionStorage
     `pb_tutorialSlide` (cleared on close/finish); play.html reopens the
     tutorial if it's set.
+- **Overlaps blame the newest piece (2026-10-20):** only the piece moved
+  most recently glows red. `placedPieces` is kept in last-moved order
+  (`bringToEnd`), and overlap is checked only against earlier pieces
+  (`occupiedBefore`). Newest piece also draws on top.
+- **Red "not allowed" sign covers the whole picture** (tutorial slide 3
+  and the rules popup), so it never seems to cross out one square (it
+  used to cross the permanent empty space's X). Slide 3's "edge" example
+  now hangs off the LEFT edge, and on phones the 2 × 2 pictures shrink to
+  fit the screen.
+- **Phone layout gotcha:** an element with a grid-area that doesn't exist
+  in the phone template (e.g. `n-trayr` → "trayr") silently adds an extra
+  grid column + gap, pushing the board off-centre. Empty ones are now
+  `display: none`; keep it that way.
 - **Calmer error messages (2026-10-20), puzzle page AND tutorial:** a
   wrong finished board glows red straight away — rule-breaking pieces
   glow, or the board frame (`#board-outer.uneven`) if only rows/columns
@@ -123,6 +137,8 @@ through the UI), `click_test.js` (click = rotate, double-click = reflect),
 and pointing),
 `board_still_test.js` (long messages never move the board),
 `tame_errors_test.js` (red glow first, message after 3 s),
+`overlap_test.js` (only the newest overlapping piece glows),
+`phone_layout_check.js` (board centred, nothing within 12px of the sides),
 `rules_text_test.js` (rules popup + Large text on laptop/phone; shared
 with the tutorial), `fonts_screens.js` (screenshots). `LARGE=1 node
 tutorial_test.js` replays the tutorial with Large text on. The user wants

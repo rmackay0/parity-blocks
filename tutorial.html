@@ -116,11 +116,14 @@
      message wraps instead of widening the middle column (which would shift
      the board sideways) */
   .play .status { grid-area: stat; width: var(--tut-board); max-width: none; justify-self: center; }
-  .play .board-wrap { grid-area: board; width: var(--tut-board); height: var(--tut-board); }
+  .play .board-wrap { grid-area: board; width: var(--tut-board); height: var(--tut-board); justify-self: center; }
   .n-trayl  { grid-area: trayl;  justify-self: end; text-align: right; display: flex; align-items: center; max-width: 320px; }
   .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; }
   .n-boardl { grid-area: boardl; justify-self: end; max-width: 270px; font-size: 1rem; }
   .n-boardl:empty { display: none; }
+  /* (Empty, it must take no part in the layout: on phones its "trayr" spot
+     doesn't exist and would add a hidden extra column that pushes the board off-centre) */
+  .n-trayr:empty { display: none; }
   /* Two-step note ("Rotate a piece" → "Then drag it onto the grid"): each
      step glows in turn, until the player has done it */
   .steps { display: flex; flex-direction: column; gap: 6px; }
@@ -223,6 +226,12 @@
   .mover { transition: transform 0.7s cubic-bezier(.3,.9,.4,1), opacity 0.3s; }
   .rb-nomark { transition: opacity 0.25s, transform 0.3s cubic-bezier(.3,1.5,.5,1); transform-box: fill-box; transform-origin: center; }
   .rb-nomark.hide { opacity: 0; transform: scale(0.3); }
+  /* Phones: the 2 × 2 pictures shrink to fit the screen instead of running off its side */
+  @media (max-width: 520px) {
+    .dont-slide .dont { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
+    .dont-slide figure { padding: 10px 6px 8px; min-width: 0; }
+    .dont-slide figure svg { width: 100%; height: auto; }
+  }
 
   /* ── Final slide: counting the blocks in each row and column ── */
   #tut-overlay { position: absolute; left: var(--board-pad); top: var(--board-pad); overflow: visible; pointer-events: none; z-index: 7; }
@@ -444,29 +453,31 @@ function dontPicture(kind, animated){
   // The piece that moves into the wrong spot lives in a "mover" group, so
   // it can start shifted by (dx, dy) and slide into place
   const mover = svgEl('g', { class:'mover' });
-  let markR = 1, markC = 1.5, dx = 0, dy = 0;
+  let dx = 0, dy = 0;
   if(kind === 'dotted'){
     svgEl('path', { d: buildOutlinePath([[0,0],[0,1],[1,0],[1,1]], cell, gap), class:'rb-dotted', transform:`translate(${pad},${pad})` }, svg);
     svg.appendChild(mover);
     drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.I, xAt(1), yAt(1), cell, gap);
-    markR = 1; markC = 2; dx = 2*step;                    // slides in from the right
+    dx = 2*step;                                          // slides in from the right
   } else if(kind === 'edge'){
     svg.appendChild(mover);
-    drawPiece(mover, [[0,0],[0,1],[1,1]], COLOR.P, xAt(3), yAt(1), cell, gap);
-    markR = 1.5; markC = 3.5; dx = -2*step;               // slides right, off the edge
+    drawPiece(mover, [[0,1],[1,0],[1,1]], COLOR.P, xAt(-1), yAt(1), cell, gap);
+    dx = 2*step;                                          // slides left, off the left edge
   } else if(kind === 'piece'){
     drawPiece(svg, [[0,0],[0,1],[0,2]], COLOR.N, xAt(0), yAt(1), cell, gap);
     svg.appendChild(mover);
     drawPiece(mover, [[0,0],[1,0],[2,0]], COLOR.U, xAt(1), yAt(0), cell, gap).setAttribute('opacity', '0.85');
-    markR = 1; markC = 1; dy = -2*step;                   // drops in from above
+    dy = -2*step;                                         // drops in from above
   } else if(kind === 'gap'){
     X(1,1);                                               // the permanent empty space, under the piece
     svg.appendChild(mover);
     // see-through, so you can tell it's sitting on the X
     drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.V, xAt(0), yAt(1), cell, gap).setAttribute('opacity', '0.55');
-    markR = 1; markC = 1; dy = 2*step;                    // rises from below
+    dy = 2*step;                                          // rises from below
   }
-  const sign = drawNoMark(svg, xAt(markC) + cell/2, yAt(markR) + cell/2, cell*0.95);
+  // The sign covers the whole picture, so it never seems to point at one
+  // square (e.g. crossing out the X of the permanent empty space)
+  const sign = drawNoMark(svg, W/2, H/2, Math.max(W, H)/2);
   if(animated){
     mover.style.transform = `translate(${dx}px, ${dy}px)`;
     mover.style.opacity = '0';
@@ -502,7 +513,7 @@ function playDont(svg){
                        until = 'rotate' | 'reflect' | 'place'
      boardRight        a note beside the board (no glow)
      bigNoteGlow       the orange "Make sure…" note glows extra-strongly for a
-                       few seconds, once a piece is placed or turned
+                       few seconds as soon as the slide opens
      hintWhenInside    piece names: once ALL of them are placed inside the
                        dotted outline (a wrong guess), a glowing Hint button
                        appears under the orange note (see showHint)
@@ -613,7 +624,7 @@ function showSlide(i){
     $('n-boardr').innerHTML = s.boardRight || '';
     $('n-boardl').innerHTML = '';
     $('n-below').innerHTML = '';
-    if(s.bigNoteGlow) $('big-note').classList.add('callout', 'strong');   // lit later
+    if(s.bigNoteGlow){ $('big-note').classList.add('callout', 'strong'); later(BIG_GLOW_DELAY_MS, glowBigNote); }
     setGameMode('play');
     loadPuzzle(s.puzzle);
     lightSteps();             // (now that it's in play mode, the first step glows)
@@ -642,12 +653,13 @@ function stepEvent(kind){
   (SLIDES[current].steps || []).forEach((st, i)=>{ if(st.until === kind) stepDone[i] = true; });
   lightSteps();
 }
-gameHooks.onPlace = ()=>{ stepEvent('place'); if(SLIDES[current].bigNoteGlow) glowBigNote(); };
-gameHooks.onTransform = kind=>{ stepEvent(kind); if(SLIDES[current].bigNoteGlow) glowBigNote(); };
+gameHooks.onPlace = ()=>stepEvent('place');
+gameHooks.onTransform = kind=>stepEvent(kind);
 gameHooks.onChange = ()=>checkHint();
 
 /* Final slide: the orange "Make sure…" note glows strongly for a few
-   seconds once they place or turn a piece. Once per visit to the slide. */
+   seconds as soon as the slide opens. Once per visit to the slide. */
+const BIG_GLOW_DELAY_MS = 300; // just after the slide appears
 const BIG_GLOW_MS = 2500;      // how long the orange note glows
 let bigNoteGlowed = false;
 function glowBigNote(){
@@ -769,8 +781,8 @@ function showDontSlide(){
   // and only then do the pictures start animating
   const heading = $('dont-slide').querySelector('h2');
   heading.className = 'callout lit';
-  const READ = 2500;            // ms the heading stays lit
-  const START = READ + 700;     // first animation starts once the fade is over
+  const READ = 1600;            // ms the heading stays lit
+  const START = READ + 300;     // first animation starts as the heading's glow fades
   later(READ, ()=>heading.classList.remove('lit'));
   const STEP = 2000;   // ms per picture (time to read each one)
   figs.forEach((f, i)=>{

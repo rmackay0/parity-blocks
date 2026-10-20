@@ -203,7 +203,8 @@ function drawNoMark(parent, cx, cy, radius){
                         counts on both sides (used by the analyzer).
      markEmpty          true: draw a ring in every open square no piece covers
      dotted             [[r,c]] region to trace with a dotted line
-     noMarkOn           a piece to draw the red "not allowed" mark over */
+     noMarkOn           a piece that breaks a rule: draws the red "not allowed"
+                        sign over the whole picture */
 function miniBoard(opts){
   const { rows, cols, cell, pieces = [], gaps = [], show = null, dotted = null } = opts;
   const removed = new Set((opts.removed || []).map(([r,c])=>r+','+c));
@@ -294,11 +295,8 @@ function miniBoard(opts){
     }
   }
 
-  if(opts.noMarkOn){
-    const p = opts.noMarkOn, b = bounds(p.cells);
-    const cx = pad + p.col*step + (b.cols*step - gap)/2;
-    const cy = pad + p.row*step + (b.rows*step - gap)/2;
-    drawNoMark(svg, cx, cy, cell*0.8);
-  }
+  // The sign covers the whole picture (not just the piece), so it never
+  // seems to point at one square in particular
+  if(opts.noMarkOn) drawNoMark(svg, boardW/2, boardH/2, Math.min(boardW, boardH)/2 - 2);
   return outer;
 }
