@@ -118,7 +118,9 @@
   .play .status { grid-area: stat; width: var(--tut-board); max-width: none; justify-self: center; }
   .play .board-wrap { grid-area: board; width: var(--tut-board); height: var(--tut-board); justify-self: center; }
   .n-trayl  { grid-area: trayl;  justify-self: end; text-align: right; display: flex; align-items: center; max-width: 320px; }
-  .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; }
+  /* (Never taller than the board, so a long note can't make the row grow
+     and shift the board; extra text just runs on below) */
+  .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; max-height: var(--tut-board); }
   .n-boardl { grid-area: boardl; justify-self: end; max-width: 270px; font-size: 1rem; }
   .n-boardl:empty { display: none; }
   /* (Empty, it must take no part in the layout: on phones its "trayr" spot
@@ -180,7 +182,16 @@
   .gap-note .pics { display: flex; gap: 24px; margin-top: 12px; }
   .gap-note figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
   .gap-note figcaption { font-size: 0.9rem; color: var(--color-text-dim); text-align: center; max-width: 110px; }
-  @media (max-width: 760px) { .gap-note .pics { justify-content: center; } }
+  /* Phones: the note sits above the board in a fixed space, so it's compact:
+     the two little pictures stack beside the text instead of under it */
+  @media (max-width: 760px) {
+    .gap-note { display: flex; align-items: center; gap: 12px; text-align: left; }
+    .gap-note p { flex: 1; }
+    .gap-note .pics { flex-direction: column; gap: 4px; margin-top: 0; }
+    .gap-note figure { flex-direction: row; gap: 6px; }
+    .gap-note figure svg { width: 26px; height: 26px; }
+    .gap-note figcaption { text-align: left; max-width: 90px; font-size: 0.8rem; line-height: 1.2; }
+  }
 
   /* ── Final slide: the Hint button and the spotlight it opens ── */
   .hint-btn {
@@ -249,6 +260,16 @@
     .n-trayl, .n-boardr, .n-boardl { justify-self: center; text-align: center; max-width: none; }
     .arrow { transform: rotate(90deg); }
     .big-note { border-left: none; padding-left: 0; font-size: 1.2rem; }
+    /* [POSITIONING] Phones: tighter spacing so more fits on the screen */
+    .play { row-gap: 4px; }
+    .steps { gap: 2px; }
+    .tut-head { padding: 8px 56px 4px; }
+    .tut-head h1 { font-size: 1.6rem; }
+    .dots { margin-top: 6px; }
+    .close-x { top: 8px; width: 36px; height: 36px; font-size: 1.15rem; }
+    .tut-body { padding-top: 2px; padding-bottom: 6px; }
+    .tut-foot { padding: 6px 14px 10px; }
+    .foot-btn { height: 44px; min-width: 116px; font-size: 1.25rem; }
   }
 
   /* ── Footer: Back, Next/Finish ── */
@@ -283,7 +304,7 @@
   .one-line { white-space: nowrap; }   /* laptops: keep this note on one line */
   @media (max-width: 600px) {
     .one-line { white-space: normal; }   /* phones: wrap so it never runs off the screen */
-    .text-size-btn { height: 34px; padding: 0 10px; font-size: 0.9rem; }
+    .text-size-btn { top: 9px; height: 34px; padding: 0 10px; font-size: 0.9rem; }
     html.large-text .spot-card p { font-size: 1.4rem; }
     .text-size-btn.is-large-label { font-size: 0.95rem; }
   }
@@ -619,6 +640,7 @@ function showSlide(i){
   if(s.kind === 'play'){
     bigNoteGlowed = false;
     hintOffered = false;
+    $('n-trayl').style.minHeight = ''; trayEl.style.display = '';   // (undo the phone empty-space note)
     renderSteps(s);
     $('n-trayr').innerHTML = '';
     $('n-boardr').innerHTML = s.boardRight || '';
@@ -749,6 +771,7 @@ gameHooks.onSolved = ()=>{
    later a calm note beside the board introduces empty spaces, with two
    little pictures, and Next lights up. */
 const GAP_NOTE_DELAY_MS = 900;
+const PHONE = window.matchMedia('(max-width: 760px)');   // same width as the one-column layout
 function showGapNote(){
   later(GAP_NOTE_DELAY_MS, ()=>{
     const note = document.createElement('div');
@@ -758,7 +781,25 @@ function showGapNote(){
     const [a, b] = note.querySelectorAll('figure');
     a.append(squareSvg(false)); a.insertAdjacentHTML('beforeend', '<figcaption>empty space</figcaption>');
     b.append(squareSvg(true));  b.insertAdjacentHTML('beforeend', '<figcaption>permanent empty space</figcaption>');
-    $('n-boardr').appendChild(note);
+    if(PHONE.matches){
+      // Phones: the note goes ABOVE the board, where the player is looking,
+      // in place of the finished step note and the (now empty) row of
+      // pieces. That space keeps its exact height, so the board doesn't move.
+      const area = $('n-trayl'), top = area.getBoundingClientRect().top, bottom = trayEl.getBoundingClientRect().bottom;
+      // (minus one row gap: the pieces' row stays in the grid, empty, with its gap)
+      const room = bottom - top - parseFloat(getComputedStyle($('play')).rowGap);
+      const steps = area.innerHTML;
+      area.style.minHeight = room + 'px';
+      trayEl.style.display = 'none';
+      area.innerHTML = '';
+      area.appendChild(note);
+      // Too tall to fit there (e.g. Large text)? Put everything back and show
+      // it under the board instead, so the board still doesn't move
+      if(area.getBoundingClientRect().height > room + 1){
+        area.style.minHeight = ''; trayEl.style.display = ''; area.innerHTML = steps; lightSteps();
+        $('n-boardr').appendChild(note);
+      }
+    } else $('n-boardr').appendChild(note);
     markDone();
   });
 }

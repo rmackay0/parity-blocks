@@ -44,10 +44,20 @@ previous project; don't push there.
 **Current state (2026-10-20 session)**
 - Always check what's pushed with `git log origin/main..HEAD` /
   `git log HEAD..origin/main`.
-- Known open issue: on phones the tutorial's notes under the board (e.g.
-  slide 2's empty-space note) can sit below the visible area and need a
-  scroll. The user knows; not fixed yet (options: tighten the phone
-  layout, or move notes above the board).
+- **Phone tutorial layout (2026-10-20):** tighter header/footer/row
+  spacing at ≤760px. After solving slide 2, the empty-space note replaces
+  the finished step note + empty row of pieces ABOVE the board, in a
+  space of the same height (board doesn't move); if it doesn't fit (Large
+  text) it falls back to under the board. Normal text on an iPhone 14
+  needs no scrolling on any slide; iPhone SE and Large text still scroll
+  a little on slides 4–5 (and slide 1 is just long text).
+- Letter/arrow keys removed (user: no selected state, so they make no
+  sense); only R / E remain. Real puzzles (play.html) set
+  `gameSettings.explain = false`: mistakes only glow red, no message, and
+  the message area is hidden. Tutorial + sandbox still explain after 3 s.
+- Claude-created practice puzzles: `claude-*` entries in puzzles.js
+  (answers in comments), added once to the sandbox archive with a note
+  (`pb_claudeOffered`). Playable via play.html?puzzle=claude-easy-1 etc.
 - **Large text** (2026-10-19): a "Large text" button (bold label) at the
   top left of the tutorial and the rules popup; turns on
   `html.large-text` (bigger reading text only) and becomes "Standard
