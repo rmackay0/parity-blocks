@@ -51,7 +51,7 @@ let GAP = 4;
 let trayCells = {};
 let placedPieces = [];        // {id, name, color, cells, row, col}
 let invalidIds = new Set();   // pieces overlapping, off-grid, or on a blocked square
-let keyPieceId = null;        // piece just called with its letter key (see KEYBOARD)
+let keyPieceId = null;        // piece just turned with R / E (see Keyboard shortcuts)
 let placedIdCounter = 1;
 let solved = false;
 let startTime = Date.now();
@@ -424,31 +424,23 @@ function onPieceClick(source){
   }, DOUBLE_CLICK_MS) };
 }
 
-/* [BEHAVIOR] Keyboard shortcuts. They act on the piece you're holding or
-   dragging, or else the piece under the mouse. Right after you call a
-   piece with its letter, they act on that piece until the mouse moves
-   (so you can play without the mouse).
-     R              rotate
-     E              reflect
-     F I L N P T U V W X Y Z   bring that piece to the centre of the grid
-                    (if it's already on the grid, the keys now act on it)
-     arrow keys     move a piece on the grid one square
-   Ignored while typing in a text box, and when Cmd/Ctrl/Alt is held
-   (so Cmd+R still reloads the page). */
-const PIECE_KEYS = 'filnptuvwxyz';
+/* [BEHAVIOR] Keyboard shortcuts (the only two; the user removed the
+   letter and arrow keys since there's no selected piece for them to act on):
+     R   rotate      E   reflect
+   They act on the piece you're holding or dragging, or else the piece
+   under the mouse. Ignored while typing in a text box, and when
+   Cmd/Ctrl/Alt is held (so Cmd+R still reloads the page). */
 document.addEventListener('keydown', e=>{
   if(e.metaKey || e.ctrlKey || e.altKey) return;
   if(e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
   if(gameMode !== 'play' || !puzzle) return;
   const k = e.key.toLowerCase();
-  const ARROWS = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
   if(k === 'r' || k === 'e'){ e.preventDefault(); keyTransform(k === 'r' ? rotateCells : reflectCells); }
-  else if(ARROWS[e.key]){ if(moveKeyPiece(...ARROWS[e.key])) e.preventDefault(); }
-  else if(k.length === 1 && PIECE_KEYS.includes(k)) callPiece(k.toUpperCase());
 });
 
-// Where the mouse is, so the keys know which piece it's pointing at. Moving
-// the mouse hands the keys back to "the piece under the mouse".
+// Where the mouse is, so R / E know which piece it's pointing at. A piece
+// turned with a key stays the keys' piece (keyPieceId) until the mouse
+// moves, even if turning it took it out from under the mouse.
 let mouseX = null, mouseY = null;
 document.addEventListener('pointermove', e=>{
   if(e.pointerType !== 'mouse') return;
@@ -502,37 +494,6 @@ function clampGrab(pr){
   const b = bounds(pr.cells);
   pr.grabDR = Math.min(pr.grabDR, b.rows - 1);
   pr.grabDC = Math.min(pr.grabDC, b.cols - 1);
-}
-
-// Arrow keys: move a piece on the grid one square, as long as it keeps at
-// least one block on the grid (so it can't get lost off the edge). The
-// piece keeps being the one the keys act on even once it's moved out
-// from under the mouse.
-function moveKeyPiece(dr, dc){
-  const target = keyTarget();
-  const p = target && target.kind === 'board' && placedPieces.find(q=>q.id===target.id);
-  if(!p || p.locked) return false;
-  keyPieceId = p.id;
-  if(p.cells.some(([r,c])=>inBounds(p.row+dr+r, p.col+dc+c))){ p.row += dr; p.col += dc; bringToEnd(p); renderAll(); }
-  return true;
-}
-
-// A piece's letter: bring it from the top to the centre of the grid (it
-// may land somewhere that doesn't fit yet, shown in red). Either way the
-// keys now act on it.
-function callPiece(name){
-  const def = puzzle.pieces.find(d=>d.name === name);
-  if(!def) return;
-  flushPendingClick();
-  const onBoard = placedPieces.find(p=>!p.locked && p.name === name);
-  if(onBoard){ keyPieceId = onBoard.id; return; }
-  const cells = trayCells[name].map(c=>c.slice()), b = bounds(cells);
-  const id = 'p' + (placedIdCounter++);
-  placedPieces.push({ id, name, color: def.color, cells,
-    row: Math.floor((puzzle.rows - b.rows) / 2), col: Math.floor((puzzle.cols - b.cols) / 2) });
-  keyPieceId = id;
-  renderAll();
-  if(gameHooks.onPlace) gameHooks.onPlace();
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -696,6 +657,10 @@ const markOverlayEl = document.getElementById('mark-overlay');
 // written explanation appears (the user may change this; 0 = explain
 // straight away). Any move restarts the wait.
 const EXPLAIN_DELAY_MS = 3000;
+// [BEHAVIOR] Whether the written explanation appears at all. The puzzle
+// page turns it off (user, 2026-10-20: "in game there should only be red
+// glow, no telling why"); the tutorial and the sandbox keep it.
+const gameSettings = { explain: true };
 let explainTimer = null, explainKey = '';
 function cancelExplain(){ clearTimeout(explainTimer); explainTimer = null; explainKey = ''; }
 // Show `msg` once the board has stayed the same for EXPLAIN_DELAY_MS
@@ -707,7 +672,7 @@ function explainLater(msg){
   cancelExplain();
   explainKey = key;
   statusEl.textContent = '';
-  if(!msg) return;
+  if(!msg || !gameSettings.explain) return;
   if(EXPLAIN_DELAY_MS <= 0){ statusEl.textContent = msg; return; }
   explainTimer = setTimeout(()=>{ if(gameMode === 'play' && !solved) statusEl.textContent = msg; }, EXPLAIN_DELAY_MS);
 }

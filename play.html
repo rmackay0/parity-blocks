@@ -52,7 +52,10 @@
 
   <div class="tray" id="tray" aria-label="Available pieces"></div>
 
-  <p class="status" id="status" role="status" aria-live="polite"></p>
+  <!-- Mistakes only glow red here (no written explanation; see
+       gameSettings.explain below), so the message area is hidden and the
+       board gets its space -->
+  <p class="status" id="status" role="status" aria-live="polite" hidden></p>
 
   <div class="board-wrap" id="board-wrap">
     <div id="board-outer">
@@ -154,6 +157,7 @@ document.getElementById('reset-confirm').onclick = ()=>{
   document.getElementById('reset-popup').hidden = true;
   loadPuzzle(puzzle);
 };
+gameSettings.explain = false;        // a wrong board just glows red; no "Uneven rows…" message
 if(wantedPuzzle){
   document.title = 'Parity Blocks: ' + wantedPuzzle.title;
   loadPuzzle(wantedPuzzle);

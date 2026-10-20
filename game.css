@@ -237,6 +237,7 @@ body {
   z-index: 100;
 }
 .popup-backdrop[hidden] { display: none; }
+.status[hidden] { display: none; }     /* the puzzle page hides the message area */
 .popup {
   width: 100%;
   max-width: 340px;
