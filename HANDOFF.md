@@ -1,6 +1,6 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-10-19)
+## START HERE (updated 2026-10-20, end of session)
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -11,8 +11,9 @@ previous project; don't push there.
 **File map**
 | File | What it is |
 |---|---|
-| `index.html` | Splash: logo, title, Easy/Medium/Hard (→ `play.html?level=…`), Tutorial button (→ tutorial.html), Rules (top-right) |
-| `play.html` | The puzzle page. Loads `published.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first) |
+| `index.html` | Splash: logo, title, Easy/Medium/Hard (→ `play.html?level=…`), Tutorial button (→ tutorial.html), **Archive** button (calendar of solved days), Rules (top-right) |
+| `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
+| `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html |
 | `tutorial.html` | Interactive 5-slide tutorial (real mini puzzles via game.js) |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
@@ -41,9 +42,34 @@ previous project; don't push there.
 - Vocabulary below (block / piece / permanent empty space / empty space)
   is mandatory.
 
-**Current state (2026-10-20 session)**
+**Current state (end of 2026-10-20 session)**
 - Always check what's pushed with `git log origin/main..HEAD` /
-  `git log HEAD..origin/main`.
+  `git log HEAD..origin/main`. At the end of this session the last two
+  commits (phone layout; progress + Archive) were committed but NOT yet
+  pushed — ask the user before pushing.
+
+**Open items / ideas for next session**
+- Double-tap zoom fix on iPhone (`touch-action: manipulation` + touchend
+  guard in game.js): user says it doesn't seem to zoom; still checking.
+- Phones: iPhone SE and Large text still need a little scrolling on
+  tutorial slides 4–5 (normal text on an iPhone 14 needs none).
+- Archive calendar only shows stars; past days can't be replayed because
+  published.js keeps only the current three puzzles. Replaying would need
+  a history of published puzzles (e.g. keep each publish, keyed by date).
+- Practice puzzles opened by link (`?puzzle=`) save progress but earn no
+  stars (only Easy/Medium/Hard do).
+- The admin sandbox still says "gap"/"fixed gap" in its own labels (user
+  said that's fine).
+
+**Saving progress + Archive (2026-10-20)** — progress.js, localStorage
+only (the user wanted no data collected). play.html saves the board on
+every change and on leaving (pieces, tray turns, time so far) under a key
+that includes the puzzle's publishedAt, so a newly published puzzle starts
+fresh; time away doesn't count; solving or Reset clears it. Solving an
+Easy/Medium/Hard puzzle records `{date (player's local day), level, title,
+timeMs}`. The splash Archive button opens a month calendar (‹ ›, can't go
+past this month) with a star per difficulty solved that day: teal Easy,
+orange Medium, purple Hard (the button colors).
 - **Phone tutorial layout (2026-10-20):** tighter header/footer/row
   spacing at ≤760px. After solving slide 2, the empty-space note replaces
   the finished step note + empty row of pieces ABOVE the board, in a
@@ -66,20 +92,19 @@ previous project; don't push there.
   The rules' rotate/reflect lines also say "tap" on touchscreens now.
 - **Tutorial v3 + new game features** (all tested; committed & pushed
   together with Large text — see git log):
-  game.js — keyboard shortcuts (R rotate, E reflect — F/T no longer
-  reflect; piece letters F I L N P T U V W X Y Z call that piece to the
-  grid centre; arrow keys move a piece; R/E also work while
-  holding/dragging a piece; shortcuts ignored in text boxes and with
-  Cmd/Ctrl/Alt), hook `onPlace`, finished-board gaps drawn dark
-  (`.gap-dark`), ring pulse animation (`.pulse`).
+  game.js — keyboard shortcuts R rotate / E reflect only (the letter and
+  arrow keys were removed 2026-10-20); they act on the held piece or the
+  one under the mouse, also while holding/dragging; ignored in text boxes
+  and with Cmd/Ctrl/Alt. Hook `onPlace`, finished-board empty spaces drawn
+  dark (`.gap-dark`), ring pulse animation (`.pulse`).
   **No selecting at all** (user, 2026-10-19: "i dont want selected or
   unselected pieces to be a concept at all in this game"). No box select,
   no outline on a "selected" piece, no Esc, and the Reflect/Rotate
   buttons under the board were removed (click = rotate, double-click =
-  reflect does that job). Keys act on: the held piece → else
-  `keyPieceId` (the piece just called by letter or just moved/turned by a
-  key; cleared as soon as the mouse moves or anything is pressed) → else
-  the piece under the mouse (`keyTarget()` uses elementFromPoint).
+  reflect does that job). R/E act on: the held piece → else `keyPieceId`
+  (the piece just turned by a key, so it stays the target if turning
+  moved it out from under the mouse; cleared when the mouse moves or
+  anything is pressed) → else the piece under the mouse (`keyTarget()`).
   sandbox-classic.html still has its own old selection model; untouched.
 - **Tutorial v4 (2026-10-20, from a friend's playtest notes the user
   adopted)** — see the comment at the top of tutorial.html for the slide
@@ -90,8 +115,7 @@ previous project; don't push there.
     piece or press R to rotate it" → "Then drag it onto the grid" (slide
     4: double-click / E to reflect). The first undone step glows. Slide 4
     also says "You can also rotate and reflect pieces once they're on the
-    grid." The keyboard note and "Optional shortcuts" dropdown are gone
-    (letter/arrow keys still work, just not explained).
+    grid." The keyboard note and "Optional shortcuts" dropdown are gone.
   - Slide 2 no longer has a popup (it "felt like I did something wrong"):
     "Solved!" in green, then a calm note beside the board introduces
     empty spaces (`showGapNote`). No rings ("o's") on empty spaces in the
@@ -135,16 +159,26 @@ previous project; don't push there.
   long messages, and grows upward if it ever needs a 3rd line; in the
   tutorial it's exactly the board's width. Don't put anything else
   between the tray and the board whose size depends on its content.
-- Not built yet (user's future wish): save players' progress, collecting
-  no data beyond what's needed (suggested: browser localStorage only).
+  (The puzzle page now hides `#status` entirely — see "only glow red".)
 
-**Testing** — there's no test suite beyond tests/solver.test.js. Browser
-checks use Playwright scripts kept in the session scratchpad (they don't
-persist between sessions; rewrite as needed): `tutorial_test.js` (plays
+**Testing** — `node tests/solver.test.js` for the solver. Browser checks
+are Playwright scripts, saved in **`tests/browser/`** (copied there at the
+end of the 2026-10-20 session). Run them from that folder, e.g.
+`cd tests/browser` then `node tutorial_test.js` (`LARGE=1 node
+tutorial_test.js` for Large text); they save screenshots there (ignored
+by git). **One-time setup in a new session:** in `tests/browser`, run
+`npm install --no-save playwright` and then `npx playwright install
+chromium` (node_modules is git-ignored). Until then they fail with
+"Cannot find module 'playwright'". Scripts: `tutorial_test.js` (plays
 the whole tutorial on desktop + phone), `play_test.js` (solves Easy/Hard
 through the UI), `click_test.js` (click = rotate, double-click = reflect),
-`game_features_test.js` (letter keys, arrows, R/E incl. while holding
-and pointing),
+`game_features_test.js` (R/E incl. while holding and pointing; letter and
+arrow keys do nothing),
+`progress_test.js` (board saved/restored, Reset, solves recorded, Archive
+calendar), `claude_puzzles_test.js` (practice puzzles in the sandbox
+archive + solvable by playing), `make_puzzles.js` (the generator used for
+them: lays out 6 random pieces square by square, then checks with the
+solver — much faster than findPuzzles on random boards),
 `board_still_test.js` (long messages never move the board),
 `tame_errors_test.js` (red glow first, message after 3 s),
 `overlap_test.js` (only the newest overlapping piece glows),

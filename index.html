@@ -255,6 +255,50 @@
     transition: opacity 0.2s, transform 0.2s;
   }
   .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Archive: a calendar with a star on each day a puzzle was solved ──
+     [COLORS] the stars use the three difficulty colors from :root */
+  .cal-backdrop {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .cal-backdrop[hidden] { display: none; }
+  .cal {
+    width: min(420px, 100%); max-height: 100%; overflow-y: auto;
+    background: var(--color-panel); border: 1px solid var(--color-panel-border); border-radius: 18px;
+    padding: 18px 18px 16px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  }
+  .cal h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.7rem; color: var(--color-title); text-align: center; margin-bottom: 10px; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .cal-nav b { font-size: 1.15rem; font-weight: 700; }
+  .cal-nav button {
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-panel-border);
+    background: transparent; color: var(--color-text); font-size: 1.3rem; cursor: pointer;
+  }
+  .cal-nav button:disabled { opacity: 0.3; cursor: default; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-grid .wd { font-size: 0.8rem; color: var(--color-text-dim); text-align: center; padding-bottom: 2px; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 8px; background: rgba(255, 255, 255, 0.04);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding-top: 4px; font-size: 0.85rem; color: var(--color-text-dim);
+  }
+  .cal-day.today { box-shadow: 0 0 0 2px var(--color-focus); color: var(--color-text); }
+  .cal-day .stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; margin-top: 2px; }
+  .cal-day .stars svg { width: 16px; height: 16px; }
+  .star-easy   { fill: var(--color-easy); }
+  .star-medium { fill: var(--color-medium); }
+  .star-hard   { fill: var(--color-hard); }
+  .cal-legend { display: flex; justify-content: center; gap: 16px; margin: 12px 0 4px; font-size: 0.9rem; color: var(--color-text-dim); }
+  .cal-legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .cal-legend svg { width: 15px; height: 15px; }
+  .cal-total { text-align: center; font-size: 0.9rem; color: var(--color-text-dim); margin-bottom: 12px; }
+  .cal-close {
+    display: block; width: 100%; height: 46px; border: none; border-radius: 12px; cursor: pointer;
+    font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em;
+    background: var(--color-easy); color: var(--color-button-text);
+  }
 </style>
 </head>
 <body>
@@ -290,7 +334,28 @@
        ✕ and Finish buttons come back here). Rules stay in the top-right corner. -->
   <a class="rules-btn rules-bottom" href="tutorial.html">Tutorial</a>
 
+  <!-- [CONTENT] Archive: opens the calendar of solved puzzles below -->
+  <button class="rules-btn rules-bottom" type="button" id="archive-btn">Archive</button>
+
 </main>
+
+<!-- The Archive calendar: a star on each day this player solved a puzzle
+     (teal = Easy, orange = Medium, purple = Hard). Kept in this browser only
+     (progress.js). Drawn by showMonth() below. -->
+<div class="cal-backdrop" id="cal-popup" hidden>
+  <div class="cal" role="dialog" aria-modal="true" aria-labelledby="cal-title">
+    <h2 id="cal-title">Archive</h2>
+    <div class="cal-nav">
+      <button type="button" id="cal-prev" aria-label="Previous month">&lsaquo;</button>
+      <b id="cal-month"></b>
+      <button type="button" id="cal-next" aria-label="Next month">&rsaquo;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend" id="cal-legend"></div>
+    <p class="cal-total" id="cal-total"></p>
+    <button type="button" class="cal-close" id="cal-close">Close</button>
+  </div>
+</div>
 
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -298,6 +363,7 @@
 <!-- The rules popup: text and pictures in rules.js, which needs shapes.js -->
 <script src="shapes.js"></script>
 <script src="rules.js"></script>
+<script src="progress.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════
    [BEHAVIOR] Where each difficulty button goes.
@@ -332,6 +398,60 @@ document.querySelectorAll('.difficulty-btn[data-difficulty]').forEach(btn => {
     }
   });
 });
+
+/* ═══════════════════════════════════════════════════════════════════
+   [BEHAVIOR] Archive calendar. One star per difficulty on each day it
+   was solved (solving the same one twice that day still shows one star).
+   Opens on the current month; ‹ › go back and forward (not past this
+   month). Days are the player's own calendar days.
+═══════════════════════════════════════════════════════════════════ */
+const LEVELS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']];
+const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+const star = level => `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="star-${level}" d="${STAR_PATH}"/></svg>`;
+const calPopup = document.getElementById('cal-popup');
+let shownMonth = null;     // a Date on the 1st of the month being shown
+
+function showMonth(){
+  const solves = loadSolves();
+  const byDay = {};        // 'YYYY-MM-DD' → Set of levels solved that day
+  solves.forEach(s => { (byDay[s.date] = byDay[s.date] || new Set()).add(s.level); });
+  const y = shownMonth.getFullYear(), m = shownMonth.getMonth();
+  document.getElementById('cal-month').textContent = shownMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const now = new Date();
+  document.getElementById('cal-next').disabled = y === now.getFullYear() && m === now.getMonth();
+  const grid = document.getElementById('cal-grid');
+  // Weekday headings (starting Sunday), in the browser's language
+  let html = [...Array(7)].map((_, i) => `<div class="wd">${new Date(2026, 1, 1 + i).toLocaleDateString(undefined, { weekday: 'narrow' })}</div>`).join('');
+  const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+  html += '<div></div>'.repeat(first);
+  let solvedThisMonth = 0;
+  for (let d = 1; d <= days; d++) {
+    const key = localDay(new Date(y, m, d));
+    const done = byDay[key] || new Set();
+    solvedThisMonth += done.size;
+    const label = done.size ? ' (solved: ' + LEVELS.filter(([l]) => done.has(l)).map(([, n]) => n).join(', ') + ')' : '';
+    html += `<div class="cal-day${key === localDay() ? ' today' : ''}" aria-label="${d}${label}">${d}`
+          + `<div class="stars">${LEVELS.filter(([l]) => done.has(l)).map(([l]) => star(l)).join('')}</div></div>`;
+  }
+  grid.innerHTML = html;
+  document.getElementById('cal-total').textContent = solvedThisMonth
+    ? `${solvedThisMonth} solved this month`
+    : (solves.length ? 'Nothing solved this month' : 'Solve a puzzle to earn your first star.');
+}
+document.getElementById('cal-legend').innerHTML = LEVELS.map(([l, n]) => `<span>${star(l)}${n}</span>`).join('');
+document.getElementById('archive-btn').addEventListener('click', () => {
+  const now = new Date();
+  shownMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  showMonth();
+  calPopup.hidden = false;
+  document.getElementById('cal-close').focus();
+});
+document.getElementById('cal-prev').onclick = () => { shownMonth.setMonth(shownMonth.getMonth() - 1); showMonth(); };
+document.getElementById('cal-next').onclick = () => { shownMonth.setMonth(shownMonth.getMonth() + 1); showMonth(); };
+const closeCal = () => { calPopup.hidden = true; };
+document.getElementById('cal-close').onclick = closeCal;
+calPopup.addEventListener('click', e => { if (e.target === calPopup) closeCal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !calPopup.hidden) closeCal(); });
 </script>
 </body>
 </html>

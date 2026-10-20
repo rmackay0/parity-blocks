@@ -1,2 +1,8 @@
 .DS_Store
 *.zip
+# Screenshots the browser tests save when run from tests/browser
+tests/browser/*.png
+# Playwright, installed locally for the browser tests (see HANDOFF.md)
+node_modules/
+package-lock.json
+package.json

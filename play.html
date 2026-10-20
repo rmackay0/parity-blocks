@@ -113,6 +113,7 @@
 <!-- Rules popup (opens from the Rules button; first-time players get the tutorial instead) -->
 <script src="rules.js"></script>
 <script src="published.js"></script>
+<script src="progress.js"></script>
 <script src="game.js"></script>
 <script>
 /* Which puzzle to play comes from the URL:
@@ -155,12 +156,52 @@ document.getElementById('reset-btn').onclick = ()=>{ document.getElementById('re
 document.getElementById('reset-cancel').onclick = ()=>{ document.getElementById('reset-popup').hidden = true; };
 document.getElementById('reset-confirm').onclick = ()=>{
   document.getElementById('reset-popup').hidden = true;
+  clearSavedBoard(saveKey);
   loadPuzzle(puzzle);
 };
 gameSettings.explain = false;        // a wrong board just glows red; no "Uneven rows…" message
+
+/* ── Saving progress (progress.js; this browser only) ──
+   The board is saved as you play (pieces on it, how the ones at the top
+   are turned, and the time so far), and comes back when you return.
+   Time away from the page doesn't count. Solving or Reset clears it.
+   Solving an Easy / Medium / Hard puzzle is recorded for the Archive
+   calendar on the splash screen. */
+const saveKey = level ? 'level:' + level + ':' + ((PUBLISHED[level] || {}).publishedAt || '')
+                      : 'puzzle:' + params.get('puzzle');
+function saveBoard(){
+  if(!puzzle || gameMode !== 'play') return;
+  if(solved){ clearSavedBoard(saveKey); return; }
+  saveBoardState(saveKey, {
+    placed: placedPieces.filter(p=>!p.locked).map(p=>({ name:p.name, cells:p.cells, row:p.row, col:p.col })),
+    tray: trayCells, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString(),
+  });
+}
+function restoreBoard(){
+  const saved = loadSavedBoard(saveKey);
+  if(!saved) return;
+  const names = new Set(puzzle.pieces.map(d=>d.name));
+  Object.keys(saved.tray || {}).forEach(n=>{ if(names.has(n)) trayCells[n] = saved.tray[n]; });
+  (saved.placed || []).filter(p=>names.has(p.name)).forEach(p=>{
+    placedPieces.push({ id: 'p' + (placedIdCounter++), name: p.name, color: puzzle.pieces.find(d=>d.name===p.name).color,
+                        cells: p.cells, row: p.row, col: p.col });
+  });
+  startTime = Date.now() - (saved.elapsedMs || 0);
+  renderAll();
+}
+gameHooks.onSolved = time=>{
+  document.getElementById('solved-time').textContent = 'Your time: ' + time;
+  document.getElementById('solved-popup').hidden = false;
+  clearSavedBoard(saveKey);
+  if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime);
+};
+
 if(wantedPuzzle){
   document.title = 'Parity Blocks: ' + wantedPuzzle.title;
   loadPuzzle(wantedPuzzle);
+  restoreBoard();
+  gameHooks.onChange = saveBoard;                      // (set after restoring, so loading doesn't overwrite the save)
+  window.addEventListener('pagehide', saveBoard);      // keep the time right if they leave without moving anything
   if(!tutorialSeen || tutorialInProgress) window.openTutorial();
 } else {
   document.querySelector('.game').hidden = true;
