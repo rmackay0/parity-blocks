@@ -44,11 +44,12 @@ previous project; don't push there.
 
 **Current state (end of 2026-10-20 session)**
 - Always check what's pushed with `git log origin/main..HEAD` /
-  `git log HEAD..origin/main`. At the end of this session the last two
-  commits (phone layout; progress + Archive) were committed but NOT yet
-  pushed — ask the user before pushing.
+  `git log HEAD..origin/main`, and ask the user before pushing.
 
 **Open items / ideas for next session**
+- **Change the Medium puzzle** (user asked 2026-10-20, after the tutorial
+  v5 work). An older Medium had only one way to fit the pieces at all, so
+  the even rule never mattered — check the published one with the solver.
 - Double-tap zoom fix on iPhone (`touch-action: manipulation` + touchend
   guard in game.js): user says it doesn't seem to zoom; still checking.
 - Phones: iPhone SE and Large text still need a little scrolling on
@@ -61,6 +62,18 @@ previous project; don't push there.
 - The admin sandbox still says "gap"/"fixed gap" in its own labels (user
   said that's fine).
 
+**Tutorial v5: empty-spaces slide (2026-10-20, "claude notes v4" PDF)** —
+now 6 slides. Slide 1 no longer explains permanent empty spaces, and
+slide 2 no longer shows an empty-space note after solving (just "Solved!"
+and Next). New slide 3 (`kind: 'recap'`, `showRecap`): slide 2's solved
+board (`PUZZLE_2_SOLVED`, its only solution) in view mode with no tray; it
+dims (`#board-outer.dim`), then a highlighted note under it appears line
+by line — empty spaces (dark square picture) → permanent empty spaces
+(red X picture) → "count both kinds the same" — while the matching board
+squares glow (`.sq-ring` in `#tut-overlay`; empty → Xs → all six). Next
+lights up after the last line (~4.2 s). Phones use a slightly smaller
+board on this slide so the note fits; Large text scrolls a little.
+
 **Saving progress + Archive (2026-10-20)** — progress.js, localStorage
 only (the user wanted no data collected). play.html saves the board on
 every change and on leaving (pieces, tray turns, time so far) under a key
@@ -71,10 +84,8 @@ timeMs}`. The splash Archive button opens a month calendar (‹ ›, can't go
 past this month) with a star per difficulty solved that day: teal Easy,
 orange Medium, purple Hard (the button colors).
 - **Phone tutorial layout (2026-10-20):** tighter header/footer/row
-  spacing at ≤760px. After solving slide 2, the empty-space note replaces
-  the finished step note + empty row of pieces ABOVE the board, in a
-  space of the same height (board doesn't move); if it doesn't fit (Large
-  text) it falls back to under the board. Normal text on an iPhone 14
+  spacing at ≤760px. (The slide-2 empty-space note that used to sit above
+  the board on phones is gone — see Tutorial v5.) Normal text on an iPhone 14
   needs no scrolling on any slide; iPhone SE and Large text still scroll
   a little on slides 4–5 (and slide 1 is just long text).
 - Letter/arrow keys removed (user: no selected state, so they make no
@@ -117,8 +128,8 @@ orange Medium, purple Hard (the button colors).
     also says "You can also rotate and reflect pieces once they're on the
     grid." The keyboard note and "Optional shortcuts" dropdown are gone.
   - Slide 2 no longer has a popup (it "felt like I did something wrong"):
-    "Solved!" in green, then a calm note beside the board introduces
-    empty spaces (`showGapNote`). No rings ("o's") on empty spaces in the
+    "Solved!" in green (the calm empty-space note that followed was
+    replaced by its own slide in v5). No rings ("o's") on empty spaces in the
     tutorial (`rings: false` in the view tiling).
   - Slide 3: heading glows 1.6 s and the first animation starts as the
     glow fades (~1.9 s; user found 3.2 s too late), then 2 s per picture;
