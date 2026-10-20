@@ -499,11 +499,12 @@ const SLIDES = [
     trayLeft: TOUCH ? 'Try tapping and double-tapping a piece before dragging it onto the grid.'
                     : 'Try clicking and double-clicking a piece before dragging it onto the grid.',
     trayGlowUntil: 'turns',
-    boardRight: `<div class="big-note" id="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>`,
+    // The strategy line sits under the orange note. Hidden at first; fades in
+    // once the orange note has finished glowing
+    boardRight: `<div class="big-note" id="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>
+      <p class="hint reveal-later" id="strategy">Useful strategy: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
     bigNoteGlowAfterTurns: true,
     boardLeft: SHORTCUTS_NOTE,
-    // Hidden at first; fades in once the orange note has finished glowing
-    belowHtml: `<p class="hint reveal-later" id="strategy">Useful strategy: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
     countAnimation: true,
     solvedNote: 'Every row and column is even. You’re ready to play!' },
 ];

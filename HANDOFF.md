@@ -76,7 +76,7 @@ previous project; don't push there.
   piece, whichever is first) the orange "Make sure that the rows and
   columns…" note gets an extra-strong glow (`.callout.strong`) for 2.5 s
   (`BIG_GLOW_MS`) — the user wants that message drilled in most. After the
-  glow fades, the bottom "Useful strategy:" line (not "Hint:") fades in
+  glow fades, the "Useful strategy:" line under it (right side) (not "Hint:") fades in
   (`.reveal-later` → `.shown`); it never glows. Computers also get a
   non-glowing left note: "Keyboard: point at a piece and press R… E…",
   plus a collapsed "Optional shortcuts" dropdown (letters + arrows).
