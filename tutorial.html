@@ -229,25 +229,27 @@
   .foot-btn.next.ready:hover { filter: brightness(1.08); transform: translateY(-1px); }
   /* ── Large text (the button at the top left) ──
      Only reading text grows; titles, buttons and the board stay the same. */
-  html.large-text .note { font-size: 1.45rem; }
-  html.large-text .n-trayl { max-width: 420px; }
-  html.large-text .n-boardr { max-width: 380px; }
-  html.large-text .n-boardl { font-size: 1.35rem; max-width: 360px; }
-  html.large-text .big-note { font-size: 1.75rem; }
-  html.large-text .hint { font-size: 1.35rem; }
-  html.large-text .solved-note { font-size: 1.4rem; }
-  html.large-text .shortcuts { font-size: 1.25rem; }
-  html.large-text .intro li { font-size: 1.5rem; }
-  html.large-text .intro p { font-size: 1.4rem; }
-  html.large-text .gap-pop { width: 390px; }
-  html.large-text .gap-pop p { font-size: 1.35rem; }
-  html.large-text .gap-pop figcaption { font-size: 1.15rem; }
-  html.large-text .dont-slide figcaption { font-size: 1.35rem; }
-  html.large-text .status { font-size: 1.45rem; --status-line: 1.9rem; }
+  html.large-text .note { font-size: 1.8rem; }
+  html.large-text .n-trayl { max-width: 460px; }
+  html.large-text .n-boardr { max-width: 420px; }
+  html.large-text .n-boardl { font-size: 1.65rem; max-width: 400px; }
+  html.large-text .big-note { font-size: 2.15rem; }
+  html.large-text .hint { font-size: 1.65rem; }
+  html.large-text .solved-note { font-size: 1.75rem; }
+  html.large-text .shortcuts { font-size: 1.55rem; }
+  html.large-text .intro li { font-size: 1.85rem; }
+  html.large-text .intro p { font-size: 1.75rem; }
+  html.large-text .gap-pop { width: 460px; }
+  html.large-text .gap-pop p { font-size: 1.65rem; }
+  html.large-text .gap-pop figcaption { font-size: 1.4rem; }
+  html.large-text .dont-slide figcaption { font-size: 1.65rem; }
+  html.large-text .status { font-size: 1.75rem; --status-line: 2.25rem; }
+  .one-line { white-space: nowrap; }   /* laptops: keep this note on one line */
   @media (max-width: 600px) {
+    .one-line { white-space: normal; }   /* phones: wrap so it never runs off the screen */
     .text-size-btn { height: 34px; padding: 0 10px; font-size: 0.9rem; }
     .text-size-btn.is-large-label { font-size: 0.95rem; }
-    html.large-text .gap-pop { width: min(390px, 92vw); }
+    html.large-text .gap-pop { width: min(460px, 92vw); }
   }
 
   [hidden] { display: none !important; }
@@ -489,7 +491,7 @@ const SHORTCUTS_NOTE = TOUCH ? '' : `
 const SLIDES = [
   { kind: 'intro' },
   { kind: 'play', puzzle: PUZZLE_2,
-    trayLeft: `<span style="white-space:nowrap">Drag these pieces onto the grid</span><span class="arrow">&#10148;</span>`, trayGlowUntil: 'drag',
+    trayLeft: `<span class="one-line">Drag these pieces onto the grid</span><span class="arrow">&#10148;</span>`, trayGlowUntil: 'drag',
     boardRight: `${tapOrClick} a piece to <b>rotate</b> it.`, boardGlowUntil: 'rotate', boardGlowAfterPlace: true,
     gapPopup: true },
   { kind: 'dont' },
