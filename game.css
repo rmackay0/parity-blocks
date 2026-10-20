@@ -144,7 +144,10 @@ body {
   padding: var(--board-pad);
   box-shadow: 0 0 28px rgba(0, 0, 0, 0.5);
   touch-action: none;
+  transition: box-shadow 0.3s;
 }
+/* [COLORS] A finished board whose rows/columns aren't all even glows red */
+#board-outer.uneven { box-shadow: 0 0 0 3px rgba(220, 70, 70, 0.85), 0 0 26px rgba(220, 70, 70, 0.55); }
 #board { display: grid; }
 .board-cell {
   background: var(--color-cell);

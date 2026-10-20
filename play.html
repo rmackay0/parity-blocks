@@ -140,8 +140,12 @@ window.addEventListener('message', e=>{
   tutorialFrame.src = 'about:blank';
   try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(err){}
 });
-let tutorialSeen = false;
+let tutorialSeen = false, tutorialInProgress = false;
 try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch(err){}
+// The page was refreshed while the tutorial was open: reopen it (it comes back to the same slide).
+// Only on a refresh, so arriving here from elsewhere never pops it up uninvited.
+const wasRefreshed = (performance.getEntriesByType('navigation')[0] || {}).type === 'reload';
+try { tutorialInProgress = wasRefreshed && sessionStorage.getItem('pb_tutorialSlide') !== null; } catch(err){}
 
 // Reset: asks first, then clears the board and restarts the timer
 document.getElementById('reset-btn').onclick = ()=>{ document.getElementById('reset-popup').hidden = false; };
@@ -153,7 +157,7 @@ document.getElementById('reset-confirm').onclick = ()=>{
 if(wantedPuzzle){
   document.title = 'Parity Blocks: ' + wantedPuzzle.title;
   loadPuzzle(wantedPuzzle);
-  if(!tutorialSeen) window.openTutorial();
+  if(!tutorialSeen || tutorialInProgress) window.openTutorial();
 } else {
   document.querySelector('.game').hidden = true;
   document.getElementById('missing-popup').hidden = false;

@@ -36,6 +36,7 @@ const boardWrapEl   = document.getElementById('board-wrap');
 const boardEl       = document.getElementById('board');
 const piecesLayerEl = document.getElementById('pieces-layer');
 const trayEl        = document.getElementById('tray');
+const boardOuterEl  = document.getElementById('board-outer');
 
 function cssPx(name){
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
@@ -280,14 +281,16 @@ function boardFull(){ return placedPieces.filter(p=>!p.locked).length === puzzle
 
 function renderBoardPieces(){
   piecesLayerEl.querySelectorAll('.placed-piece').forEach(el=>el.remove());
-  // A bad drop glows red while you're still placing pieces. Once every
-  // piece is down, nothing glows: the message above the board and the
-  // highlighter marks explain what's wrong instead (see checkSolved).
-  const showInvalid = !boardFull();
+  // A piece that breaks a placement rule glows red. Once every piece is
+  // down, only pieces breaking a rule the player can see glow (a piece on
+  // a hidden gap stays secret); the written explanation follows a few
+  // seconds later (see checkSolved).
+  const full = boardFull();
   placedPieces.forEach(p=>{
+    const bad = full ? !p.locked && !!pieceProblem(p) : invalidIds.has(p.id);
     const wrap = document.createElement('div');
     wrap.className = 'placed-piece'
-      + (showInvalid && invalidIds.has(p.id) ? ' invalid' : '')
+      + (bad ? ' invalid' : '')
       + (p.locked ? ' locked' : '');
     wrap.style.left = pxPos(p.col) + 'px';
     wrap.style.top = pxPos(p.row) + 'px';
@@ -306,7 +309,7 @@ function renderAll(){
   renderTray();
   renderBoardPieces();
   if(gameMode === 'play') checkSolved();
-  else { markOverlayEl.innerHTML = ''; statusEl.textContent = ''; }
+  else { markOverlayEl.innerHTML = ''; cancelExplain(); statusEl.textContent = ''; boardOuterEl.classList.remove('uneven'); }
   if(gameHooks.onChange) gameHooks.onChange();
 }
 
@@ -314,6 +317,8 @@ function renderAll(){
 // rows/columns with the highlighter and ring the empty squares
 function renderView(){
   const t = viewTiling || { pieces:[], oddRows:[], oddCols:[], empty:[], status:'' };
+  cancelExplain();
+  boardOuterEl.classList.remove('uneven');
   trayEl.querySelectorAll('.tray-slot').forEach(el=>el.classList.add('used'));
   piecesLayerEl.querySelectorAll('.placed-piece').forEach(el=>el.remove());
   t.pieces.forEach(p=>{
@@ -325,12 +330,13 @@ function renderView(){
     piecesLayerEl.appendChild(wrap);
   });
   drawUnevenMarks(t.oddRows, t.oddCols);
-  // Gaps in a finished board: dark like a fixed gap, with a ring
+  // Empty spaces in a finished board: dark like a permanent empty space, with a ring
   boardEl.querySelectorAll('.gap-dark').forEach(el=>el.classList.remove('gap-dark'));
   t.empty.forEach(([r,c])=>{
     const cell = boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
     if(cell) cell.classList.add('gap-dark');
-    markOverlayEl.appendChild(svgEl('circle', { cx: pxPos(c) + CELL/2, cy: pxPos(r) + CELL/2, r: CELL*0.22, class:'empty-ring' }));
+    if(t.rings !== false)     // the tutorial turns the rings off
+      markOverlayEl.appendChild(svgEl('circle', { cx: pxPos(c) + CELL/2, cy: pxPos(r) + CELL/2, r: CELL*0.22, class:'empty-ring' }));
   });
   statusEl.textContent = t.status || '';
   statusEl.classList.toggle('good', !!t.good);
@@ -654,13 +660,35 @@ function onPointerUp(e){
    Solved = every piece placed, none overlapping/off-grid/on a gap/across
    a dotted line, and every row and column has an even number of filled
    squares.
-   Once every piece is down but it isn't solved, the message above the
-   board says what's wrong ("Uneven rows and column", "A piece is on a
-   gap", ...). Highlighter strokes on the uneven lines are off by default
-   (SHOW_UNEVEN_MARKS below).
+   Once every piece is down but it isn't solved, it glows red straight
+   away (the rule-breaking pieces, or the board's frame if it's only the
+   rows/columns), and if nothing moves for EXPLAIN_DELAY_MS the message
+   above the board says what's wrong ("Uneven rows and columns", "Pieces
+   overlap", ...). Highlighter strokes on the uneven lines are off by
+   default (SHOW_UNEVEN_MARKS below).
 ═══════════════════════════════════════════════════════════════════ */
 const statusEl = document.getElementById('status');
 const markOverlayEl = document.getElementById('mark-overlay');
+
+// [BEHAVIOR] How long a wrong finished board just glows red before the
+// written explanation appears (the user may change this; 0 = explain
+// straight away). Any move restarts the wait.
+const EXPLAIN_DELAY_MS = 3000;
+let explainTimer = null, explainKey = '';
+function cancelExplain(){ clearTimeout(explainTimer); explainTimer = null; explainKey = ''; }
+// Show `msg` once the board has stayed the same for EXPLAIN_DELAY_MS
+// ('' clears it). A re-draw with nothing moved (e.g. resizing the window)
+// leaves the message, or the wait, as it is.
+function explainLater(msg){
+  const key = msg + '|' + JSON.stringify(placedPieces.map(p=>[p.id, p.row, p.col, p.cells]));
+  if(key === explainKey) return;
+  cancelExplain();
+  explainKey = key;
+  statusEl.textContent = '';
+  if(!msg) return;
+  if(EXPLAIN_DELAY_MS <= 0){ statusEl.textContent = msg; return; }
+  explainTimer = setTimeout(()=>{ if(gameMode === 'play' && !solved) statusEl.textContent = msg; }, EXPLAIN_DELAY_MS);
+}
 
 // [CONTENT] Messages for a piece that breaks a placement rule
 // [BEHAVIOR] When every piece is placed but it isn't solved, the message
@@ -672,7 +700,7 @@ const SHOW_UNEVEN_MARKS = false;
 const PROBLEM_TEXT = {
   overlap: 'Pieces overlap',
   off:     'A piece is off the board',
-  gap:     'A piece is on a fixed gap',
+  gap:     'A piece is on a permanent empty space',
   dotted:  'A piece crosses a dotted line',
 };
 
@@ -720,8 +748,9 @@ function drawUnevenMarks(oddRows, oddCols){
 
 function checkSolved(){
   markOverlayEl.innerHTML = '';
+  boardOuterEl.classList.remove('uneven');
   if(solved) return;
-  if(!boardFull()){ statusEl.textContent = ''; return; }
+  if(!boardFull()){ explainLater(''); return; }
 
   // Count filled squares on the board (overlapping squares count once)
   const filled = new Set();
@@ -746,6 +775,7 @@ function checkSolved(){
 
   if(!oddRows.length && !oddCols.length && !problems.length && !onHiddenGap){
     solved = true;
+    cancelExplain();
     statusEl.textContent = '';
     const time = formatElapsed(Date.now() - startTime);
     if(gameHooks.onSolved){ gameHooks.onSolved(time); return; }
@@ -754,8 +784,11 @@ function checkSolved(){
     return;
   }
   if(SHOW_UNEVEN_MARKS) drawUnevenMarks(oddRows, oddCols);
-  statusEl.textContent = [unevenMessage(oddRows.length, oddCols.length), ...problems.map(k=>PROBLEM_TEXT[k])]
-    .filter(Boolean).join(' · ');
+  // Only the rows/columns are wrong: no piece glows, so the board's frame does
+  // (A piece on a hidden gap alone shows nothing: hidden gaps stay secret.)
+  if(!problems.length && (oddRows.length || oddCols.length)) boardOuterEl.classList.add('uneven');
+  explainLater([unevenMessage(oddRows.length, oddCols.length), ...problems.map(k=>PROBLEM_TEXT[k])]
+    .filter(Boolean).join(' · '));
 }
 const solvedCloseBtn = document.getElementById('solved-close');
 if(solvedCloseBtn) solvedCloseBtn.addEventListener('click', ()=>{

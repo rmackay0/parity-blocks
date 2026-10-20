@@ -38,11 +38,16 @@ previous project; don't push there.
   test scripts in files (not long inline commands); explain pipes etc.
 - **Specs come as PDFs** ("instructions v1/v2/v3") with notes beside
   screenshots; follow them closely, flag any typos/ambiguities briefly.
-- Vocabulary below (block / piece / fixed gap / gap) is mandatory.
+- Vocabulary below (block / piece / permanent empty space / empty space)
+  is mandatory.
 
-**Current state (end of 2026-10-19 session)**
-- Everything below is committed and pushed (end of 2026-10-19). Always
-  re-check with `git log origin/main..HEAD` / `git log HEAD..origin/main`.
+**Current state (2026-10-20 session)**
+- Always check what's pushed with `git log origin/main..HEAD` /
+  `git log HEAD..origin/main`.
+- Known open issue: on phones the tutorial's notes under the board (e.g.
+  slide 2's empty-space note) can sit below the visible area and need a
+  scroll. The user knows; not fixed yet (options: tighten the phone
+  layout, or move notes above the board).
 - **Large text** (2026-10-19): a "Large text" button (bold label) at the
   top left of the tutorial and the rules popup; turns on
   `html.large-text` (bigger reading text only) and becomes "Standard
@@ -66,20 +71,41 @@ previous project; don't push there.
   key; cleared as soon as the mouse moves or anything is pressed) → else
   the piece under the mouse (`keyTarget()` uses elementFromPoint).
   sandbox-classic.html still has its own old selection model; untouched.
-  tutorial.html — rotate note glows only after a piece is placed; gaps
-  popup centred on the gaps, static pictures, rings pulse twice then OK
-  turns green; going Back resets a slide but Next stays green; reflect
-  slide's "Nice!" removed. Slide 4's reflect note also stops glowing if
-  they reflect a piece at the top. Slide 3's heading glows ~1.4 s then
-  fades before its animations start. Final slide: tray note glows until
-  the player has rotated AND reflected; then (or as soon as they place a
-  piece, whichever is first) the orange "Make sure that the rows and
-  columns…" note gets an extra-strong glow (`.callout.strong`) for 2.5 s
-  (`BIG_GLOW_MS`) — the user wants that message drilled in most. After the
-  glow fades, the "Useful strategy:" line under it (right side) (not "Hint:") fades in
-  (`.reveal-later` → `.shown`); it never glows. Computers also get a
-  non-glowing left note: "Keyboard: point at a piece and press R… E…",
-  plus a collapsed "Optional shortcuts" dropdown (letters + arrows).
+- **Tutorial v4 (2026-10-20, from a friend's playtest notes the user
+  adopted)** — see the comment at the top of tutorial.html for the slide
+  list. Going Back resets a slide but Next stays green.
+  - Slide 1 explains permanent empty spaces (red X) before they appear;
+    fun fact mentions triominoes.
+  - Slides 2 and 4 use a two-step note (`steps` in SLIDES): "Click a
+    piece or press R to rotate it" → "Then drag it onto the grid" (slide
+    4: double-click / E to reflect). The first undone step glows. Slide 4
+    also says "You can also rotate and reflect pieces once they're on the
+    grid." The keyboard note and "Optional shortcuts" dropdown are gone
+    (letter/arrow keys still work, just not explained).
+  - Slide 2 no longer has a popup (it "felt like I did something wrong"):
+    "Solved!" in green, then a calm note beside the board introduces
+    empty spaces (`showGapNote`). No rings ("o's") on empty spaces in the
+    tutorial (`rings: false` in the view tiling).
+  - Slide 3: heading glows 2.5 s, then 2 s per picture; the piece in the
+    permanent-empty-space picture is see-through so the X shows.
+  - Final slide: only the orange note ("Make sure there is an even number
+    of blocks in each row AND column.") — it glows strongly for 2.5 s on
+    the first place/turn. The old "Useful strategy" line was replaced by
+    a **Hint** button: when W and P are both inside the outline (always
+    wrong — every such tiling fails, checked with solver.js) it fades in
+    glowing; it darkens the page except the permanent empty space(s)
+    (`showHint`, SVG mask) with the user's explanation text.
+  - Row/column counting is slower (650 ms each, a pause between rows and
+    columns) and each number pops in.
+  - Refresh resumes: the current slide is in sessionStorage
+    `pb_tutorialSlide` (cleared on close/finish); play.html reopens the
+    tutorial if it's set.
+- **Calmer error messages (2026-10-20), puzzle page AND tutorial:** a
+  wrong finished board glows red straight away — rule-breaking pieces
+  glow, or the board frame (`#board-outer.uneven`) if only rows/columns
+  are odd — and the message above the board only appears after
+  `EXPLAIN_DELAY_MS` (3000, game.js) with no move. The user said this
+  might change; 0 restores the old instant messages.
 - **The board must never move** (user request 2026-10-19): the message
   above it (`#status`) has a fixed 2-line height (`--status-line`), wraps
   long messages, and grows upward if it ever needs a 3rd line; in the
@@ -96,6 +122,7 @@ through the UI), `click_test.js` (click = rotate, double-click = reflect),
 `game_features_test.js` (letter keys, arrows, R/E incl. while holding
 and pointing),
 `board_still_test.js` (long messages never move the board),
+`tame_errors_test.js` (red glow first, message after 3 s),
 `rules_text_test.js` (rules popup + Large text on laptop/phone; shared
 with the tutorial), `fonts_screens.js` (screenshots). `LARGE=1 node
 tutorial_test.js` replays the tutorial with Large text on. The user wants
@@ -104,16 +131,17 @@ both laptop and phone checked before pushes. Tips: mark the tutorial seen with
 testing play.html; game state (`placedPieces`, `trayCells`, `puzzle`,
 `keyPieceId`, `CELL`) are globals readable via page.evaluate.
 
-## Words to use (user's decision, 2026-10-19) — in ALL player-facing text
+## Words to use (user's decision, updated 2026-10-20) — in ALL player-facing text
 
 | Word | Means |
 |---|---|
 | **block** | one square of a piece |
 | **piece** | a pentomino |
-| **fixed gap** | a square with a red X (code: `blocked`; `hiddenBlocked` = hidden fixed gap) |
-| **gap** | an empty open square left between pieces (solver JSON: `gaps`) |
+| **permanent empty space** | a square with a red X (code: `blocked`; `hiddenBlocked` = hidden one). Was "fixed gap" until 2026-10-20 |
+| **empty space** | an empty open square left between pieces (solver JSON: `gaps`). Was "gap" |
 
-Don't say "cell", "empty square/cell" or "blocked square" to players.
+Don't say "cell", "gap", "fixed gap" or "blocked square" to players. (Code
+and the admin sandbox still say gap / fixed gap internally; that's fine.)
 
 ## Working style with this user
 

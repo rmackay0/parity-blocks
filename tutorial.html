@@ -8,25 +8,32 @@
   on its own: tutorial.html.
 
   Five slides:
-    1  Game objectives + the 12 pentominoes        (no task: Next is ready)
-    2  Drag pieces on, click/tap to rotate. The notes glow until the
-       player drags / rotates. On solving, a popup introduces "gaps"
-       (gap + fixed gap pictures animate in, then OK turns green)
+    1  Game objectives, what permanent empty spaces (red X) are, and the
+       12 pentominoes                            (no task: Next is ready)
+    2  Rotate (click / tap, or R), then drag onto the grid: a two-step
+       note, each step glowing in turn. On solving, "Solved!" and then a
+       calm note beside the board introduces empty spaces
     3  "Don't place a piece over…": four pictures animate one at a time
-    4  Double-click / tap twice to reflect (note glows until they do)
-    5  Make every row and column even (the parity puzzle). On solving,
-       each row then column flashes green and its count appears. Last
-       button says "Finish"
+    4  Reflect (double-click / tap twice, or E), then drag: same two-step
+       note, plus "you can also rotate and reflect pieces on the grid"
+    5  Make every row and column even (the parity puzzle). If they put W
+       and P in the outlined area (always wrong), a glowing Hint button
+       appears: it darkens the page, spotlights the permanent empty
+       space and explains. On solving, each row then column flashes
+       green and its count appears. Last button says "Finish"
   Slides 2, 4 and 5 are real mini puzzles running on the game's own code
   (game.js / game.css), with some pieces fixed in place. Next turns green
   only once the slide's task (and any animation) is finished.
+  Refreshing the page comes back to the same slide (sessionStorage
+  'pb_tutorialSlide'; cleared when the tutorial is closed or finished).
 
   Top left: a "Large text" button (shared setting with the rules popup)
   that makes the reading text much bigger; it then says "Standard text".
 
   Words used everywhere (see HANDOFF.md):
-    block      one square of a piece        piece      a pentomino
-    fixed gap  a square with a red X        gap        an empty square left between pieces
+    block                  one square of a piece      piece  a pentomino
+    permanent empty space  a square with a red X
+    empty space            an empty square left between pieces
 
   [CONTENT] All wording is in SLIDES below. "Tap" vs "Click" is chosen
   automatically (touchscreen vs mouse).
@@ -84,6 +91,9 @@
   .intro li { font-size: 1.15rem; line-height: 1.45; margin-bottom: 4px; }
   .intro p { font-size: 1.05rem; line-height: 1.5; color: var(--color-text); margin-bottom: 14px; }
   .intro .fun { color: var(--color-text-dim); }
+  .intro .perm { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .intro .perm p { margin: 0; }
+  .intro .perm b { color: var(--color-accent); font-weight: 700; }
   .twelve { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px 10px; justify-items: center; align-items: center;
             background: var(--color-board-bg); border-radius: 14px; padding: 16px 10px; }
   @media (max-width: 520px) { .twelve { grid-template-columns: repeat(4, 1fr); } }
@@ -111,11 +121,13 @@
   .n-boardr { grid-area: boardr; justify-self: start; max-width: 300px; }
   .n-boardl { grid-area: boardl; justify-self: end; max-width: 270px; font-size: 1rem; }
   .n-boardl:empty { display: none; }
-  /* "Optional shortcuts" dropdown (final slide, computers only) */
-  .shortcuts { margin-top: 10px; font-size: 0.95rem; color: var(--color-text-dim); }
-  .shortcuts summary { cursor: pointer; color: var(--color-text); font-weight: 600; }
-  .shortcuts p { margin-top: 6px; line-height: 1.45; }
-  .shortcuts kbd {
+  /* Two-step note ("Rotate a piece" → "Then drag it onto the grid"): each
+     step glows in turn, until the player has done it */
+  .steps { display: flex; flex-direction: column; gap: 6px; }
+  .nobr { white-space: nowrap; }     /* keeps e.g. "rotate it. ➤" together when a step wraps */
+  .step { margin: 0; }
+  /* A key on the keyboard, e.g. R */
+  .note kbd {
     font-family: var(--font-text); font-weight: 700; font-size: 0.85em;
     padding: 1px 6px; border-radius: 5px; border: 1px solid var(--color-cell-border);
     background: var(--color-bg); color: var(--color-text);
@@ -129,7 +141,6 @@
   .dont figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
   .dont figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
   .play .hint-caption { display: none; }   /* not used in the tutorial */
-  .play { position: relative; }      /* the gaps popup is positioned inside it */
 
   /* [COLORS] A note that glows until the player does what it says
      ("Drag these pieces…" fades once a piece is dragged, etc.) */
@@ -144,8 +155,8 @@
     box-shadow: 0 0 0 3px rgba(240, 170, 90, 0.95), 0 0 30px rgba(240, 170, 90, 0.6);
   }
   .big-note.callout { padding: 10px 14px; }
-  /* Text that fades in later (the final slide's "Useful strategy" line).
-     It keeps its space while hidden, so nothing moves when it appears. */
+  /* Things that fade in later (the final slide's Hint button). They keep
+     their space while hidden, so nothing moves when they appear. */
   .reveal-later { opacity: 0; visibility: hidden; transition: opacity 0.8s, visibility 0.8s; }
   .reveal-later.shown { opacity: 1; visibility: visible; }
   /* Slide 3's heading: glows just long enough to read, then fades */
@@ -158,20 +169,36 @@
   .draw { stroke-dasharray: 100; stroke-dashoffset: 100; }
   .anim-in .draw { animation: draw 0.6s 0.2s ease forwards; }   /* traces itself once its picture pops in */
 
-  /* ── The gaps popup (slide 2, after solving) ── */
-  .gap-pop {
-    position: absolute; z-index: 40; width: 300px;
-    background: var(--color-panel);
-    border: 2px solid var(--color-valid); border-radius: 14px;
-    padding: 14px 16px 14px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
-    animation: popIn 0.3s ease both;
+  /* ── Slide 2, after solving: a calm note about empty spaces ── */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .gap-note { animation: fadeIn 0.8s ease both; }
+  .gap-note p { line-height: 1.45; }
+  .gap-note p b { color: var(--color-valid); font-weight: 700; }
+  .gap-note .pics { display: flex; gap: 24px; margin-top: 12px; }
+  .gap-note figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
+  .gap-note figcaption { font-size: 0.9rem; color: var(--color-text-dim); text-align: center; max-width: 110px; }
+  @media (max-width: 760px) { .gap-note .pics { justify-content: center; } }
+
+  /* ── Final slide: the Hint button and the spotlight it opens ── */
+  .hint-btn {
+    display: block; margin-top: 14px; height: 44px; padding: 0 22px; border: none; border-radius: 12px;
+    font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 0.04em; cursor: pointer;
+    background: var(--color-accent); color: #2a211b;
   }
-  .gap-pop p { font-size: 1rem; line-height: 1.45; color: var(--color-text); }
-  .gap-pop p b { color: var(--color-valid); }
-  .gap-pop .pics { display: flex; justify-content: center; gap: 26px; margin: 12px 0; }
-  .gap-pop figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
-  .gap-pop figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
+  .hint-btn.lit { animation: hintGlow 1.2s ease-in-out infinite alternate; }
+  @keyframes hintGlow { from { box-shadow: 0 0 0 3px rgba(240,170,90,0.5), 0 0 10px rgba(240,170,90,0.35); }
+                        to   { box-shadow: 0 0 0 5px rgba(240,170,90,0.9), 0 0 28px rgba(240,170,90,0.7); } }
+  @media (max-width: 760px) { .hint-btn { margin-left: auto; margin-right: auto; } }
+  .spot { position: fixed; inset: 0; z-index: 90; animation: fadeIn 0.4s ease both; }
+  .spot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .spot-ring { fill: none; stroke: var(--color-accent); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(240,170,90,0.9)); }
+  .spot-card {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    width: min(520px, calc(100vw - 32px)); padding: 16px 18px;
+    background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  }
+  .spot-card p { font-size: 1.1rem; line-height: 1.5; color: var(--color-text); margin-bottom: 12px; }
   .ok-btn {
     display: block; width: 100%; height: 42px; border: none; border-radius: 10px;
     font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em;
@@ -201,7 +228,8 @@
   #tut-overlay { position: absolute; left: var(--board-pad); top: var(--board-pad); overflow: visible; pointer-events: none; z-index: 7; }
   .row-glow { fill: var(--color-valid); opacity: 0; transition: opacity 0.12s; }
   .row-glow.on { opacity: 0.6; }
-  .count { font-family: var(--font-text); font-weight: 700; font-size: 16px; fill: var(--color-valid); }
+  .count { font-family: var(--font-text); font-weight: 700; font-size: 18px; fill: var(--color-valid);
+           transform-box: fill-box; transform-origin: center; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; }
 
   @media (max-width: 760px) {
     .play {
@@ -236,20 +264,19 @@
   html.large-text .big-note { font-size: 2.15rem; }
   html.large-text .hint { font-size: 1.65rem; }
   html.large-text .solved-note { font-size: 1.75rem; }
-  html.large-text .shortcuts { font-size: 1.55rem; }
+  html.large-text .gap-note figcaption { font-size: 1.3rem; max-width: 150px; }
+  html.large-text .spot-card p { font-size: 1.7rem; }
+  html.large-text .hint-btn { font-size: 1.6rem; height: 52px; }
   html.large-text .intro li { font-size: 1.85rem; }
   html.large-text .intro p { font-size: 1.75rem; }
-  html.large-text .gap-pop { width: 460px; }
-  html.large-text .gap-pop p { font-size: 1.65rem; }
-  html.large-text .gap-pop figcaption { font-size: 1.4rem; }
   html.large-text .dont-slide figcaption { font-size: 1.65rem; }
   html.large-text .status { font-size: 1.75rem; --status-line: 2.25rem; }
   .one-line { white-space: nowrap; }   /* laptops: keep this note on one line */
   @media (max-width: 600px) {
     .one-line { white-space: normal; }   /* phones: wrap so it never runs off the screen */
     .text-size-btn { height: 34px; padding: 0 10px; font-size: 0.9rem; }
+    html.large-text .spot-card p { font-size: 1.4rem; }
     .text-size-btn.is-large-label { font-size: 0.95rem; }
-    html.large-text .gap-pop { width: min(460px, 92vw); }
   }
 
   [hidden] { display: none !important; }
@@ -277,21 +304,6 @@
 
     <!-- Slides 2, 4, 5: the game, with notes placed around it -->
     <section class="play" id="play" hidden>
-      <!-- The gaps popup (slide 2, after solving) -->
-      <div class="gap-pop" id="gap-pop" hidden role="dialog" aria-label="Gaps">
-        <p>The empty squares left over are called <b>gaps</b>. They work just like fixed gaps, except you decide where they go.</p>
-        <div class="pics">
-          <figure id="pic-gap"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-            <rect x="2.5" y="2.5" width="39" height="39" rx="5" class="rb-gap"/>
-            <circle cx="22" cy="22" r="10" class="rb-empty" id="pic-gap-ring"/>
-          </svg><figcaption>gap</figcaption></figure>
-          <figure id="pic-fixed"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-            <rect x="2.5" y="2.5" width="39" height="39" rx="5" class="rb-gap"/>
-            <path d="M13,13 L31,31 M31,13 L13,31" class="rb-gap-x"/>
-          </svg><figcaption>fixed gap</figcaption></figure>
-        </div>
-        <button class="ok-btn" id="gap-ok" aria-disabled="true">OK</button>
-      </div>
       <div class="note n-trayl" id="n-trayl"></div>
       <div class="tray" id="tray" aria-label="Pieces to place"></div>
       <div class="note n-trayr" id="n-trayr" style="grid-area:trayr"></div>
@@ -318,6 +330,16 @@
   </footer>
 </div>
 
+<!-- The final slide's hint: darkens the page except the permanent empty
+     spaces, with an explanation (drawn by showHint) -->
+<div class="spot" id="spot" hidden role="dialog" aria-label="Hint">
+  <svg id="spot-svg" aria-hidden="true"></svg>
+  <div class="spot-card" id="spot-card">
+    <p>Every row and every column in this grid is even (6 squares long), so each one needs an even number of empty spaces. Before continuing, visualize where else empty spaces can go, and then try to fit the pieces to account for that.</p>
+    <button class="ok-btn ready" id="spot-ok">Got it</button>
+  </div>
+</div>
+
 <script src="shapes.js"></script>
 <script src="game.js"></script>
 <script>
@@ -326,8 +348,6 @@
 ═══════════════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
 const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-const tapOrClick = TOUCH ? 'Tap' : 'Click';
-const tapTwice   = TOUCH ? 'Tap a piece twice' : 'Double-click a piece';
 
 /* ═══════════════════════════════════════════════════════════════════
    PIECES AND PUZZLES
@@ -440,9 +460,10 @@ function dontPicture(kind, animated){
     drawPiece(mover, [[0,0],[1,0],[2,0]], COLOR.U, xAt(1), yAt(0), cell, gap).setAttribute('opacity', '0.85');
     markR = 1; markC = 1; dy = -2*step;                   // drops in from above
   } else if(kind === 'gap'){
-    X(1,1);                                               // the fixed gap, drawn under the piece
+    X(1,1);                                               // the permanent empty space, under the piece
     svg.appendChild(mover);
-    drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.V, xAt(0), yAt(1), cell, gap);   // solid: covers the X
+    // see-through, so you can tell it's sitting on the X
+    drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.V, xAt(0), yAt(1), cell, gap).setAttribute('opacity', '0.55');
     markR = 1; markC = 1; dy = 2*step;                    // rises from below
   }
   const sign = drawNoMark(svg, xAt(markC) + cell/2, yAt(markR) + cell/2, cell*0.95);
@@ -451,6 +472,15 @@ function dontPicture(kind, animated){
     mover.style.opacity = '0';
     sign.classList.add('hide');
   }
+  return svg;
+}
+
+// One board square as a picture: an empty space, or (withX) a permanent one
+function squareSvg(withX, size){
+  size = size || 44;
+  const svg = svgEl('svg', { width:size, height:size, viewBox:'0 0 44 44', 'aria-hidden':'true' });
+  svgEl('rect', { x:2.5, y:2.5, width:39, height:39, rx:5, class:'rb-gap' }, svg);
+  if(withX) svgEl('path', { d:'M13,13 L31,31 M31,13 L13,31', class:'rb-gap-x' }, svg);
   return svg;
 }
 
@@ -466,51 +496,49 @@ function playDont(svg){
    [CONTENT] THE SLIDES
 ═══════════════════════════════════════════════════════════════════ */
 /* Options for 'play' slides:
-     trayLeft / boardRight / boardLeft   notes beside the pieces / the board
-     trayGlowUntil     the tray note glows until: 'drag' (a piece is dragged)
-                       or 'turns' (a piece has been rotated AND reflected)
-     boardGlowUntil    the right-hand board note glows until 'rotate' / 'reflect'
-     boardGlowAfterPlace   ...but only starts glowing once a piece is on the grid
-     bigNoteGlowAfterTurns the orange "Make sure…" note glows extra-strongly
-                       for a few seconds once a piece has been rotated AND
-                       reflected (or a piece is placed, whichever is first);
-                       when the glow fades, the "Useful strategy" line fades in
-     gapPopup          on solving, show the gaps popup; Next waits for its OK
+     steps             a note beside the pieces with steps done in order, e.g.
+                       "Rotate a piece" then "Drag it onto the grid": the first
+                       step not yet done glows. Each is { html, until } with
+                       until = 'rotate' | 'reflect' | 'place'
+     boardRight        a note beside the board (no glow)
+     bigNoteGlow       the orange "Make sure…" note glows extra-strongly for a
+                       few seconds, once a piece is placed or turned
+     hintWhenInside    piece names: once ALL of them are placed inside the
+                       dotted outline (a wrong guess), a glowing Hint button
+                       appears under the orange note (see showHint)
+     gapNote           on solving, a note about empty spaces fades in beside
+                       the board, then Next lights up
      countAnimation    on solving, count each row and column; Next waits for it
      solvedNote        a line added beside the board once it's solved      */
-// Keyboard tips (computers only, no glow): R / E shown straight away, the
-// rest tucked in a collapsed "Optional shortcuts" dropdown
-const SHORTCUTS_NOTE = TOUCH ? '' : `
-  Keyboard: point at a piece and press <kbd>R</kbd> to rotate it or <kbd>E</kbd> to reflect it, even while you&rsquo;re holding it.
-  <details class="shortcuts">
-    <summary>Optional shortcuts</summary>
-    <p>If you want to go totally mouse-less: each piece&rsquo;s letter
-      (<kbd>T</kbd> <kbd>U</kbd> <kbd>V</kbd> <kbd>W</kbd> <kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd> <kbd>F</kbd> <kbd>I</kbd> <kbd>L</kbd> <kbd>P</kbd> <kbd>N</kbd>)
-      calls that piece to the center of the grid, and the arrow keys move it around.</p>
-  </details>`;
 const SLIDES = [
   { kind: 'intro' },
   { kind: 'play', puzzle: PUZZLE_2,
-    trayLeft: `<span class="one-line">Drag these pieces onto the grid</span><span class="arrow">&#10148;</span>`, trayGlowUntil: 'drag',
-    boardRight: `${tapOrClick} a piece to <b>rotate</b> it.`, boardGlowUntil: 'rotate', boardGlowAfterPlace: true,
-    gapPopup: true },
+    steps: [
+      { html: (TOUCH ? 'Tap a piece to ' : 'Click a piece or press <kbd>R</kbd> to ')
+              + '<span class="nobr"><b>rotate</b> it.<span class="arrow">&#10148;</span></span>', until: 'rotate' },
+      { html: 'Then drag it onto the grid.', until: 'place' },
+    ],
+    gapNote: true },
   { kind: 'dont' },
   { kind: 'play', puzzle: PUZZLE_3,
-    boardRight: `${tapTwice} to <b>reflect</b> it.`, boardGlowUntil: 'reflect' },
+    steps: [
+      { html: (TOUCH ? 'Tap a piece twice to ' : 'Double-click a piece or press <kbd>E</kbd> to ')
+              + '<span class="nobr"><b>reflect</b> it.<span class="arrow">&#10148;</span></span>', until: 'reflect' },
+      { html: 'Then drag it onto the grid.', until: 'place' },
+    ],
+    boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.' },
   { kind: 'play', puzzle: PUZZLE_4,
-    trayLeft: TOUCH ? 'Try tapping and double-tapping a piece before dragging it onto the grid.'
-                    : 'Try clicking and double-clicking a piece before dragging it onto the grid.',
-    trayGlowUntil: 'turns',
-    // The strategy line sits under the orange note. Hidden at first; fades in
-    // once the orange note has finished glowing
-    boardRight: `<div class="big-note" id="big-note">Make sure that the rows and columns have an even number of blocks in them.</div>
-      <p class="hint reveal-later" id="strategy">Useful strategy: In this particular puzzle, the grid is 6 &times; 6, so there also needs to be an even number of gaps in each row and column.</p>`,
-    bigNoteGlowAfterTurns: true,
-    boardLeft: SHORTCUTS_NOTE,
+    // The Hint button sits under the orange note, hidden until it's needed
+    boardRight: `<div class="big-note" id="big-note">Make sure there is an even number of blocks in each row AND column.</div>
+      <button type="button" class="hint-btn reveal-later" id="hint-btn">Hint</button>`,
+    bigNoteGlow: true,
+    // Every way to fit these pieces with W and P inside the outline fails
+    // (checked with solver.js), so that's when the hint is offered
+    hintWhenInside: ['W', 'P'],
     countAnimation: true,
     solvedNote: 'Every row and column is even. You’re ready to play!' },
 ];
-const DONT_ITEMS = [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece'], ['gap','a fixed gap']];
+const DONT_ITEMS = [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece'], ['gap','a permanent empty space']];
 
 function renderIntro(){
   const box = $('intro');
@@ -520,8 +548,10 @@ function renderIntro(){
       <li>Fit all of the pieces onto the grid.</li>
       <li>Every row and column contains an even (parity) number of blocks.</li>
     </ol>
-    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b> because they&rsquo;re made of five blocks. Dominoes are made of two, and tetrominoes are made of four (the origin of the name Tetris).</p>
+    <div class="perm" id="perm"><p>Squares with a red X are <b>permanent empty spaces</b>. Pieces can&rsquo;t go on them, and they don&rsquo;t count as blocks.</p></div>
+    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b> because they&rsquo;re made of five blocks. Dominoes are made of two, triominoes of three, and tetrominoes of four (the origin of the name Tetris).</p>
     <div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>`;
+  $('perm').prepend(squareSvg(true));
   TWELVE.forEach(([color, cells])=>$('twelve').appendChild(pieceSvg(cells, color, 15)));
 }
 
@@ -529,6 +559,7 @@ function renderIntro(){
    NAVIGATION
 ═══════════════════════════════════════════════════════════════════ */
 let current = 0;
+const SLIDE_KEY = 'pb_tutorialSlide';             // sessionStorage: the slide to come back to after a refresh
 const done = SLIDES.map(s=>s.kind === 'intro');   // slide 1 has no task
 const solvedView = {};                            // slide index → what the solved board looked like
 
@@ -567,60 +598,56 @@ function showSlide(i){
   $('intro').hidden = s.kind !== 'intro';
   $('dont-slide').hidden = s.kind !== 'dont';
   $('play').hidden = s.kind !== 'play';
-  $('gap-pop').hidden = true;
+  hideHint();
   $('tut-overlay').innerHTML = '';
+  try { sessionStorage.setItem(SLIDE_KEY, String(i)); } catch(e){}   // so a refresh comes back here
   if(s.kind === 'intro') renderIntro();
   if(s.kind === 'dont') showDontSlide();
   // Every slide starts fresh, even when you come Back to it (Next stays
   // green if you've already finished it once)
   if(s.kind === 'play'){
-    turned = { rotate: false, reflect: false };
     bigNoteGlowed = false;
-    $('n-trayl').innerHTML = s.trayLeft || '';
+    hintOffered = false;
+    renderSteps(s);
     $('n-trayr').innerHTML = '';
     $('n-boardr').innerHTML = s.boardRight || '';
-    $('n-boardl').innerHTML = s.boardLeft || '';
-    // Glowing notes: lit until the player does what they say
-    $('n-trayl').className = 'note n-trayl' + (s.trayGlowUntil ? ' callout lit' : '');
-    $('n-boardr').className = 'note n-boardr' + (s.boardGlowUntil ? ' callout' + (s.boardGlowAfterPlace ? '' : ' lit') : '');
-    $('n-boardl').className = 'note n-boardl';            // (the keyboard tips never glow)
-    if(s.bigNoteGlowAfterTurns) $('big-note').classList.add('callout', 'strong');   // lit later
-    $('n-below').innerHTML = s.belowHtml || '';
+    $('n-boardl').innerHTML = '';
+    $('n-below').innerHTML = '';
+    if(s.bigNoteGlow) $('big-note').classList.add('callout', 'strong');   // lit later
     setGameMode('play');
     loadPuzzle(s.puzzle);
+    lightSteps();             // (now that it's in play mode, the first step glows)
   }
   renderDots();
   updateNext();
   $('play').parentElement.scrollTop = 0;
 }
 
-/* The glowing notes fade once the player does what they say */
-let turned = { rotate: false, reflect: false };    // what's happened on this slide so far
-gameHooks.onDragStart = ()=>{
-  if(SLIDES[current].trayGlowUntil === 'drag') $('n-trayl').classList.remove('lit');
-};
-gameHooks.onPlace = ()=>{
-  // "Click a piece to rotate it" lights up once a piece is on the grid (unless they've already rotated)
-  const s = SLIDES[current];
-  if(s.boardGlowAfterPlace && !turned[s.boardGlowUntil]) $('n-boardr').classList.add('lit');
-  if(s.bigNoteGlowAfterTurns) glowBigNote();          // (fallback: they placed a piece without turning one)
-};
-gameHooks.onTransform = kind=>{
-  turned[kind] = true;
-  const s = SLIDES[current];
-  // e.g. the reflect slide: any reflect turns its note off, at the top or on the grid
-  if(s.boardGlowUntil === kind) $('n-boardr').classList.remove('lit');
-  if(turned.rotate && turned.reflect){
-    // Rotated AND reflected: the tray tip has done its job, and the most
-    // important message (make every row and column even) gets its turn
-    if(s.trayGlowUntil === 'turns') $('n-trayl').classList.remove('lit');
-    if(s.bigNoteGlowAfterTurns) glowBigNote();
-  }
-};
+/* ── Step notes ("Rotate a piece" → "Then drag it onto the grid") ──
+   The first step not done yet glows; doing a step (in any order) ticks it off. */
+let stepDone = [];
+function renderSteps(s){
+  $('n-trayl').className = 'note n-trayl';
+  $('n-trayl').innerHTML = s.steps
+    ? `<div class="steps">${s.steps.map((st, i)=>`<p class="step callout" id="step${i}">${st.html}</p>`).join('')}</div>` : '';
+  stepDone = (s.steps || []).map(()=>false);
+  lightSteps();
+}
+function lightSteps(){
+  const steps = SLIDES[current].steps || [];
+  const next = gameMode === 'view' ? -1 : stepDone.indexOf(false);
+  steps.forEach((st, i)=>$('step' + i).classList.toggle('lit', i === next));
+}
+function stepEvent(kind){
+  (SLIDES[current].steps || []).forEach((st, i)=>{ if(st.until === kind) stepDone[i] = true; });
+  lightSteps();
+}
+gameHooks.onPlace = ()=>{ stepEvent('place'); if(SLIDES[current].bigNoteGlow) glowBigNote(); };
+gameHooks.onTransform = kind=>{ stepEvent(kind); if(SLIDES[current].bigNoteGlow) glowBigNote(); };
+gameHooks.onChange = ()=>checkHint();
 
 /* Final slide: the orange "Make sure…" note glows strongly for a few
-   seconds, fades, and then the "Useful strategy" line fades in below.
-   Happens once per visit to the slide. */
+   seconds once they place or turn a piece. Once per visit to the slide. */
 const BIG_GLOW_MS = 2500;      // how long the orange note glows
 let bigNoteGlowed = false;
 function glowBigNote(){
@@ -628,11 +655,60 @@ function glowBigNote(){
   bigNoteGlowed = true;
   $('big-note').classList.add('lit');
   later(BIG_GLOW_MS, ()=>$('big-note').classList.remove('lit'));
-  later(BIG_GLOW_MS + 700, ()=>{ if($('strategy')) $('strategy').classList.add('shown'); });   // after the fade
 }
 
-// A tutorial puzzle got solved: freeze it and ring the gaps; then either
-// show the gaps popup, run the counting animation, or light up Next
+/* ── Final slide: the Hint ──
+   Once every piece in hintWhenInside sits inside the dotted outline (the
+   wrong guess most people make), a glowing Hint button fades in under the
+   orange note. It opens a spotlight: the page goes dark except the
+   permanent empty spaces, with an explanation. */
+let hintOffered = false;
+function checkHint(){
+  const s = SLIDES[current];
+  if(!s.hintWhenInside || hintOffered || gameMode !== 'play' || !puzzle) return;
+  const outline = new Set((puzzle.hintOutline || []).map(([r,c])=>r+','+c));
+  const allInside = s.hintWhenInside.every(name=>{
+    const p = placedPieces.find(q=>q.name === name && !q.locked);
+    return p && p.cells.every(([r,c])=>outline.has((p.row+r)+','+(p.col+c)));
+  });
+  if(!allInside) return;
+  hintOffered = true;
+  $('hint-btn').classList.add('shown', 'lit');
+}
+function showHint(){
+  $('hint-btn').classList.remove('lit');
+  $('spot').hidden = false;
+  const W = innerWidth, H = innerHeight, pad = 5;
+  const holes = puzzle.blocked.map(([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`))
+    .filter(Boolean).map(el=>el.getBoundingClientRect());
+  const box = (b, extra)=>`x="${b.left - pad}" y="${b.top - pad}" width="${b.width + 2*pad}" height="${b.height + 2*pad}" rx="8" ${extra}`;
+  const svg = $('spot-svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `<defs><mask id="spot-mask"><rect width="${W}" height="${H}" fill="white"/>`
+    + holes.map(b=>`<rect ${box(b, 'fill="black"')}/>`).join('') + `</mask></defs>`
+    + `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.75)" mask="url(#spot-mask)"/>`
+    + holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('');
+  // The explanation goes on whichever side of the squares has more room,
+  // never over them (if it's too tall for that room, it scrolls inside)
+  const card = $('spot-card'), gapPx = 16;
+  const top = holes.length ? Math.min(...holes.map(b=>b.top)) - pad : H/2;
+  const bottom = holes.length ? Math.max(...holes.map(b=>b.bottom)) + pad : H/2;
+  const below = H - bottom > top;      // more room under the squares than above them?
+  card.style.top    = below ? (bottom + gapPx) + 'px' : '';
+  card.style.bottom = below ? '' : (H - top + gapPx) + 'px';
+  card.style.maxHeight = ((below ? H - bottom : top) - 2*gapPx) + 'px';
+  card.style.overflowY = 'auto';
+  card.scrollTop = 0;                               // start at the first sentence
+  $('spot-ok').focus({ preventScroll: true });
+}
+function hideHint(){ $('spot').hidden = true; }
+// (The Hint button is created with its slide, so listen on the page)
+document.addEventListener('click', e=>{ if(e.target.closest('#hint-btn')) showHint(); });
+$('spot-ok').onclick = hideHint;
+$('spot').onclick = e=>{ if(!$('spot-card').contains(e.target)) hideHint(); };   // tapping the dark area closes it too
+
+// A tutorial puzzle got solved: freeze it and darken the empty spaces;
+// then show the empty-space note, run the counting animation, or light up Next
 gameHooks.onSolved = ()=>{
   const covered = new Set();
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
@@ -642,53 +718,38 @@ gameHooks.onSolved = ()=>{
   const s = SLIDES[current];
   // On the counting slide the column counts sit above the board, so no "Solved!" there
   solvedView[current] = { pieces: placedPieces.map(p=>({ name:p.name, color:p.color, cells:p.cells, row:p.row, col:p.col })),
-                          oddRows: [], oddCols: [], empty, status: s.countAnimation ? '' : 'Solved!', good: true };
+                          oddRows: [], oddCols: [], empty, rings: false,
+                          status: s.countAnimation ? '' : 'Solved!', good: true };
   setViewTiling(solvedView[current]);
   setGameMode('view');
-  ['n-trayl', 'n-boardr', 'big-note'].forEach(id=>{ if($(id)) $(id).classList.remove('lit'); });
+  lightSteps();                                         // (no step glows once it's solved)
+  if($('big-note')) $('big-note').classList.remove('lit');
+  hideHint();
   // (On the counting slide, the solved note waits until the counting is done)
   if(s.solvedNote && !s.countAnimation) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
-  if(s.gapPopup) showGapPopup(empty);
+  if(s.gapNote) showGapNote();
   else if(s.countAnimation) drawCounts(true);
   else markDone();
 };
 
-/* ── The gaps popup (slide 2) ──
-   Sits partly over the grid, just right of the ringed gaps, with its
-   middle ("equator") level with the point between the two gaps. The rings
-   on the board and the ring in the popup's gap picture pulse twice; then
-   OK turns green; OK closes it and lights up Next. */
-function showGapPopup(empty){
-  const pop = $('gap-pop'), ok = $('gap-ok');
-  ok.classList.remove('ready'); ok.setAttribute('aria-disabled', 'true');
-  pop.hidden = false;
-  const play = $('play').getBoundingClientRect(), board = boardEl.getBoundingClientRect();
-  const maxC = Math.max(...empty.map(c=>c[1]));
-  const minR = Math.min(...empty.map(c=>c[0])), maxR = Math.max(...empty.map(c=>c[0]));
-  if(play.width >= 620){
-    // Vertical middle of the gaps (between the top one and the bottom one)
-    const middle = board.top - play.top + (pxPos(minR) + pxPos(maxR) + CELL) / 2;
-    pop.style.left = (board.left - play.left + pxPos(maxC + 1) + 4) + 'px';
-    pop.style.top  = Math.max(0, middle - pop.offsetHeight / 2) + 'px';
-  } else {
-    // Narrow screen: centred just ABOVE the gaps, so the gaps and OK stay in view
-    pop.style.left = Math.max(0, (play.width - pop.offsetWidth) / 2) + 'px';
-    pop.style.top  = Math.max(0, board.top - play.top + pxPos(minR) - pop.offsetHeight - 8) + 'px';
-    pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }
-  // Two pulses of light on the rings (board + popup picture), then OK is ready
-  later(350, ()=>{
-    document.querySelectorAll('#mark-overlay .empty-ring, #pic-gap-ring').forEach(ring=>{
-      ring.classList.remove('pulse'); void ring.getBoundingClientRect(); ring.classList.add('pulse');
-    });
+/* ── Slide 2, after solving ──
+   "Solved!" shows above the board straight away (in green); a moment
+   later a calm note beside the board introduces empty spaces, with two
+   little pictures, and Next lights up. */
+const GAP_NOTE_DELAY_MS = 900;
+function showGapNote(){
+  later(GAP_NOTE_DELAY_MS, ()=>{
+    const note = document.createElement('div');
+    note.className = 'gap-note';
+    note.innerHTML = `<p>The squares left empty are called <b>empty spaces</b>. They work just like permanent empty spaces, except you decide where they go.</p>
+      <div class="pics"><figure></figure><figure></figure></div>`;
+    const [a, b] = note.querySelectorAll('figure');
+    a.append(squareSvg(false)); a.insertAdjacentHTML('beforeend', '<figcaption>empty space</figcaption>');
+    b.append(squareSvg(true));  b.insertAdjacentHTML('beforeend', '<figcaption>permanent empty space</figcaption>');
+    $('n-boardr').appendChild(note);
+    markDone();
   });
-  later(350 + 1700, ()=>{ ok.classList.add('ready'); ok.setAttribute('aria-disabled', 'false'); });
 }
-$('gap-ok').onclick = ()=>{
-  if(!$('gap-ok').classList.contains('ready')) return;
-  $('gap-pop').hidden = true;
-  markDone();
-};
 
 /* ── "Don't place a piece over" slide ──
    Plays each picture's animation in turn with a highlighted square behind
@@ -708,13 +769,13 @@ function showDontSlide(){
   // and only then do the pictures start animating
   const heading = $('dont-slide').querySelector('h2');
   heading.className = 'callout lit';
-  const READ = 1400;            // ms the heading stays lit
+  const READ = 2500;            // ms the heading stays lit
   const START = READ + 700;     // first animation starts once the fade is over
   later(READ, ()=>heading.classList.remove('lit'));
-  const STEP = 1300;   // ms per picture
+  const STEP = 2000;   // ms per picture (time to read each one)
   figs.forEach((f, i)=>{
     later(START + i*STEP,        ()=>{ f.classList.add('active'); playDont(f.querySelector('svg')); });
-    later(START + i*STEP + 1150, ()=>f.classList.remove('active'));
+    later(START + i*STEP + 1800, ()=>f.classList.remove('active'));
   });
   later(START + figs.length*STEP, markDone);
 }
@@ -745,17 +806,19 @@ function drawCounts(animate){
     t.textContent = line.cells.length;
   };
   if(!animate){ lines.forEach(addCount); return; }
-  const STEP = 230;    // ms per row/column: fairly quick
+  const STEP = 650;    // ms per row/column: slow enough to follow each one
+  const PAUSE = 500;   // extra pause between the rows and the columns
+  const at = i => 400 + i*STEP + (i >= puzzle.rows ? PAUSE : 0);
   lines.forEach((line, i)=>{
-    later(300 + i*STEP, ()=>{
+    later(at(i), ()=>{
       const glows = line.cells.map(([r,c])=>svgEl('rect', { x: pxPos(c), y: pxPos(r), width: CELL, height: CELL, rx: 4, class:'row-glow' }, svg));
       requestAnimationFrame(()=>glows.forEach(g=>g.classList.add('on')));   // fade in
-      addCount(line);
-      later(STEP * 0.75, ()=>glows.forEach(g=>g.classList.remove('on')));  // fade out
-      later(STEP * 0.75 + 200, ()=>glows.forEach(g=>g.remove()));
+      addCount(line);                                                        // the number pops in and stays
+      later(STEP * 0.8, ()=>glows.forEach(g=>g.classList.remove('on')));   // fade out
+      later(STEP * 0.8 + 200, ()=>glows.forEach(g=>g.remove()));
     });
   });
-  later(300 + lines.length*STEP + 150, ()=>{
+  later(at(lines.length) + 150, ()=>{
     const note = SLIDES[current].solvedNote;
     if(note) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${note}</p>`);
     markDone();
@@ -763,6 +826,7 @@ function drawCounts(animate){
 }
 
 function closeTutorial(finished){
+  try { sessionStorage.removeItem(SLIDE_KEY); } catch(e){}   // next time starts from slide 1
   // Inside the popup on a puzzle page: ask that page to close it
   if(window.parent !== window) window.parent.postMessage({ type:'pb-tutorial-close', finished: !!finished }, '*');
   else {
@@ -800,9 +864,19 @@ $('next-btn').onclick = ()=>{
 };
 $('back-btn').onclick = ()=>{ if(current > 0) showSlide(current - 1); };
 $('close-x').onclick = ()=>closeTutorial(false);
-document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeTutorial(false); });
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Escape') return;
+  if(!$('spot').hidden) hideHint();      // Esc closes the hint first
+  else closeTutorial(false);
+});
 
-showSlide(0);
+// Start where they were if the page was refreshed mid-tutorial (the slides
+// before it count as done), otherwise at slide 1
+let startAt = 0;
+try { startAt = parseInt(sessionStorage.getItem(SLIDE_KEY), 10) || 0; } catch(e){}
+if(!(startAt > 0 && startAt < SLIDES.length)) startAt = 0;
+for(let i = 0; i < startAt; i++) done[i] = true;
+showSlide(startAt);
 </script>
 </body>
 </html>
