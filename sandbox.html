@@ -766,7 +766,7 @@ let loadedArchiveId = null;
 
 function loadArchive(){
   try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)); } catch(e){}
-  if(Array.isArray(archive)) return;
+  if(Array.isArray(archive)){ addClaudePuzzles(); return; }
   const now = new Date().toISOString();
   archive = Object.keys(PUZZLES).map(id=>({
     id: 'puzzles-js:' + id,
@@ -777,6 +777,27 @@ function loadArchive(){
     published: LEVELS.filter(l=>PUBLISHED[l] && PUBLISHED[l].archiveId === 'puzzles-js:' + id)
                       .map(l=>({ difficulty:l, at: PUBLISHED[l].publishedAt })),
   }));
+  saveArchive();
+  addClaudePuzzles();     // (marks them as offered, so they aren't added twice)
+}
+// Practice puzzles Claude made (puzzles.js ids starting "claude-") are added
+// to the archive once, at the top, with a note saying who made them. The
+// ids already offered are remembered ('pb_claudeOffered'), so deleting one
+// keeps it deleted.
+function addClaudePuzzles(){
+  let offered = [];
+  try { offered = JSON.parse(localStorage.getItem('pb_claudeOffered')) || []; } catch(e){}
+  const fresh = Object.keys(PUZZLES).filter(id=>id.startsWith('claude-') && !offered.includes(id));
+  if(!fresh.length) return;
+  const have = new Set(archive.map(e=>e.id));
+  const now = new Date().toISOString();
+  fresh.slice().reverse().forEach(id=>{
+    if(have.has('puzzles-js:' + id)) return;
+    archive.unshift({ id: 'puzzles-js:' + id, title: PUZZLES[id].title, savedAt: now,
+      notes: 'Made by Claude (not yours), in the style of your puzzles, for trying the app as a player.',
+      puzzle: copyPuzzle(PUZZLES[id]), published: [] });
+  });
+  try { localStorage.setItem('pb_claudeOffered', JSON.stringify(offered.concat(fresh))); } catch(e){}
   saveArchive();
 }
 function saveArchive(){ try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive)); } catch(e){ alert('Couldn’t save the archive in this browser: ' + e.message); } }
