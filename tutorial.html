@@ -437,6 +437,7 @@ const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 // because it sits next to the brown Y on slides 2 and 5)
 const COLOR = { I:'#5f9e8f', F:'#5f7fb5', W:'#a44e6b', N:'#7d6aa8', P:'#b8923f', Y:'#8c6a4a', U:'#a85c4a', V:'#8a9c5a' };
 gameSettings.distinctColors = false;     // (use these colors, not the game's own palette)
+gameSettings.explain = false;            // mistakes only glow red; no message saying what's wrong
 function fixedPiece(name, absCells, color){
   const r0 = Math.min(...absCells.map(c=>c[0])), c0 = Math.min(...absCells.map(c=>c[1]));
   return { name, color: color || COLOR[name], row: r0, col: c0, cells: absCells.map(([r,c])=>[r-r0, c-c0]) };

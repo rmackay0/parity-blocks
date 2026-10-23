@@ -88,6 +88,19 @@ previous project; don't push there.
   sandbox's solution views. Tutorial keeps its own `COLOR` map (F is now
   blue).
 
+**Puzzle page + tutorial polish (2026-10-23, end of day):**
+- Solved popup: 26px between the badge and the buttons; after Easy a
+  "Play Medium →" button (start screen's orange), after Medium "Play
+  Hard →" (purple), above Menu / Close (plain then); after Hard, Menu is
+  green. `#solved-next` set in play.html's onSolved (only if that level
+  is published). Test: `tests/browser/next_level_test.js`.
+- Puzzle captions are no longer shown on the puzzle page
+  (`gameSettings.showCaption = false` in play.html): the user removed
+  "No piece crosses the dotted line." The data still has hintText.
+- Tutorial: `gameSettings.explain = false`, so mistakes only glow red.
+- Back button (play.html, sandbox.html): a drawn SVG chevron, exactly
+  centred (the ‹ character sat off-centre).
+
 **Tutorial timing/look tweaks (2026-10-23, latest):** slide 3's pictures
 start 33% sooner (heading lit 1.07 s, first picture 1.27 s); slide 4 ends
 with the same "Solved!" badge as slide 2; slide 5 holds each kind of

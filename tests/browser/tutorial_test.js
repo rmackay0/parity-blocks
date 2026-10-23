@@ -169,6 +169,8 @@ async function placePiece(page, frame, name, target, touch){
     for(const [name, target] of Object.entries(TARGETS.Ewrong)) await placePiece(page, frame, name, target, touch);
     await page.waitForTimeout(300);
     console.log(`[${label}] wrong try: frame glows red ${await frame.evaluate(()=>document.getElementById('board-outer').classList.contains('uneven'))} (expected true) | squares turned dark ${await frame.locator('.board-cell.gap-dark').count()} (expected 0) | Next ready ${await nextReady()} (expected false)`);
+    await page.waitForTimeout(3300);
+    console.log(`[${label}]   after 3.3 s: message "${(await frame.textContent('#status')).trim()}" (expected "": the tutorial only glows red)`);
     // (The Hint appears after 3 minutes; call it straight away here)
     await frame.evaluate(()=>offerHint());
     console.log(`[${label}] after 3 minutes: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')} (expected true, false)`);

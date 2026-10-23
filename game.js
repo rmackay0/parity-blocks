@@ -42,8 +42,11 @@ const gameHooks = {
                       solution can still be moved around to test ideas.
      distinctColors   pieces take their colors from PIECE_PALETTE (below)
                       instead of the puzzle's own colors. The tutorial turns
-                      it off to keep its hand-picked colors. */
-const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true };
+                      it off to keep its hand-picked colors.
+     showCaption      show the puzzle's caption (hintText) under the board.
+                      The puzzle page turns it off (the user removed "No
+                      piece crosses the dotted line."; the rules say it). */
+const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true, showCaption: true };
 
 /* [COLORS] Piece colors, given out in the order the puzzle lists its
    pieces, so no two pieces in a puzzle look alike. The first six are six
@@ -127,7 +130,7 @@ function loadPuzzle(p, opts){
   solved = false;
   const caption = document.getElementById('hint-caption');
   caption.textContent = p.hintText || '';
-  caption.hidden = !p.hintText;
+  caption.hidden = !p.hintText || !gameSettings.showCaption;
   renderTray();          // tray + caption first, so the board sizes itself to the space left
   setupBoard();
   renderAll();

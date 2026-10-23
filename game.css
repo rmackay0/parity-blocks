@@ -331,6 +331,24 @@ body.empty-space-pieces .placed-piece.invalid .piece-box { box-shadow: 0 0 0 2px
   justify-content: center;
 }
 .popup-buttons .secondary { background: var(--color-cell-border); }
+/* The Solved popup (play.html): room between the badge and the buttons,
+   and a Menu button in the same green as the check */
+.solved-win { margin-bottom: 26px; }
+#solved-popup .popup-buttons a { background: var(--color-valid); color: #fff; }   /* [COLORS] */
+/* After Easy / Medium: a big "Play Medium →" / "Play Hard →" button above
+   Menu and Close (which then both turn plain), in that level's color */
+.next-level-btn {
+  display: flex; align-items: center; justify-content: center; height: 50px; margin-bottom: 10px;
+  border-radius: 12px; text-decoration: none; font-family: var(--font-display); font-size: 1.4rem;
+  background: var(--color-valid); color: #fff; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+.next-level-btn[hidden] { display: none; }
+/* [COLORS] the same as the start screen's Medium / Hard buttons
+   (--color-medium / --color-hard in index.html) */
+.next-level-btn.medium { background: #d99a4e; color: var(--color-button-text); }
+.next-level-btn.hard   { background: #7d5a78; color: var(--color-button-text); }
+.next-level-btn:hover { filter: brightness(1.08); }
+#solved-popup.has-next .popup-buttons a { background: var(--color-cell-border); }
 
 /* ── Sandbox modes (only the puzzle builder uses these) ── */
 /* Edit mode: pieces fade and ignore clicks, so clicks reach the squares */

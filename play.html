@@ -41,7 +41,8 @@
 
 <main class="game">
   <div class="top-row">
-    <a class="back-btn" href="index.html" aria-label="Back to menu">&lsaquo;</a>
+    <!-- (A drawn chevron, not the ‹ character, so it sits dead centre in the circle) -->
+    <a class="back-btn" href="index.html" aria-label="Back to menu"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M13 4 L7 10 L13 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <div class="top-right">
       <!-- Clears the board (asks first). Tucked in the corner on purpose. -->
       <button type="button" class="reset-btn" id="reset-btn" aria-label="Reset puzzle">Reset</button>
@@ -79,6 +80,8 @@
   <div class="popup" role="dialog" aria-modal="true" aria-label="Solved">
     <!-- The solved badge: checkmark animation + jingle (celebrate.js) -->
     <div class="solved-win" id="solved-win"></div>
+    <!-- After Easy: "Play Medium"; after Medium: "Play Hard" (set in onSolved) -->
+    <a class="next-level-btn" id="solved-next" hidden></a>
     <div class="popup-buttons">
       <a href="index.html">Menu</a>
       <button type="button" class="secondary" id="solved-close">Close</button>
@@ -174,6 +177,7 @@ document.getElementById('reset-confirm').onclick = ()=>{
   loadPuzzle(puzzle);
 };
 gameSettings.explain = false;        // a wrong board just glows red; no "Uneven rows…" message
+gameSettings.showCaption = false;    // no caption under the board (e.g. "No piece crosses the dotted line.")
 gameSettings.lockWhenSolved = true;  // a solved board stays as it is (Reset to play again)
 
 /* ── Saving progress (progress.js; this browser only) ──
@@ -215,6 +219,16 @@ gameHooks.onSolved = time=>{
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
   document.getElementById('solved-win').replaceChildren(solvedBadge('Solved!', 'Your time: ' + time, { animate: true, sound: true, stack: true }));
+  // The next level up, if it's published: a "Play Medium" / "Play Hard" button
+  const next = { easy: 'medium', medium: 'hard' }[level];
+  const nextBtn = document.getElementById('solved-next');
+  nextBtn.hidden = !(next && PUBLISHED[next]);
+  if(!nextBtn.hidden){
+    nextBtn.textContent = 'Play ' + next[0].toUpperCase() + next.slice(1) + ' →';
+    nextBtn.href = 'play.html?level=' + next;
+    nextBtn.className = 'next-level-btn ' + next;      // (its color: the start screen's button for that level)
+  }
+  document.getElementById('solved-popup').classList.toggle('has-next', !nextBtn.hidden);
   document.getElementById('solved-popup').hidden = false;
   if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime, saveKey);
 };
