@@ -227,9 +227,7 @@ gameHooks.onSolved = time=>{
     nextBtn.textContent = 'Play ' + next[0].toUpperCase() + next.slice(1) + ' →';
     nextBtn.href = 'play.html?level=' + next;
     nextBtn.className = 'next-level-btn ' + next;      // (its color: the start screen's button for that level)
-  }
-  document.getElementById('solved-popup').classList.toggle('has-next', !nextBtn.hidden);
-  document.getElementById('solved-popup').hidden = false;
+  }  document.getElementById('solved-popup').hidden = false;
   if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime, saveKey);
 };
 

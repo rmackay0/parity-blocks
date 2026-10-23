@@ -91,8 +91,8 @@ previous project; don't push there.
 **Puzzle page + tutorial polish (2026-10-23, end of day):**
 - Solved popup: 26px between the badge and the buttons; after Easy a
   "Play Medium →" button (start screen's orange), after Medium "Play
-  Hard →" (purple), above Menu / Close (plain then); after Hard, Menu is
-  green. `#solved-next` set in play.html's onSolved (only if that level
+  Hard →" (purple), above Menu / Close. Menu and Close are always plain
+  and identical (user: the only colorful button is Play Medium / Hard). `#solved-next` set in play.html's onSolved (only if that level
   is published). Test: `tests/browser/next_level_test.js`.
 - Puzzle captions are no longer shown on the puzzle page
   (`gameSettings.showCaption = false` in play.html): the user removed
