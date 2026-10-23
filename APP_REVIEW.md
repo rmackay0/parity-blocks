@@ -5,7 +5,8 @@ page, the rules popup, the tutorial and the Archive. Every screen was
 tried on a laptop (1280 × 800) and a phone (390 × 844). The game code
 was read, and the solver was run on the three published puzzles.
 
-Items 1–4 are **done** (see "Done" below). Items 5–17 are still open.
+Items 1–4 are **done** (see "Done" below), and half of #13 (2026-10-23).
+Everything else under "Still to do" is open.
 
 **What already works well:** the board never moves, wrong boards glow
 red calmly instead of scolding, the tutorial flows nicely, the colors
@@ -42,6 +43,19 @@ are consistent everywhere, and the Archive looks good on a phone.
 
 Tests: `tests/browser/solved_state_test.js` checks all four on a laptop
 and a phone. The other browser tests and the solver tests still pass.
+
+## Done (2026-10-23)
+
+- **#13, first half: the Solved popup offers the next level.** After
+  Easy it shows "Play Medium →", after Medium "Play Hard →", in the start
+  screen's colors for those levels; Menu and Close stay plain. It also
+  has a new look: a green checkmark that draws itself in time with the
+  user's jingle (`celebrate.js`, `assets/solved.mp3`). The Share button
+  is still to do.
+- The Solved badge's animation respects the phone's Reduce Motion
+  setting (part of #16; the tutorial's other glows still don't).
+
+Test: `tests/browser/next_level_test.js`.
 
 ---
 
@@ -86,9 +100,10 @@ and a phone. The other browser tests and the solver tests still pass.
    checking for a double-tap. You notice it when rotating several times.
    The piece could rotate straight away instead, and undo that rotation
    and reflect if a second tap follows.
-- **The tutorial's empty-spaces slide (slide 3) scrolls on an iPhone SE.**
-  About 108px on a 375 × 667 screen; an iPhone 14 needs none. Slides 1,
-  5 and 6 also scroll a little there (23–37px).
+- **Some tutorial slides scroll on phones.** (Updated 2026-10-23 for the
+  8-slide tutorial.) On slides 5–7 the note sits below the board and
+  needs about 30–120px of scrolling on a 390 × 800 screen; more on an
+  iPhone SE (not re-measured) and with Large text.
 
 ### Screens
 
@@ -99,7 +114,8 @@ and a phone. The other browser tests and the solver tests still pass.
 12. **The start screen doesn't show progress.** A small ✓ on Easy,
     Medium or Hard once it's solved would give players a reason to come
     back.
-13. **The Solved popup is plain.** It could offer a "Next: Hard" button,
+13. **The Solved popup is plain.** *(Half done 2026-10-23: the next-level
+    button and new look are in; the Share button isn't.)* It could offer a "Next: Hard" button,
     plus a Share button that copies something like
     "Parity Blocks · Oct 20 · Hard ✓ 2:31". That's how daily puzzles
     spread.

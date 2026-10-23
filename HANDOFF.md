@@ -1,6 +1,6 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-10-22, end of session)
+## START HERE (updated 2026-10-23, end of session)
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -14,10 +14,12 @@ previous project; don't push there.
 | `index.html` | Splash: logo, title, Easy/Medium/Hard (→ `play.html?level=…`), Tutorial button (→ tutorial.html), **Archive** button (calendar of solved days), Rules (top-right) |
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
-| `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html |
-| `tutorial.html` | Interactive 8-slide tutorial (real mini puzzles via game.js) |
-| `APP_REVIEW.md` | Whole-app review (2026-10-20): items 1–4 done, **5–17 are the to-do list** |
-| `tests/browser/` | Playwright checks (see Testing below); `solved_state_test.js` covers the review fixes |
+| `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html. `gameSettings` at the top: `explain`, `lockWhenSolved`, `distinctColors`, `showCaption` |
+| `celebrate.js` | The solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3`, animation timed to it; tutorial = no sound, quicker |
+| `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
+| `tutorial.html` | Interactive 8-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` |
+| `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
+| `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 8 slides, `next_level_test.js` the Solved popup |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
 | `puzzles.js` | `PUZZLES` registry (test puzzles; analyzer/sandbox read it) |
 | `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter) |
@@ -44,25 +46,48 @@ previous project; don't push there.
 - Vocabulary below (block / piece / permanent empty space / empty space)
   is mandatory.
 
-**Current state (end of 2026-10-22 session)**
-- Always check what's pushed with `git log origin/main..HEAD` /
-  `git log HEAD..origin/main`, and ask the user before pushing.
-- Tutorial v5 (new empty-spaces slide) is pushed and live.
-- The review fixes (APP_REVIEW.md items 1–4) are committed; check
-  `git log origin/main..HEAD` to see whether they've been pushed yet.
-- The user plans to publish a **new Medium** themselves through the
-  sandbox (that commits to GitHub, so `git pull` first next session).
+**Current state (end of 2026-10-23 session)**
+- **Everything is committed and pushed** (last commit 5867117, live on
+  Vercel). Still check `git log HEAD..origin/main` first: the user may
+  publish a puzzle from the sandbox in between, which commits to GitHub.
+- This session (all from the user's PDFs "instructions for claude on
+  parity blocks" and "instructions for claude v6", plus chat requests;
+  details in the dated sections just below):
+  - Tutorial rebuilt to **8 slides**: block counting on slides 2, 4, 8
+    (25% faster; other text fades while counting) with a "Solved!"
+    badge; slide 5 explains empty spaces on its own; slide 6 removes the
+    pieces and counts the empty spaces; slide 7 is a new puzzle where you
+    drag four single empty spaces (Hint after 3 min, nothing glows);
+    final slide's Hint appears once all pieces are placed but uneven.
+    The tutorial never writes what's wrong, it only glows red.
+  - **Solved badge** (`celebrate.js`) for every success message; the
+    puzzle page plays the user's jingle with the checkmark animation.
+  - **Solved popup** on the puzzle page: "Play Medium →" after Easy,
+    "Play Hard →" after Medium, in the start screen's level colors; Menu
+    and Close always plain.
+  - Puzzle page shows no caption under the board; back arrow centred.
+- The user still plans to make a **new Medium** (and revisit Easy) in the
+  sandbox; see APP_REVIEW.md #5.
 
 **Open items / ideas for next session**
-- **The to-do list is APP_REVIEW.md items 5–17** (puzzle design, phone
-  dragging, screens, site polish) plus its iPhone SE scrolling note.
+- **The to-do list is APP_REVIEW.md "Still to do"** (puzzle design, phone
+  dragging, screens, site polish).
+- **Slide 7's hint text:** the user's notes stopped mid-sentence; Claude
+  finished it ("…two of the lines crossing it will be left with only one.
+  So every row and column needs either 0 or 2 empty spaces.") — never
+  confirmed by the user. It's `hintText` on that slide in tutorial.html.
 - **Puzzle variety:** Easy AND Medium each fit together only one way
   (solver), so the even rule never decides anything; Hard has 13 ways /
   1 solution. Check "ways to fit" when making new puzzles.
-- Double-tap zoom fix on iPhone (`touch-action: manipulation` + touchend
-  guard in game.js): user says it doesn't seem to zoom; still checking.
-- Phones: iPhone SE needs some scrolling on tutorial slides 1, 3, 5, 6
-  (slide 3 the most, ~108px); Large text scrolls more. iPhone 14 needs none.
+- Untested on a real iPhone: the jingle (unlocked silently on the first
+  tap, `unlockSolvedSound`), and the double-tap zoom guard.
+- Phones scroll a little on tutorial slides 5–7 (the note sits below the
+  board, ~30–120px on a 390 × 800 screen); Large text scrolls more
+  (~250–290px on a laptop on slides 4–7). iPhone SE not re-measured since
+  the 8-slide rebuild.
+- The rules popup still says "You can't place a piece across a dotted
+  perimeter." (the user removed only the caption under the board; ask if
+  they want that line changed too).
 - Archive calendar only shows stars; past days can't be replayed because
   published.js keeps only the current three puzzles. Replaying would need
   a history of published puzzles (e.g. keep each publish, keyed by date).
@@ -277,7 +302,11 @@ by git). **One-time setup in a new session:** in `tests/browser`, run
 `npm install --no-save playwright` and then `npx playwright install
 chromium` (node_modules is git-ignored). Until then they fail with
 "Cannot find module 'playwright'". Scripts: `tutorial_test.js` (plays
-the whole tutorial on desktop + phone), `play_test.js` (solves Easy/Hard
+all 8 tutorial slides on desktop + phone, checking timings, that the
+board never moves, colors and hints; ~2.5 min), `next_level_test.js`
+(Solved popup: Play Medium/Hard buttons + colors, spacing, no caption,
+back arrow centred), `solved_state_test.js` (locked solved board, badge,
+one star per puzzle), `play_test.js` (solves Easy/Hard
 through the UI), `click_test.js` (click = rotate, double-click = reflect),
 `game_features_test.js` (R/E incl. while holding and pointing; letter and
 arrow keys do nothing),
