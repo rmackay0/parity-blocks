@@ -132,11 +132,11 @@ async function placePiece(page, frame, name, target, touch){
     await page.waitForTimeout(1300);
     console.log(`[${label}] slide 5 at 1.3 s:`, JSON.stringify(await explainState()), `(expected 1 line, 2 glowing, 0 counts) | board moved ${board4 !== await boardAt()} (expected false) | Next ready ${await nextReady()} (expected false)`);
     await page.screenshot({ path:`tut-${label}-5-line1.png` });
-    await page.waitForTimeout(1800);
-    console.log(`[${label}] slide 5 at 3.1 s:`, JSON.stringify(await explainState()), '(expected still 1 line, 2 glowing: held a second longer)');
-    await page.waitForTimeout(1000);
-    console.log(`[${label}] slide 5 at 4.1 s:`, JSON.stringify(await explainState()), '(expected 2 lines, 4 glowing: the Xs)');
-    await page.waitForTimeout(2600);
+    await page.waitForTimeout(1300);
+    console.log(`[${label}] slide 5 at 2.6 s:`, JSON.stringify(await explainState()), '(expected still 1 line, 2 glowing)');
+    await page.waitForTimeout(800);
+    console.log(`[${label}] slide 5 at 3.4 s:`, JSON.stringify(await explainState()), '(expected 2 lines, 4 glowing: the Xs; 2nd line now at 3.0 s)');
+    await page.waitForTimeout(2000);
     console.log(`[${label}] slide 5 done:`, JSON.stringify(await explainState()), `(expected 2 lines, 0 glowing) | note ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())} | step text opacity ${await textOpacity()} (expected 0) | Next ready ${await nextReady()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-5-done.png` });
     await frame.click('#next-btn');

@@ -911,8 +911,8 @@ function showQuiet(s){
    The only thing on the slide: a highlighted note beside the board that
    appears a line at a time, while the squares each line is about glow:
    first the empty spaces, then the permanent ones. Then Next lights up. */
-const EXPLAIN_LINE_MS = [300, 3100];   // when each line of the note appears
-const EXPLAIN_DONE_MS = 5900;          // the glow ends and Next lights up
+const EXPLAIN_LINE_MS = [240, 2480];   // when each line of the note appears
+const EXPLAIN_DONE_MS = 4720;          // the glow ends and Next lights up
 function explainEmptySpaces(){
   const card = document.createElement('div');
   card.className = 'recap-card callout';

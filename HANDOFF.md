@@ -103,7 +103,7 @@ previous project; don't push there.
 
 **Tutorial timing/look tweaks (2026-10-23, latest):** slide 3's pictures
 start 33% sooner (heading lit 1.07 s, first picture 1.27 s); slide 4 ends
-with the same "Solved!" badge as slide 2; slide 5 holds each kind of
+with the same "Solved!" badge as slide 2; slide 5 holds each kind of (later cut 20%: lines at 0.24 s / 2.48 s, done 4.72 s)
 empty space 1 s longer; slide 6 waits 2 s more before counting
 (`EMPTY_COUNT_MS` 4800) and its note sits 16px further from the row
 counts (laptop); slide 7 has nothing glowing (`noGlow`, even the Hint
