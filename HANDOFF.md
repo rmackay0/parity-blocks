@@ -15,7 +15,7 @@ previous project; don't push there.
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html |
-| `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js) |
+| `tutorial.html` | Interactive 7-slide tutorial (real mini puzzles via game.js) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): items 1–4 done, **5–17 are the to-do list** |
 | `tests/browser/` | Playwright checks (see Testing below); `solved_state_test.js` covers the review fixes |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
@@ -88,7 +88,27 @@ previous project; don't push there.
   sandbox's solution views. Tutorial keeps its own `COLOR` map (F is now
   blue).
 
-**Tutorial v5: empty-spaces slide (2026-10-20, "claude notes v4" PDF)** —
+**Tutorial v6 (2026-10-22, "instructions for claude on parity blocks" PDF)**
+— 7 slides; see the comment at the top of tutorial.html. v5's
+empty-spaces slide is gone (and `PUZZLE_2_SOLVED`, `showRecap`, `.dim`).
+Slide 2 now counts the blocks on solving (then "Solved! Every row and
+column has an even number of blocks." beside the board). Slide 4 (reflect)
+counts, then `explainEmptySpaces` (user's wording, squares glow). Slide 5
+(`quiet: true`, `PUZZLE_3_SOLVED`): same board in the exact same place
+(slide 4's steps are rendered but faded, so nothing moves), pieces fade
+(`#pieces-layer.gone`), note + count of empty spaces (`countedSquares`).
+Slide 6: new `PUZZLE_E`, four single empty spaces to drag; game.js
+`puzzle.piecesAreEmptySpaces` counts the permanent ones with them and
+skips darkening; Hint after 3 min (`hintAfterMs`); "Great work!" box
+(`solvedCard`). Slide 7's Hint now appears once every piece is placed
+with no rule broken but it's uneven (`hintWhenUneven`, replacing
+`hintWhenInside`). Hint wording per slide is `hintText` in SLIDES.
+**Open:** the user's slide-6 hint text stopped mid-sentence ("two of
+the"); Claude finished it (comment in SLIDES) — confirm with the user.
+Phones scroll a little on slides 4–6 (note below the board); Large text
+on a laptop scrolls ~250–290px on those slides.
+
+**Tutorial v5: empty-spaces slide (2026-10-20, "claude notes v4" PDF)** — *replaced by v6*
 now 6 slides. Slide 1 no longer explains permanent empty spaces, and
 slide 2 no longer shows an empty-space note after solving (just "Solved!"
 and Next). New slide 3 (`kind: 'recap'`, `showRecap`): slide 2's solved

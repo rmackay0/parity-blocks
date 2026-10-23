@@ -777,7 +777,7 @@ function drawUnevenMarks(oddRows, oddCols){
    teaches. Picking a piece back up turns them back to normal. */
 function markEmptySpaces(full){
   boardEl.querySelectorAll('.gap-dark').forEach(el=>el.classList.remove('gap-dark'));
-  if(!full) return;
+  if(!full || puzzle.piecesAreEmptySpaces) return;
   const covered = new Set();
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
   boardEl.querySelectorAll('.board-cell').forEach(el=>{
@@ -794,11 +794,14 @@ function checkSolved(){
   if(solved) return;
   if(!boardFull()){ explainLater(''); return; }
 
-  // Count filled squares on the board (overlapping squares count once)
+  // Count filled squares on the board (overlapping squares count once).
+  // puzzle.piecesAreEmptySpaces (a tutorial puzzle): the pieces are single
+  // empty spaces, so the permanent empty spaces count along with them.
   const filled = new Set();
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
     if(inBounds(p.row+r, p.col+c)) filled.add((p.row+r)+','+(p.col+c));
   }));
+  if(puzzle.piecesAreEmptySpaces) puzzle.blocked.forEach(([r,c])=>filled.add(r+','+c));
   const oddRows = [], oddCols = [];
   for(let r=0; r<puzzle.rows; r++){
     let n = 0;

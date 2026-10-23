@@ -7,23 +7,30 @@
   and from "Play the tutorial" in the Rules popup. It can also be opened
   on its own: tutorial.html.
 
-  Six slides:
+  Seven slides:
     1  Game objectives and the 12 pentominoes   (no task: Next is ready)
     2  Rotate (click / tap, or R), then drag onto the grid: a two-step
-       note, each step glowing in turn. On solving, "Solved!"
-    3  Empty spaces: slide 2's solved board comes back, dims, and a
-       highlighted note appears under it line by line (empty spaces,
-       permanent empty spaces, count them the same), while the squares
-       each line is about glow on the board
-    4  "Don't place a piece over…": four pictures animate one at a time
-    5  Reflect (double-click / tap twice, or E), then drag: same two-step
-       note, plus "you can also rotate and reflect pieces on the grid"
-    6  Make every row and column even (the parity puzzle). If they put W
-       and P in the outlined area (always wrong), a glowing Hint button
-       appears: it darkens the page, spotlights the permanent empty
-       space and explains. On solving, each row then column flashes
-       green and its count appears. Last button says "Finish"
-  Slides 2, 5 and 6 are real mini puzzles running on the game's own code
+       note, each step glowing in turn. On solving, each row then column
+       flashes green and its count of blocks appears, then "Solved!"
+    3  "Don't place a piece over…": four pictures animate one at a time
+    4  Reflect (double-click / tap twice, or E), then drag: same two-step
+       note, plus "you can also rotate and reflect pieces on the grid".
+       On solving, the blocks are counted, then a note beside the board
+       explains empty spaces and permanent empty spaces while those
+       squares glow
+    5  Same board, same place: all the text fades, the pieces are taken
+       away, a note says the empty spaces are even too (count X's and
+       dark squares together), and the empty spaces are counted
+    6  Empty-spaces puzzle: drag four single empty spaces onto a grid
+       with two permanent ones so every row and column has an even
+       number of empty spaces. A Hint button appears after 3 minutes.
+       On solving, "Great work! … only works with an even grid"
+    7  Make every row and column even (the parity puzzle). If they place
+       every piece but the rows/columns aren't all even, a glowing Hint
+       button appears: it darkens the page, spotlights the permanent
+       empty space and explains. On solving, the blocks are counted. Last
+       button says "Finish"
+  Slides 2 and 4–7 run on the game's own code
   (game.js / game.css), with some pieces fixed in place. Next turns green
   only once the slide's task (and any animation) is finished.
   Refreshing the page comes back to the same slide (sessionStorage
@@ -175,17 +182,18 @@
 
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  /* ── Slide 3: empty spaces (slide 2's solved board, dimmed, with a note under it) ── */
-  .play.recap .n-trayl, .play.recap .tray, .play.recap .status { display: none; }
-  .play.recap #board-outer > * { transition: opacity 1s, filter 1s; }
-  /* [COLORS] how much the board fades and darkens (the glowing squares stay bright) */
-  #board-outer.dim > :not(#tut-overlay) { opacity: 0.45; filter: brightness(0.7); }
+  /* ── Slides 4–5: empty spaces (notes beside the reflect puzzle's solved board) ──
+     Slide 5 keeps the board exactly where it was: the text above it only
+     fades out (it keeps its space), and the pieces fade away. */
+  .play.quiet .n-trayl, .play.quiet .tray, .play.quiet .status { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+  .fading { opacity: 0; transition: opacity 0.5s; }
+  #pieces-layer.gone { opacity: 0; transition: opacity 1s; }
   .sq-ring { fill: rgba(240, 170, 90, 0.15); stroke: var(--color-accent); stroke-width: 3;
              filter: drop-shadow(0 0 6px rgba(240, 170, 90, 0.85)); opacity: 0; transition: opacity 0.5s; }
   .sq-ring.on { opacity: 1; }
   /* The note: always gently highlighted; glows harder while its lines appear */
   .recap-card {
-    max-width: 600px; margin-top: 10px; padding: 14px 18px; text-align: left;
+    max-width: 600px; padding: 14px 18px; text-align: left;
     border: 2px solid rgba(217, 154, 78, 0.55); border-radius: 14px; background: rgba(217, 154, 78, 0.08);
     opacity: 0; transition: opacity 0.6s, box-shadow 0.7s, background 0.7s;
   }
@@ -197,9 +205,15 @@
   .recap-item.shown { opacity: 1; transform: none; }
   .recap-item svg { flex: 0 0 auto; }
   .recap-item p, p.recap-item { font-size: 1.05rem; line-height: 1.45; color: var(--color-text); margin: 0; }
-  .recap-tip { display: block; margin: 4px 0 0; padding-top: 10px; border-top: 1px solid var(--color-cell-border); }
+  p.recap-item { display: block; }   /* a line with no picture: plain text */
+  .recap-item:last-child { margin-bottom: 0; }
+  .recap-split { padding-top: 10px; border-top: 1px solid var(--color-cell-border); }
+  .recap-pair { display: flex; gap: 4px; flex: 0 0 auto; }
+  /* Slide 6's "Great work!" message pops in beside the board */
+  .great { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--color-valid);
+           background: rgba(111, 174, 90, 0.12); animation: popIn 0.45s cubic-bezier(.3,1.4,.5,1) both; }
+  .great .solved-note { margin-top: 0; }
   @media (max-width: 760px) {
-    .play.recap { --tut-board: min(360px, 38vh, 86vw); }   /* [POSITIONING] a bit smaller, so the note fits under it */
     .recap-card { margin-top: 6px; padding: 10px 12px; }
     .recap-item { gap: 10px; margin-bottom: 8px; }
     .recap-item svg { width: 34px; height: 34px; }
@@ -345,7 +359,7 @@
       <div class="dont" id="dont"></div>
     </section>
 
-    <!-- Slides 2, 4, 5: the game, with notes placed around it -->
+    <!-- Slides 2, 4–7: the game, with notes placed around it -->
     <section class="play" id="play" hidden>
       <div class="note n-trayl" id="n-trayl"></div>
       <div class="tray" id="tray" aria-label="Pieces to place"></div>
@@ -373,12 +387,12 @@
   </footer>
 </div>
 
-<!-- The final slide's hint: darkens the page except the permanent empty
-     spaces, with an explanation (drawn by showHint) -->
+<!-- Slides 6 and 7's hint: darkens the page except the permanent empty
+     spaces, with an explanation (drawn by showHint; wording in SLIDES) -->
 <div class="spot" id="spot" hidden role="dialog" aria-label="Hint">
   <svg id="spot-svg" aria-hidden="true"></svg>
   <div class="spot-card" id="spot-card">
-    <p>Every row and every column in this grid is even (6 squares long), so each one needs an even number of empty spaces. Before continuing, visualize where else empty spaces can go, and then try to fit the pieces to account for that.</p>
+    <p id="spot-text"></p>
     <button class="ok-btn ready" id="spot-ok">Got it</button>
   </div>
 </div>
@@ -421,15 +435,6 @@ const PUZZLE_2 = {
   ],
   pieces: [ trayPiece('I', [[0,0],[0,1],[0,2],[0,3],[0,4]]), trayPiece('F', [[0,1],[0,2],[1,0],[1,1],[2,1]]) ],
 };
-// PUZZLE_2 solved (its only solution, from solver.js), shown again on the
-// empty-spaces slide, so it's there even after a refresh on that slide
-const PUZZLE_2_SOLVED = {
-  pieces: PUZZLE_2.fixedPieces.concat([
-    fixedPiece('I', [[0,5],[1,5],[2,5],[3,5],[4,5]]),
-    fixedPiece('F', [[1,2],[2,1],[2,2],[2,3],[3,3]]),
-  ]),
-  empty: [[3,2],[4,2]], oddRows: [], oddCols: [], rings: false, status: '',
-};
 const PUZZLE_3 = {
   title: 'Tutorial 2', rows: 6, cols: 6,
   blocked: [[0,5],[3,3],[3,5],[4,3]],
@@ -441,6 +446,26 @@ const PUZZLE_3 = {
     fixedPiece('Y', [[4,2],[5,0],[5,1],[5,2],[5,3]]),
   ],
   pieces: [ trayPiece('F', [[0,1],[0,2],[1,0],[1,1],[2,1]]), trayPiece('N', [[0,0],[1,0],[2,0],[2,1],[3,1]]) ],
+};
+// PUZZLE_3 solved (its only solution, from solver.js), shown again on the
+// next slide, so it's there even after a refresh on that slide
+const PUZZLE_3_SOLVED = {
+  pieces: PUZZLE_3.fixedPieces.concat([
+    fixedPiece('F', [[1,3],[2,2],[2,3],[2,4],[3,2]]),
+    fixedPiece('N', [[0,2],[1,1],[1,2],[2,1],[3,1]]),
+  ]),
+  empty: [[0,1],[4,1]], oddRows: [], oddCols: [], rings: false, status: '',
+};
+// The empty-spaces puzzle: its "pieces" are four single empty spaces
+// (drawn dark, like an empty space), and the two permanent ones count with
+// them (piecesAreEmptySpaces, see game.js). Many answers work, e.g.
+// (1,2) (3,4) (5,2) (5,4).
+const EMPTY_SPACE_COLOR = '#241f1c';   // [COLORS] the page background, like a dark empty space
+const PUZZLE_E = {
+  title: 'Tutorial empty spaces', rows: 6, cols: 6,
+  blocked: [[1,1],[3,1]],
+  piecesAreEmptySpaces: true,
+  pieces: [1,2,3,4].map(i=>({ name: 'E'+i, color: EMPTY_SPACE_COLOR, cells: [[0,0]] })),
 };
 const PUZZLE_4 = {
   title: 'Tutorial 3', rows: 6, cols: 6,
@@ -560,37 +585,62 @@ function playDont(svg){
      boardRight        a note beside the board (no glow)
      bigNoteGlow       the orange "Make sure…" note glows extra-strongly for a
                        few seconds as soon as the slide opens
-     hintWhenInside    piece names: once ALL of them are placed inside the
-                       dotted outline (a wrong guess), a glowing Hint button
+     hintWhenUneven    once every piece is placed with no rule broken but the
+                       rows/columns aren't all even, a glowing Hint button
                        appears under the orange note (see showHint)
-     countAnimation    on solving, count each row and column; Next waits for it
-     solvedNote        a line added beside the board once it's solved      */
+     hintAfterMs       or: the Hint button appears after this long on the slide
+     hintText          what the Hint says
+     countAnimation    on solving, count the blocks in each row and column;
+                       Next waits for it
+     explainEmpty      after counting, a note beside the board explains empty
+                       spaces and permanent empty spaces while they glow
+     quiet             (with tiling) the previous slide's solved board stays
+                       exactly where it was; the text fades, the pieces fade
+                       away, and the empty spaces are counted
+     solvedNote        a line added beside the board once it's solved
+     solvedCard        it pops in inside a green box                          */
+const ROTATE_STEPS = [
+  { html: (TOUCH ? 'Tap a piece to ' : 'Click a piece or press <kbd>R</kbd> to ')
+          + '<span class="nobr"><b>rotate</b> it.<span class="arrow">&#10148;</span></span>', until: 'rotate' },
+  { html: 'Then drag it onto the grid.', until: 'place' },
+];
+const REFLECT_STEPS = [
+  { html: (TOUCH ? 'Tap a piece twice to ' : 'Double-click a piece or press <kbd>E</kbd> to ')
+          + '<span class="nobr"><b>reflect</b> it.<span class="arrow">&#10148;</span></span>', until: 'reflect' },
+  { html: 'Then drag it onto the grid.', until: 'place' },
+];
+const HINT_BUTTON = '<button type="button" class="hint-btn reveal-later" id="hint-btn">Hint</button>';
 const SLIDES = [
   { kind: 'intro' },
-  { kind: 'play', puzzle: PUZZLE_2,
-    steps: [
-      { html: (TOUCH ? 'Tap a piece to ' : 'Click a piece or press <kbd>R</kbd> to ')
-              + '<span class="nobr"><b>rotate</b> it.<span class="arrow">&#10148;</span></span>', until: 'rotate' },
-      { html: 'Then drag it onto the grid.', until: 'place' },
-    ] },
-  // Slide 2's solved board again, dimmed, with a note about empty spaces
-  { kind: 'recap', puzzle: PUZZLE_2, tiling: PUZZLE_2_SOLVED },
+  { kind: 'play', puzzle: PUZZLE_2, steps: ROTATE_STEPS,
+    countAnimation: true,
+    solvedNote: 'Solved! Every row and column has an even number of blocks.' },
   { kind: 'dont' },
-  { kind: 'play', puzzle: PUZZLE_3,
-    steps: [
-      { html: (TOUCH ? 'Tap a piece twice to ' : 'Double-click a piece or press <kbd>E</kbd> to ')
-              + '<span class="nobr"><b>reflect</b> it.<span class="arrow">&#10148;</span></span>', until: 'reflect' },
-      { html: 'Then drag it onto the grid.', until: 'place' },
-    ],
-    boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.' },
+  { kind: 'play', puzzle: PUZZLE_3, steps: REFLECT_STEPS,
+    boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.',
+    countAnimation: true, explainEmpty: true },
+  // The same solved board, with the pieces taken away. (It keeps slide 4's
+  // steps, invisible, so the board stays exactly where it was.)
+  { kind: 'play', puzzle: PUZZLE_3, tiling: PUZZLE_3_SOLVED, steps: REFLECT_STEPS, quiet: true },
+  { kind: 'play', puzzle: PUZZLE_E,
+    boardRight: `<p class="hint" style="margin:0 0 8px">Before re-introducing the blocks, try this parity puzzle.</p>
+      <div class="big-note" id="big-note">Drag the four empty spaces onto the grid so that every row and column has an even number of empty spaces in it.</div>
+      <p class="hint">(0 is an even number.)</p>` + HINT_BUTTON,
+    bigNoteGlow: true,
+    hintAfterMs: 3 * 60 * 1000,
+    // (The user's notes stopped mid-sentence after "two of the"; the end of
+    // the 4th sentence and the last sentence are Claude's, to be checked.)
+    hintText: 'There are a total of six empty spaces, two of which are permanent. A row or column could at most include six empty spaces, and at the very least 0. If we place all of the empty spaces in a column of six, the rows will all have an odd number of empty spaces. If one of the rows or columns has four empty spaces in it, two of the lines crossing it will be left with only one. So every row and column needs either 0 or 2 empty spaces.',
+    solvedNote: 'Great work! Keep in mind, this trick will only work with an even grid: 6 &times; 6, 8 &times; 8, etc.',
+    solvedCard: true },
   { kind: 'play', puzzle: PUZZLE_4,
     // The Hint button sits under the orange note, hidden until it's needed
-    boardRight: `<div class="big-note" id="big-note">Make sure there is an even number of blocks in each row AND column.</div>
-      <button type="button" class="hint-btn reveal-later" id="hint-btn">Hint</button>`,
+    boardRight: `<div class="big-note" id="big-note">Make sure there is an even number of blocks in each row AND column.</div>` + HINT_BUTTON,
     bigNoteGlow: true,
-    // Every way to fit these pieces with W and P inside the outline fails
-    // (checked with solver.js), so that's when the hint is offered
-    hintWhenInside: ['W', 'P'],
+    // The hint is offered once every piece is placed (no rule broken) but
+    // the rows and columns aren't all even
+    hintWhenUneven: true,
+    hintText: 'Every row and every column in this grid is even (6 squares long), so each one needs an even number of empty spaces. Before continuing, visualize where else empty spaces can go, and then try to fit the pieces to account for that.',
     countAnimation: true,
     solvedNote: 'Every row and column is even. You’re ready to play!' },
 ];
@@ -651,12 +701,13 @@ function showSlide(i){
   const s = SLIDES[i];
   $('intro').hidden = s.kind !== 'intro';
   $('dont-slide').hidden = s.kind !== 'dont';
-  const onBoard = s.kind === 'play' || s.kind === 'recap';   // slides that show the game's board
+  const onBoard = s.kind === 'play';   // slides that show the game's board
   $('play').hidden = !onBoard;
-  $('play').classList.toggle('recap', s.kind === 'recap');
-  $('board-outer').classList.remove('dim');
+  $('play').classList.toggle('quiet', !!s.quiet);
+  $('pieces-layer').classList.remove('gone');
   hideHint();
-  $('tut-overlay').innerHTML = '';
+  // (A quiet slide fades out the previous slide's notes and counts instead)
+  if(!s.quiet){ $('tut-overlay').innerHTML = ''; ['tut-overlay', 'n-boardr'].forEach(id=>$(id).classList.remove('fading')); }
   try { sessionStorage.setItem(SLIDE_KEY, String(i)); } catch(e){}   // so a refresh comes back here
   if(s.kind === 'intro') renderIntro();
   if(s.kind === 'dont') showDontSlide();
@@ -667,16 +718,17 @@ function showSlide(i){
     hintOffered = false;
     renderSteps(s);
     $('n-trayr').innerHTML = '';
-    $('n-boardr').innerHTML = s.boardRight || '';
+    if(!s.quiet) $('n-boardr').innerHTML = s.boardRight || '';
     $('n-boardl').innerHTML = '';
     $('n-below').innerHTML = '';
     if(s.bigNoteGlow){ $('big-note').classList.add('callout', 'strong'); later(BIG_GLOW_DELAY_MS, glowBigNote); }
+    if(s.hintAfterMs) later(s.hintAfterMs, offerHint);
     if(s.tiling) setViewTiling(s.tiling);          // (a finished board to look at, not play)
     setGameMode(s.tiling ? 'view' : 'play');
     loadPuzzle(s.puzzle);
     lightSteps();             // (now that it's in play mode, the first step glows)
   }
-  if(s.kind === 'recap') showRecap();
+  if(s.quiet) showEmptyCount();
   renderDots();
   updateNext();
   $('play').parentElement.scrollTop = 0;
@@ -717,26 +769,25 @@ function glowBigNote(){
   later(BIG_GLOW_MS, ()=>$('big-note').classList.remove('lit'));
 }
 
-/* ── Final slide: the Hint ──
-   Once every piece in hintWhenInside sits inside the dotted outline (the
-   wrong guess most people make), a glowing Hint button fades in under the
-   orange note. It opens a spotlight: the page goes dark except the
-   permanent empty spaces, with an explanation. */
+/* ── Slides 6 and 7: the Hint ──
+   A glowing Hint button fades in under the orange note: on slide 6 after
+   3 minutes (hintAfterMs), on slide 7 once every piece is placed with no
+   rule broken but the rows/columns aren't all even (hintWhenUneven). It
+   opens a spotlight: the page goes dark except the permanent empty
+   spaces, with an explanation (hintText). */
 let hintOffered = false;
 function checkHint(){
-  const s = SLIDES[current];
-  if(!s.hintWhenInside || hintOffered || gameMode !== 'play' || !puzzle) return;
-  const outline = new Set((puzzle.hintOutline || []).map(([r,c])=>r+','+c));
-  const allInside = s.hintWhenInside.every(name=>{
-    const p = placedPieces.find(q=>q.name === name && !q.locked);
-    return p && p.cells.every(([r,c])=>outline.has((p.row+r)+','+(p.col+c)));
-  });
-  if(!allInside) return;
+  // (game.js gives the board's frame the 'uneven' glow exactly then)
+  if(SLIDES[current].hintWhenUneven && puzzle && boardFull() && $('board-outer').classList.contains('uneven')) offerHint();
+}
+function offerHint(){
+  if(hintOffered || gameMode !== 'play') return;
   hintOffered = true;
   $('hint-btn').classList.add('shown', 'lit');
 }
 function showHint(){
   $('hint-btn').classList.remove('lit');
+  $('spot-text').textContent = SLIDES[current].hintText;
   $('spot').hidden = false;
   const W = innerWidth, H = innerHeight, pad = 5;
   const holes = puzzle.blocked.map(([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`))
@@ -768,54 +819,90 @@ $('spot-ok').onclick = hideHint;
 $('spot').onclick = e=>{ if(!$('spot-card').contains(e.target)) hideHint(); };   // tapping the dark area closes it too
 
 // A tutorial puzzle got solved: freeze it and darken the empty spaces;
-// then show the empty-space note, run the counting animation, or light up Next
+// then run the counting animation, or show the solved note and light up Next
 gameHooks.onSolved = ()=>{
   const covered = new Set();
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
   const empty = [];
-  for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++)
+  // (On the empty-spaces puzzle the placed squares ARE the empty spaces)
+  if(!puzzle.piecesAreEmptySpaces) for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++)
     if(!covered.has(r+','+c) && !isBlocked(r,c) && inBounds(r,c)) empty.push([r,c]);
   const s = SLIDES[current];
-  // On the counting slide the column counts sit above the board, so no "Solved!" there
   solvedView[current] = { pieces: placedPieces.map(p=>({ name:p.name, color:p.color, cells:p.cells, row:p.row, col:p.col })),
-                          oddRows: [], oddCols: [], empty, rings: false,
-                          status: s.countAnimation ? '' : 'Solved!', good: true };
+                          oddRows: [], oddCols: [], empty, rings: false, status: '', good: true };
   setViewTiling(solvedView[current]);
   setGameMode('view');
   lightSteps();                                         // (no step glows once it's solved)
   if($('big-note')) $('big-note').classList.remove('lit');
+  if($('hint-btn')) $('hint-btn').hidden = true;     // (gives its space to the solved note)
   hideHint();
-  // (On the counting slide, the solved note waits until the counting is done)
-  if(s.solvedNote && !s.countAnimation) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${s.solvedNote}</p>`);
+  // (The solved note waits until any counting is done)
   if(s.countAnimation) drawCounts(true);
-  else markDone();
+  else { addSolvedNote(); markDone(); }
 };
+function addSolvedNote(){
+  const s = SLIDES[current];
+  if(!s.solvedNote) return;
+  const note = `<p class="solved-note">${s.solvedNote}</p>`;
+  $('n-boardr').insertAdjacentHTML('beforeend', s.solvedCard ? `<div class="great">${note}</div>` : note);
+}
 
-/* ── Slide 3: empty spaces ──
-   Slide 2's solved board is back. It dims, then a highlighted note appears
-   under it one line at a time, and the squares each line is about glow on
-   the board: first the empty spaces, then the permanent ones, then both
-   together (they count the same). Then Next lights up. */
-const RECAP_DIM_MS = 400;      // the board starts to dim
-const RECAP_LINE_MS = [1000, 2600, 4200];   // when each line of the note appears
-function showRecap(){
+/* ── Slide 4: empty spaces ──
+   After the reflect puzzle's blocks are counted, its note beside the board
+   is replaced by a highlighted one that appears a line at a time, while
+   the squares each line is about glow: first the empty spaces, then the
+   permanent ones. Then Next lights up. */
+const EXPLAIN_LINE_MS = [300, 2100];   // when each line of the note appears
+const EXPLAIN_DONE_MS = 3900;          // the glow ends and Next lights up
+function explainEmptySpaces(){
   const card = document.createElement('div');
   card.className = 'recap-card callout';
   card.innerHTML = `
-    <div class="recap-item"><p>The squares left over are <b>empty spaces</b>. They turn dark once all of the pieces are on the grid.</p></div>
-    <div class="recap-item"><p><b>Permanent empty spaces</b> are marked with a red X. They can&rsquo;t be moved, and pieces can&rsquo;t be placed on them.</p></div>
-    <p class="recap-item recap-tip">When you check rows and columns for an even number of empty spaces (often a good strategy), count both kinds exactly the same. The only difference is that you find empty spaces, and permanent ones come with the puzzle.</p>`;
-  const [one, two, tip] = card.querySelectorAll('.recap-item');
+    <div class="recap-item"><p>These dark squares are the <b>empty spaces</b> not covered by the pieces.</p></div>
+    <div class="recap-item"><p>These dark squares with X&rsquo;s on them are <b>permanent empty spaces</b>, which aren&rsquo;t allowed to be covered by the pieces.</p></div>`;
+  const [one, two] = card.querySelectorAll('.recap-item');
   one.prepend(squareSvg(false));
   two.prepend(squareSvg(true));
-  $('n-below').appendChild(card);
-  const emptyRings = squareRings(SLIDES[current].tiling.empty), permRings = squareRings(puzzle.blocked);
+  $('n-boardr').innerHTML = '';
+  $('n-boardr').appendChild(card);
+  const emptyRings = squareRings(solvedView[current].empty), permRings = squareRings(puzzle.blocked);
   const glow = (rings, on)=>rings.forEach(el=>el.classList.toggle('on', on));
-  later(RECAP_DIM_MS, ()=>$('board-outer').classList.add('dim'));
-  later(RECAP_LINE_MS[0], ()=>{ card.classList.add('shown', 'lit'); one.classList.add('shown'); glow(emptyRings, true); });
-  later(RECAP_LINE_MS[1], ()=>{ two.classList.add('shown'); glow(emptyRings, false); glow(permRings, true); });
-  later(RECAP_LINE_MS[2], ()=>{ tip.classList.add('shown'); glow(emptyRings, true); card.classList.remove('lit'); markDone(); });
+  later(EXPLAIN_LINE_MS[0], ()=>{ card.classList.add('shown', 'lit'); one.classList.add('shown'); glow(emptyRings, true); });
+  later(EXPLAIN_LINE_MS[1], ()=>{ two.classList.add('shown'); glow(emptyRings, false); glow(permRings, true); });
+  later(EXPLAIN_DONE_MS, ()=>{ glow(permRings, false); card.classList.remove('lit'); markDone(); });
 }
+
+/* ── Slide 5: count the empty spaces ──
+   Slide 4's solved board stays where it is. The text fades, then the
+   pieces fade away, leaving only the empty spaces (dark squares and X's).
+   A note appears beside the board, then each row and column's empty
+   spaces are counted. Then Next lights up. */
+const EMPTY_FADE_MS = 600;     // the text has faded; the pieces start to fade
+const EMPTY_NOTE_MS = 1900;    // the note appears
+const EMPTY_COUNT_MS = 3400;   // the counting starts
+function showEmptyCount(){
+  $('n-boardr').classList.add('fading');
+  $('tut-overlay').classList.add('fading');
+  later(EMPTY_FADE_MS, ()=>{
+    $('tut-overlay').innerHTML = '';
+    $('tut-overlay').classList.remove('fading');
+    $('n-boardr').innerHTML = '';
+    $('n-boardr').classList.remove('fading');
+    $('pieces-layer').classList.add('gone');
+  });
+  later(EMPTY_NOTE_MS, ()=>{
+    const card = document.createElement('div');
+    card.className = 'recap-card';
+    card.innerHTML = `
+      <p class="recap-item">When you remove the pieces from the solution, you can clearly see that there is an even number of <b>empty spaces</b> in every row and column.</p>
+      <div class="recap-item recap-split"><span class="recap-pair"></span><p>When counting empty spaces, count X&rsquo;s and dark squares together.</p></div>`;
+    card.querySelector('.recap-pair').append(squareSvg(false, 34), squareSvg(true, 34));
+    $('n-boardr').appendChild(card);
+    requestAnimationFrame(()=>{ card.classList.add('shown'); card.querySelectorAll('.recap-item').forEach(el=>el.classList.add('shown')); });
+  });
+  later(EMPTY_COUNT_MS, ()=>drawCounts(true));
+}
+
 // A glowing outline around each of these board squares (hidden until .on)
 function squareRings(cells){
   const svg = $('tut-overlay');
@@ -853,18 +940,24 @@ function showDontSlide(){
   later(START + figs.length*STEP, markDone);
 }
 
-/* ── Final slide: count the blocks in every row, then every column ──
-   Each line's blocks flash green one line at a time; its count appears
-   (right of rows, above columns) and stays. Then Finish lights up. With
+/* ── Counting: the blocks in every row, then every column ──
+   (Slides 2, 4 and 7 once solved; slide 5 counts the empty spaces instead.)
+   Each line's squares flash green one line at a time; its count appears
+   (right of rows, above columns) and stays. Then Next lights up. With
    animate = false, just draw all the counts. */
+function countedSquares(){
+  const s = SLIDES[current], set = new Set();
+  if(s.quiet) s.tiling.empty.concat(puzzle.blocked).forEach(([r,c])=>set.add(r+','+c));
+  else solvedView[current].pieces.forEach(p=>p.cells.forEach(([r,c])=>set.add((p.row+r)+','+(p.col+c))));
+  return set;
+}
 function drawCounts(animate){
   const svg = $('tut-overlay');
   svg.innerHTML = '';
   const w = puzzle.cols*CELL + (puzzle.cols-1)*GAP, h = puzzle.rows*CELL + (puzzle.rows-1)*GAP;
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   const pad = cssPx('--board-pad');
-  const filled = new Set();
-  solvedView[current].pieces.forEach(p=>p.cells.forEach(([r,c])=>filled.add((p.row+r)+','+(p.col+c))));
+  const filled = countedSquares();
   const lines = [];
   for(let r=0; r<puzzle.rows; r++){
     const cells = []; for(let c=0; c<puzzle.cols; c++) if(filled.has(r+','+c)) cells.push([r,c]);
@@ -892,9 +985,8 @@ function drawCounts(animate){
     });
   });
   later(at(lines.length) + 150, ()=>{
-    const note = SLIDES[current].solvedNote;
-    if(note) $('n-boardr').insertAdjacentHTML('beforeend', `<p class="solved-note">${note}</p>`);
-    markDone();
+    if(SLIDES[current].explainEmpty) explainEmptySpaces();
+    else { addSolvedNote(); markDone(); }
   });
 }
 
@@ -925,7 +1017,8 @@ $('text-size-btn').onclick = ()=>{
   showLargeText();
   if(!$('play').hidden){
     setupBoard(); renderAll();                       // re-fit the board to the new space
-    if(gameMode === 'view' && SLIDES[current].countAnimation && done[current]) drawCounts(false);   // re-place the counts
+    const s = SLIDES[current];
+    if(gameMode === 'view' && (s.countAnimation || s.quiet) && done[current]) drawCounts(false);   // re-place the counts
   }
 };
 showLargeText();
