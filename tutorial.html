@@ -186,6 +186,20 @@
      Slide 5 keeps the board exactly where it was: the text above it only
      fades out (it keeps its space), and the pieces fade away. */
   .play.quiet .n-trayl, .play.quiet .tray, .play.quiet .status { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+  /* Slide 7: the empty spaces to drag sit a little lower, bigger, on a
+     rectangle labelled "Empty spaces" (html.big-tray while it's showing) */
+  html.big-tray { --tray-cell: 30px; }
+  @media (max-width: 480px) { html.big-tray { --tray-cell: 24px; } }
+  .play.boxed-tray .tray {
+    position: relative; margin-top: 30px; padding: 10px 14px; justify-self: center; width: fit-content;
+    background: rgba(255, 255, 255, 0.07); border: 1px solid var(--color-cell-border); border-radius: 12px;   /* [COLORS] */
+  }
+  .play.boxed-tray .tray::before {
+    content: attr(data-label); position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 5px;
+    text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--color-text-dim); white-space: nowrap;
+  }
+  /* Slides 5–6: the note sits a little further from the row counts */
+  @media (min-width: 761px) { .n-boardr .recap-card { margin-left: 16px; } }
   /* While a solved board's rows and columns are counted, the other text fades */
   .play.counting .n-trayl, .play.counting .status, .play.counting .n-boardl, .play.counting .n-below { opacity: 0; transition: opacity 0.5s; }
   .fading { opacity: 0; transition: opacity 0.5s; }
@@ -595,6 +609,9 @@ function playDont(svg){
                        rows/columns aren't all even, a glowing Hint button
                        appears under the orange note (see showHint)
      hintAfterMs       or: the Hint button appears after this long on the slide
+     noGlow            nothing on the slide glows (not even the Hint button)
+     trayLabel         the pieces sit a little lower and bigger, on a
+                       rectangle with this label above it
      hintText          what the Hint says
      countAnimation    on solving, count the blocks in each row and column
                        (all other text fades first); Next waits for it
@@ -626,7 +643,8 @@ const SLIDES = [
   { kind: 'dont' },
   { kind: 'play', puzzle: PUZZLE_3, steps: REFLECT_STEPS,
     boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.',
-    countAnimation: true },
+    countAnimation: true,
+    solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   // Slide 4's solved board again, exactly where it was (it keeps slide 4's
   // steps, invisible, so nothing moves): first the explanation of empty
   // spaces on its own, then the pieces taken away and the empty spaces counted
@@ -636,7 +654,8 @@ const SLIDES = [
     boardRight: `<p class="hint" style="margin:0 0 8px">Before re-introducing the blocks, try this parity puzzle.</p>
       <div class="big-note" id="big-note">Drag the four empty spaces onto the grid so that every row and column has an even number of empty spaces in it.</div>
       <p class="hint">(0 is an even number.)</p>` + HINT_BUTTON,
-    bigNoteGlow: true,
+    trayLabel: 'Empty spaces',
+    noGlow: true,
     hintAfterMs: 3 * 60 * 1000,
     // (The user's notes stopped mid-sentence after "two of the"; the end of
     // the 4th sentence and the last sentence are Claude's, to be checked.)
@@ -650,8 +669,8 @@ const SLIDES = [
     // the rows and columns aren't all even
     hintWhenUneven: true,
     hintText: `<ol>
-      <li>The dotted area must be completely filled with two pieces&mdash;no empty spaces&mdash;because there is no way to fit just one piece in the dotted area, and the other three in the rest of the grid.</li>
-      <li>There needs to be an even number of empty spaces in every row and every column, so looking at the permanent empty space, where do some of the empty spaces have to go?</li></ol>`,
+      <li>The dotted area must contain two pieces and no empty spaces.</li>
+      <li>Knowing this about the dotted area, look at the permanent empty space. Where do empty spaces have to be placed so that there is an even number of empty spaces in every row and column?</li></ol>`,
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column is even. You&rsquo;re ready to play!' },
 ];
@@ -716,6 +735,10 @@ function showSlide(i){
   $('play').hidden = !onBoard;
   $('play').classList.toggle('quiet', !!s.quiet);
   $('play').classList.remove('counting');
+  // (Before the puzzle loads, so the board sizes itself to the space left)
+  $('play').classList.toggle('boxed-tray', !!s.trayLabel);
+  document.documentElement.classList.toggle('big-tray', !!s.trayLabel);
+  $('tray').dataset.label = s.trayLabel || '';
   $('pieces-layer').classList.remove('gone');
   hideHint();
   // (A quiet slide fades out the previous slide's notes and counts instead)
@@ -795,7 +818,8 @@ function checkHint(){
 function offerHint(){
   if(hintOffered || gameMode !== 'play') return;
   hintOffered = true;
-  $('hint-btn').classList.add('shown', 'lit');
+  $('hint-btn').classList.add('shown');
+  if(!SLIDES[current].noGlow) $('hint-btn').classList.add('lit');
 }
 function showHint(){
   $('hint-btn').classList.remove('lit');
@@ -886,8 +910,8 @@ function showQuiet(s){
    The only thing on the slide: a highlighted note beside the board that
    appears a line at a time, while the squares each line is about glow:
    first the empty spaces, then the permanent ones. Then Next lights up. */
-const EXPLAIN_LINE_MS = [300, 2100];   // when each line of the note appears
-const EXPLAIN_DONE_MS = 3900;          // the glow ends and Next lights up
+const EXPLAIN_LINE_MS = [300, 3100];   // when each line of the note appears
+const EXPLAIN_DONE_MS = 5900;          // the glow ends and Next lights up
 function explainEmptySpaces(){
   const card = document.createElement('div');
   card.className = 'recap-card callout';
@@ -911,7 +935,7 @@ function explainEmptySpaces(){
    empty spaces (dark squares and X's). A note appears beside the board,
    then each row and column's empty spaces are counted. Then Next lights up. */
 const EMPTY_NOTE_MS = 1300;    // the note appears (after the pieces start to fade)
-const EMPTY_COUNT_MS = 2800;   // the counting starts
+const EMPTY_COUNT_MS = 4800;   // the counting starts
 function showEmptyCount(){
   $('pieces-layer').classList.add('gone');
   later(EMPTY_NOTE_MS, ()=>{
@@ -953,8 +977,8 @@ function showDontSlide(){
   // and only then do the pictures start animating
   const heading = $('dont-slide').querySelector('h2');
   heading.className = 'callout lit';
-  const READ = 1600;            // ms the heading stays lit
-  const START = READ + 300;     // first animation starts as the heading's glow fades
+  const READ = 1070;            // ms the heading stays lit
+  const START = READ + 200;     // first animation starts as the heading's glow fades
   later(READ, ()=>heading.classList.remove('lit'));
   const STEP = 2000;   // ms per picture (time to read each one)
   figs.forEach((f, i)=>{

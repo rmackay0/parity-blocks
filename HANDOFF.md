@@ -88,6 +88,16 @@ previous project; don't push there.
   sandbox's solution views. Tutorial keeps its own `COLOR` map (F is now
   blue).
 
+**Tutorial timing/look tweaks (2026-10-23, latest):** slide 3's pictures
+start 33% sooner (heading lit 1.07 s, first picture 1.27 s); slide 4 ends
+with the same "Solved!" badge as slide 2; slide 5 holds each kind of
+empty space 1 s longer; slide 6 waits 2 s more before counting
+(`EMPTY_COUNT_MS` 4800) and its note sits 16px further from the row
+counts (laptop); slide 7 has nothing glowing (`noGlow`, even the Hint
+button) and its empty spaces are bigger (30px / 24px phones,
+`html.big-tray`) on a labelled box ("Empty spaces", `trayLabel`).
+Final hint shortened to the user's two new points.
+
 **Tutorial now 8 slides (2026-10-23, later):** the empty-spaces
 explanation is its own slide 5 (`quiet` + `explainEmpty`: slide 4's
 board, same place, only that note); slide 6 is the empty-space count

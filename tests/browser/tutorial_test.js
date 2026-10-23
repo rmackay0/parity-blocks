@@ -86,9 +86,13 @@ async function placePiece(page, frame, name, target, touch){
     await frame.click('#next-btn');
 
     // Slide 3: "Don't place a piece over" animations
-    await page.waitForTimeout(1000);
-    console.log(`[${label}] slide 3 heading glowing at 1 s: ${await frame.evaluate(()=>document.querySelector('#dont-slide h2').classList.contains('lit'))} (expected true)`);
-    await page.waitForTimeout(10600);
+    const dontState = ()=>frame.evaluate(()=>({ headingLit: document.querySelector('#dont-slide h2').classList.contains('lit'),
+                                                  signs: document.querySelectorAll('#dont .rb-nomark:not(.hide)').length }));
+    await page.waitForTimeout(600);
+    console.log(`[${label}] slide 3 at 0.6 s:`, JSON.stringify(await dontState()), '(expected heading lit, 0 signs)');
+    await page.waitForTimeout(1500);
+    console.log(`[${label}] slide 3 at 2.1 s:`, JSON.stringify(await dontState()), '(expected heading not lit, 1 sign: first picture starts at 1.27 s now)');
+    await page.waitForTimeout(7900);
     console.log(`[${label}] slide 3 after animations: Next ready ${await nextReady()}, signs showing ${await frame.locator('#dont .rb-nomark:not(.hide)').count()} of 4`);
     await page.screenshot({ path:`tut-${label}-3-done.png` });
     // Back to slide 2: it starts over, but Next stays green
@@ -113,7 +117,8 @@ async function placePiece(page, frame, name, target, touch){
     await page.waitForTimeout(1500);
     console.log(`[${label}] slide 4 counting at 1.5 s: step text opacity ${await textOpacity()}, right note "${(await frame.textContent('#n-boardr')).trim()}" (expected 0, "")`);
     await page.waitForTimeout(5500);
-    console.log(`[${label}] slide 4 counted: "${await counts()}" (expected 4 6 6 4 4 6 | 6 4 6 4 6 4) | Next ready ${await nextReady()} (expected true) | right note "${(await frame.textContent('#n-boardr')).trim()}" (expected "")`);
+    console.log(`[${label}] slide 4 counted: "${await counts()}" (expected 4 6 6 4 4 6 | 6 4 6 4 6 4) | Next ready ${await nextReady()} (expected true) | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())}`);
+    await page.waitForTimeout(1200);
     await page.screenshot({ path:`tut-${label}-4-done.png` });
     const board4 = await boardAt();
     await frame.click('#next-btn');
@@ -128,8 +133,10 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] slide 5 at 1.3 s:`, JSON.stringify(await explainState()), `(expected 1 line, 2 glowing, 0 counts) | board moved ${board4 !== await boardAt()} (expected false) | Next ready ${await nextReady()} (expected false)`);
     await page.screenshot({ path:`tut-${label}-5-line1.png` });
     await page.waitForTimeout(1800);
-    console.log(`[${label}] slide 5 at 3.1 s:`, JSON.stringify(await explainState()), '(expected 2 lines, 4 glowing: the Xs)');
-    await page.waitForTimeout(1600);
+    console.log(`[${label}] slide 5 at 3.1 s:`, JSON.stringify(await explainState()), '(expected still 1 line, 2 glowing: held a second longer)');
+    await page.waitForTimeout(1000);
+    console.log(`[${label}] slide 5 at 4.1 s:`, JSON.stringify(await explainState()), '(expected 2 lines, 4 glowing: the Xs)');
+    await page.waitForTimeout(2600);
     console.log(`[${label}] slide 5 done:`, JSON.stringify(await explainState()), `(expected 2 lines, 0 glowing) | note ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())} | step text opacity ${await textOpacity()} (expected 0) | Next ready ${await nextReady()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-5-done.png` });
     await frame.click('#next-btn');
@@ -146,6 +153,8 @@ async function placePiece(page, frame, name, target, touch){
     await page.waitForTimeout(2900);
     console.log(`[${label}] slide 6 at 3 s:`, JSON.stringify(await quietState()), '(expected steps 0, pieces 0, 2 dark, the new note)');
     await page.screenshot({ path:`tut-${label}-6-note.png` });
+    await page.waitForTimeout(2000);
+    console.log(`[${label}] slide 6 at 5 s: counts ${await frame.locator('#tut-overlay .count').count()} (expected 0: counting now starts at 5.3 s)`);
     await page.waitForTimeout(7500);
     console.log(`[${label}] slide 6 done: counts "${await counts()}" (expected 2 0 0 2 2 0 | 0 2 0 2 0 2) | Next ready ${await nextReady()} | board moved ${board4 !== await boardAt()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-6-done.png` });
@@ -155,13 +164,14 @@ async function placePiece(page, frame, name, target, touch){
     const shown = id => frame.evaluate(i=>document.getElementById(i).classList.contains('shown'), id);
     await page.waitForTimeout(400);
     console.log(`[${label}] slide 7: tray pieces ${await frame.locator('.tray-slot').count()} (expected 4) | note ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())} | Hint shown ${await shown('hint-btn')} (expected false)`);
+    console.log(`[${label}]   anything glowing: ${await frame.locator('#play .lit').count()} (expected 0) | tray label "${await frame.evaluate(()=>getComputedStyle(document.getElementById('tray'), '::before').content)}" | empty space size ${await frame.evaluate(()=>Math.round(document.querySelector('.tray-slot .piece-box').getBoundingClientRect().width))}px`);
     await page.screenshot({ path:`tut-${label}-7-start.png` });
     for(const [name, target] of Object.entries(TARGETS.Ewrong)) await placePiece(page, frame, name, target, touch);
     await page.waitForTimeout(300);
     console.log(`[${label}] wrong try: frame glows red ${await frame.evaluate(()=>document.getElementById('board-outer').classList.contains('uneven'))} (expected true) | squares turned dark ${await frame.locator('.board-cell.gap-dark').count()} (expected 0) | Next ready ${await nextReady()} (expected false)`);
     // (The Hint appears after 3 minutes; call it straight away here)
     await frame.evaluate(()=>offerHint());
-    console.log(`[${label}] after 3 minutes: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')}`);
+    console.log(`[${label}] after 3 minutes: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')} (expected true, false)`);
     await frame.click('#hint-btn'); await page.waitForTimeout(500);
     console.log(`[${label}] Hint opened: spotlit squares ${await frame.locator('#spot-svg .spot-ring').count()} (expected 2) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).slice(0, 45))}`);
     await page.screenshot({ path:`tut-${label}-7-hint.png` });
