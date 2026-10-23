@@ -76,9 +76,9 @@
 
 <!-- [CONTENT] Shown when the puzzle is solved -->
 <div class="popup-backdrop" id="solved-popup" hidden>
-  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="solved-title">
-    <h2 id="solved-title">Solved!</h2>
-    <p id="solved-time"></p>
+  <div class="popup" role="dialog" aria-modal="true" aria-label="Solved">
+    <!-- The solved badge: checkmark animation + jingle (celebrate.js) -->
+    <div class="solved-win" id="solved-win"></div>
     <div class="popup-buttons">
       <a href="index.html">Menu</a>
       <button type="button" class="secondary" id="solved-close">Close</button>
@@ -120,6 +120,7 @@
 <script src="published.js"></script>
 <script src="progress.js"></script>
 <script src="game.js"></script>
+<script src="celebrate.js"></script>
 <script>
 /* Which puzzle to play comes from the URL:
      play.html?level=easy|medium|hard   whatever is published for that
@@ -208,11 +209,11 @@ function restoreBoard(){
 }
 gameHooks.onSolved = time=>{
   const badge = document.getElementById('solved-badge');
-  badge.textContent = '✓ Solved in ' + time;
+  badge.replaceChildren(solvedBadge('Solved in ' + time));
   badge.hidden = false;
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
-  document.getElementById('solved-time').textContent = 'Your time: ' + time;
+  document.getElementById('solved-win').replaceChildren(solvedBadge('Solved!', 'Your time: ' + time, { animate: true, stack: true }));
   document.getElementById('solved-popup').hidden = false;
   if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime, saveKey);
 };

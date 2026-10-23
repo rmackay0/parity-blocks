@@ -70,7 +70,9 @@ function check(label, got, want){
     // 2. Solved: popup, "Solved in" where the pieces were, and the board is locked
     check('solved: popup shown', await visible('solved-popup'), true);
     await page.click('#solved-close'); await page.waitForTimeout(200);
-    check('solved: badge', await page.textContent('#solved-badge'), '✓ Solved in 0:00');
+    check('solved: badge', (await page.textContent('#solved-badge')).trim(), 'Solved in 0:00');
+    check('solved: badge has the checkmark', await page.locator('#solved-badge .win-icon').count(), 1);
+    check('solved: popup has the animated badge', await page.locator('#solved-win .win-badge.animate').count(), 1);
     check('solved: badge visible', await visible('solved-badge'), true);
     const before = await page.evaluate(()=>JSON.stringify(placedPieces.map(p=>[p.row, p.col, p.cells])));
     const piece = page.locator('.placed-piece .blk').first();      // (a piece's squares take the clicks)

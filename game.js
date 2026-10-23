@@ -102,6 +102,7 @@ function loadPuzzle(p, opts){
   const colors = pieceColors(p);
   p = Object.assign({}, p, { pieces: p.pieces.map(d=>Object.assign({}, d, { color: colors[d.name] })) });
   puzzle = p;
+  document.body.classList.toggle('empty-space-pieces', !!p.piecesAreEmptySpaces);   // (see game.css)
   dottedRegion = new Set((p.hintOutline || []).map(([r,c])=>r+','+c));
   removedSet = new Set((p.removed || []).map(([r,c])=>r+','+c));
   const names = new Set(p.pieces.map(d=>d.name));

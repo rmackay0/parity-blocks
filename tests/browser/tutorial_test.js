@@ -78,7 +78,7 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] slide 2 counting at 1.5 s: Next ready ${await nextReady()} (expected false), counts so far ${await frame.locator('#tut-overlay .count').count()}`);
     await page.screenshot({ path:`tut-${label}-2-counting.png` });
     await page.waitForTimeout(7500);
-    console.log(`[${label}] slide 2 done: counts "${await counts()}" (expected 4 6 6 4 4 6 | 4 6 4 6 4 6) | note ${JSON.stringify((await frame.textContent('#n-boardr')).trim())} | Next ready ${await nextReady()} | board moved ${board2 !== await boardAt()} (expected false)`);
+    console.log(`[${label}] slide 2 done: counts "${await counts()}" (expected 4 6 6 4 4 6 | 4 6 4 6 4 6) | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())} | Next ready ${await nextReady()} | board moved ${board2 !== await boardAt()} (expected false)`);
     await page.screenshot({ path:`tut-${label}-2-solved.png` });
     await frame.click('#next-btn');
 
@@ -160,7 +160,12 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] slide 6 again: pieces on grid ${await frame.evaluate(()=>placedPieces.length)}, Hint shown ${await shown('hint-btn')} (expected 0, false)`);
     for(const [name, target] of Object.entries(TARGETS.E)) await placePiece(page, frame, name, target, touch);
     await page.waitForTimeout(400);
-    console.log(`[${label}] slide 6 solved: Next ready ${await nextReady()} | message ${JSON.stringify((await frame.textContent('#n-boardr .great')).trim())} | dark squares ${await frame.locator('.board-cell.gap-dark').count()} (expected 0) | scroll needed ${await needsScroll()}px`);
+    console.log(`[${label}] slide 6 solved: Next ready ${await nextReady()} | badge ${JSON.stringify((await frame.textContent('#n-boardr .win-badge')).replace(/\s+/g,' ').trim())} | jingle playing ${await frame.evaluate(()=>!solvedAudio.paused)} | dark squares ${await frame.locator('.board-cell.gap-dark').count()} (expected 0) | scroll needed ${await needsScroll()}px`);
+    console.log(`[${label}] slide 6 colors (placed empty space vs permanent one):`, JSON.stringify(await frame.evaluate(()=>{
+      const look = el=>{ const s = getComputedStyle(el); return [s.backgroundColor, s.borderStyle, s.borderColor, s.borderRadius].join(' '); };
+      return { placed: look(document.querySelector('.placed-piece .piece-box')), permanent: look(document.querySelector('.board-cell.blocked')),
+               svgShown: getComputedStyle(document.querySelector('.placed-piece .piece-svg')).display !== 'none' };
+    })));
     await page.screenshot({ path:`tut-${label}-6-solved.png` });
     await frame.click('#next-btn');
 

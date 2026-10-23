@@ -88,6 +88,24 @@ previous project; don't push there.
   sandbox's solution views. Tutorial keeps its own `COLOR` map (F is now
   blue).
 
+**Solved badge + v6 tweaks (2026-10-23, "instructions for claude v6" PDF)**
+- `celebrate.js` (loaded by play.html + tutorial.html; styles "Solved
+  badge" in game.css): `solvedBadge(title, text, {animate, stack, plain})`
+  = green check circle + title + text in one box. `animate` plays
+  `assets/solved.mp3` (the user's jingle, was "Output 1-2.mp3") and
+  times the animation to it: circle 0.16 s, check draws 0.2–0.95 s,
+  "pressed" (shrinks) from 1.3 s, pops out + text on the big last note
+  (1.62 s). The first tap unlocks the sound silently (iPhones). Used for
+  every success message: tutorial slides 2, 6, 7 (`solvedTitle` +
+  `solvedNote`), the puzzle page's Solved popup (`#solved-win`, stacked)
+  and the "Solved in 2:31" badge (static). The sandbox keeps its old popup.
+- Slide 6's empty spaces look exactly like a permanent one (no X):
+  `body.empty-space-pieces` (set by loadPuzzle) hides the piece SVG and
+  styles `.piece-box` (new class from buildPieceShape) like `.blocked`.
+- New wording: slide 4's two lines, slide 5's "When counting empty
+  spaces, count these together.", the fun fact, and slide 7's hint (two
+  numbered points; `hintText` is now HTML).
+
 **Tutorial v6 (2026-10-22, "instructions for claude on parity blocks" PDF)**
 — 7 slides; see the comment at the top of tutorial.html. v5's
 empty-spaces slide is gone (and `PUZZLE_2_SOLVED`, `showRecap`, `.dim`).

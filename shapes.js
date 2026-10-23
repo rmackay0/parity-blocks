@@ -106,6 +106,7 @@ function buildPieceShape(cells, color, size, gap){
   const {rows, cols} = bounds(cells);
   const w = cols*size + (cols-1)*gap, h = rows*size + (rows-1)*gap;
   const box = document.createElement('div');
+  box.className = 'piece-box';
   box.style.position = 'relative';
   box.style.width = w + 'px';
   box.style.height = h + 'px';

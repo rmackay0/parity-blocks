@@ -133,12 +133,59 @@ body {
 .solved-badge {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0.04em;
-  color: var(--color-valid);
   animation: badgeIn 0.5s ease both;
 }
 .solved-badge[hidden] { display: none; }
+.solved-badge .win-badge { padding: 8px 16px 8px 10px; }
+.solved-badge .win-icon { width: 36px; height: 36px; }
 @keyframes badgeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ── Solved badge (celebrate.js): every success message ──
+   A green check in a circle, then a title and text, in one box. With
+   .animate it plays along with the jingle (assets/solved.mp3): the circle
+   pops in on the first note (0.16 s), the check draws over the first three
+   notes, it's "pressed" (shrinks) and pops back out on the big last note
+   (1.62 s), and the text slides in with it. */
+.win-badge {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px 12px 12px; border-radius: 14px; text-align: left;
+  background: rgba(111, 174, 90, 0.12); border: 2px solid rgba(111, 174, 90, 0.55);   /* [COLORS] */
+}
+.win-badge.plain { background: none; border: none; padding: 0; }
+.win-badge.stack { flex-direction: column; gap: 10px; text-align: center; background: none; border: none; padding: 0; }
+.win-icon { flex: 0 0 auto; width: 46px; height: 46px; overflow: visible; }
+.win-badge.stack .win-icon { width: 72px; height: 72px; }
+.win-circle { fill: var(--color-valid); transform-box: fill-box; transform-origin: center; }
+.win-check { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 34; }
+.win-text strong {
+  display: block; font-family: var(--font-display); font-weight: 400; letter-spacing: 0.03em;
+  font-size: 1.45rem; line-height: 1.1; color: var(--color-valid);
+}
+.win-badge.stack .win-text strong { font-size: 2rem; }
+.win-text span { display: block; margin-top: 3px; font-size: 1rem; line-height: 1.4; color: var(--color-text); }
+.win-badge.stack .win-text span { font-size: 1.05rem; }
+.win-badge.animate { animation: winFade 0.25s ease both; }
+.win-badge.animate .win-circle { animation: winCircle 0.3s 0.16s cubic-bezier(.3,1.5,.5,1) both; }
+.win-badge.animate .win-check  { animation: winDraw 0.75s 0.2s ease-in-out both; }
+.win-badge.animate .win-icon   { animation: winPress 0.5s 1.3s both; }
+.win-badge.animate .win-text   { animation: winText 0.45s 1.58s ease-out both; }
+@keyframes winFade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes winCircle { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes winDraw   { from { stroke-dashoffset: 34; } to { stroke-dashoffset: 0; } }
+@keyframes winPress  { 0% { transform: scale(1); } 50% { transform: scale(0.8); animation-timing-function: cubic-bezier(.2,.9,.3,1.4); }
+                       66% { transform: scale(1.16); } 100% { transform: scale(1); } }
+@keyframes winText   { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+.win-badge.stack.animate .win-text { animation-name: winTextUp; }
+@keyframes winTextUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .win-badge.animate, .win-badge.animate * { animation: none !important; } }
+
+/* Tutorial empty-spaces puzzle (puzzle.piecesAreEmptySpaces): its single
+   squares look exactly like a permanent empty space, without the X */
+body.empty-space-pieces .piece-svg { display: none; }
+body.empty-space-pieces .piece-box {
+  background: var(--color-bg); border: 1px dashed var(--color-cell-border); border-radius: 4px; box-sizing: border-box;
+}
+body.empty-space-pieces .placed-piece.invalid .piece-box { box-shadow: 0 0 0 2px rgba(220,70,70,0.95), 0 0 8px rgba(220,70,70,0.9); }
 .tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
 
 /* ── Board ── */

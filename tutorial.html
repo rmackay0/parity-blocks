@@ -147,7 +147,6 @@
   .arrow { display: inline-block; color: var(--color-accent); font-size: 1.6rem; margin-left: 6px; vertical-align: -2px; }
   .big-note { font-size: 1.4rem; font-weight: 700; line-height: 1.3; color: var(--color-accent); border-left: 4px solid var(--color-accent); padding-left: 14px; }
   .hint { font-size: 1rem; line-height: 1.5; color: var(--color-text-dim); margin-top: 6px; }
-  .solved-note { font-size: 1.05rem; font-weight: 600; line-height: 1.45; color: var(--color-valid); margin-top: 10px; }
   .dont { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 22px; margin-top: 8px; }
   .dont figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
   .dont figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
@@ -209,10 +208,10 @@
   .recap-item:last-child { margin-bottom: 0; }
   .recap-split { padding-top: 10px; border-top: 1px solid var(--color-cell-border); }
   .recap-pair { display: flex; gap: 4px; flex: 0 0 auto; }
-  /* Slide 6's "Great work!" message pops in beside the board */
-  .great { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--color-valid);
-           background: rgba(111, 174, 90, 0.12); animation: popIn 0.45s cubic-bezier(.3,1.4,.5,1) both; }
-  .great .solved-note { margin-top: 0; }
+  /* The solved badge beside the board (celebrate.js; styled in game.css),
+     clear of the row counts */
+  .n-boardr .win-badge { margin: 14px 0 0 12px; }
+  .n-boardr .win-badge:first-child { margin-top: 0; }
   @media (max-width: 760px) {
     .recap-card { margin-top: 6px; padding: 10px 12px; }
     .recap-item { gap: 10px; margin-bottom: 8px; }
@@ -239,7 +238,8 @@
     background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: 14px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
   }
-  .spot-card p { font-size: 1.1rem; line-height: 1.5; color: var(--color-text); margin-bottom: 12px; }
+  .spot-card p, .spot-card li { font-size: 1.1rem; line-height: 1.5; color: var(--color-text); margin-bottom: 12px; }
+  .spot-card ol { padding-left: 24px; }
   .ok-btn {
     display: block; width: 100%; height: 42px; border: none; border-radius: 10px;
     font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em;
@@ -285,6 +285,7 @@
       justify-items: center;
     }
     .n-trayl, .n-boardr, .n-boardl { justify-self: center; text-align: center; max-width: none; }
+    .n-boardr .win-badge { margin: 10px auto 0; width: fit-content; }
     .arrow { transform: rotate(90deg); }
     .big-note { border-left: none; padding-left: 0; font-size: 1.2rem; }
     /* [POSITIONING] Phones: tighter spacing so more fits on the screen */
@@ -320,9 +321,10 @@
   html.large-text .n-boardl { font-size: 1.65rem; max-width: 400px; }
   html.large-text .big-note { font-size: 2.15rem; }
   html.large-text .hint { font-size: 1.65rem; }
-  html.large-text .solved-note { font-size: 1.75rem; }
+  html.large-text .win-text span { font-size: 1.65rem; }
+  html.large-text .win-text strong { font-size: 2rem; }
   html.large-text .recap-item p, html.large-text p.recap-item { font-size: 1.7rem; }
-  html.large-text .spot-card p { font-size: 1.7rem; }
+  html.large-text .spot-card p, html.large-text .spot-card li { font-size: 1.7rem; }
   html.large-text .hint-btn { font-size: 1.6rem; height: 52px; }
   html.large-text .intro li { font-size: 1.85rem; }
   html.large-text .intro p { font-size: 1.75rem; }
@@ -332,7 +334,7 @@
   @media (max-width: 600px) {
     .one-line { white-space: normal; }   /* phones: wrap so it never runs off the screen */
     .text-size-btn { top: 9px; height: 34px; padding: 0 10px; font-size: 0.9rem; }
-    html.large-text .spot-card p { font-size: 1.4rem; }
+    html.large-text .spot-card p, html.large-text .spot-card li { font-size: 1.4rem; }
     .text-size-btn.is-large-label { font-size: 0.95rem; }
   }
 
@@ -392,13 +394,14 @@
 <div class="spot" id="spot" hidden role="dialog" aria-label="Hint">
   <svg id="spot-svg" aria-hidden="true"></svg>
   <div class="spot-card" id="spot-card">
-    <p id="spot-text"></p>
+    <div id="spot-text"></div>
     <button class="ok-btn ready" id="spot-ok">Got it</button>
   </div>
 </div>
 
 <script src="shapes.js"></script>
 <script src="game.js"></script>
+<script src="celebrate.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════
    WORDING HELPERS
@@ -597,8 +600,9 @@ function playDont(svg){
      quiet             (with tiling) the previous slide's solved board stays
                        exactly where it was; the text fades, the pieces fade
                        away, and the empty spaces are counted
-     solvedNote        a line added beside the board once it's solved
-     solvedCard        it pops in inside a green box                          */
+     solvedTitle       once solved, a solved badge (celebrate.js: checkmark
+     solvedNote        animation + jingle) appears beside the board with this
+                       title and text                                        */
 const ROTATE_STEPS = [
   { html: (TOUCH ? 'Tap a piece to ' : 'Click a piece or press <kbd>R</kbd> to ')
           + '<span class="nobr"><b>rotate</b> it.<span class="arrow">&#10148;</span></span>', until: 'rotate' },
@@ -614,7 +618,7 @@ const SLIDES = [
   { kind: 'intro' },
   { kind: 'play', puzzle: PUZZLE_2, steps: ROTATE_STEPS,
     countAnimation: true,
-    solvedNote: 'Solved! Every row and column has an even number of blocks.' },
+    solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   { kind: 'dont' },
   { kind: 'play', puzzle: PUZZLE_3, steps: REFLECT_STEPS,
     boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.',
@@ -630,9 +634,8 @@ const SLIDES = [
     hintAfterMs: 3 * 60 * 1000,
     // (The user's notes stopped mid-sentence after "two of the"; the end of
     // the 4th sentence and the last sentence are Claude's, to be checked.)
-    hintText: 'There are a total of six empty spaces, two of which are permanent. A row or column could at most include six empty spaces, and at the very least 0. If we place all of the empty spaces in a column of six, the rows will all have an odd number of empty spaces. If one of the rows or columns has four empty spaces in it, two of the lines crossing it will be left with only one. So every row and column needs either 0 or 2 empty spaces.',
-    solvedNote: 'Great work! Keep in mind, this trick will only work with an even grid: 6 &times; 6, 8 &times; 8, etc.',
-    solvedCard: true },
+    hintText: '<p>There are a total of six empty spaces, two of which are permanent. A row or column could at most include six empty spaces, and at the very least 0. If we place all of the empty spaces in a column of six, the rows will all have an odd number of empty spaces. If one of the rows or columns has four empty spaces in it, two of the lines crossing it will be left with only one. So every row and column needs either 0 or 2 empty spaces.</p>',
+    solvedTitle: 'Great work!', solvedNote: 'Keep in mind, this trick will only work with an even grid: 6&nbsp;&times;&nbsp;6, 8&nbsp;&times;&nbsp;8, etc.' },
   { kind: 'play', puzzle: PUZZLE_4,
     // The Hint button sits under the orange note, hidden until it's needed
     boardRight: `<div class="big-note" id="big-note">Make sure there is an even number of blocks in each row AND column.</div>` + HINT_BUTTON,
@@ -640,9 +643,11 @@ const SLIDES = [
     // The hint is offered once every piece is placed (no rule broken) but
     // the rows and columns aren't all even
     hintWhenUneven: true,
-    hintText: 'Every row and every column in this grid is even (6 squares long), so each one needs an even number of empty spaces. Before continuing, visualize where else empty spaces can go, and then try to fit the pieces to account for that.',
+    hintText: `<ol>
+      <li>The dotted area must be completely filled with two pieces&mdash;no empty spaces&mdash;because there is no way to fit just one piece in the dotted area, and the other three in the rest of the grid.</li>
+      <li>There needs to be an even number of empty spaces in every row and every column, so looking at the permanent empty space, where do some of the empty spaces have to go?</li></ol>`,
     countAnimation: true,
-    solvedNote: 'Every row and column is even. You’re ready to play!' },
+    solvedTitle: 'Solved!', solvedNote: 'Every row and column is even. You&rsquo;re ready to play!' },
 ];
 const DONT_ITEMS = [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece'], ['gap','a permanent empty space']];
 
@@ -654,7 +659,7 @@ function renderIntro(){
       <li>Fit all of the pieces onto the grid.</li>
       <li>Every row and column contains an even (parity) number of blocks.</li>
     </ol>
-    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b> because they&rsquo;re made of five blocks. Dominoes are made of two, triominoes of three, and tetrominoes of four (the origin of the name Tetris).</p>
+    <p class="fun">Fun fact: these pieces are called <b style="color:var(--color-accent);font-weight:400">pentominoes</b> because each one is made of five blocks. A domino has two blocks, a triomino three, and a tetromino four, which is where Tetris gets its name.</p>
     <div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>`;
   TWELVE.forEach(([color, cells])=>$('twelve').appendChild(pieceSvg(cells, color, 15)));
 }
@@ -787,7 +792,7 @@ function offerHint(){
 }
 function showHint(){
   $('hint-btn').classList.remove('lit');
-  $('spot-text').textContent = SLIDES[current].hintText;
+  $('spot-text').innerHTML = SLIDES[current].hintText;
   $('spot').hidden = false;
   const W = innerWidth, H = innerHeight, pad = 5;
   const holes = puzzle.blocked.map(([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`))
@@ -842,9 +847,8 @@ gameHooks.onSolved = ()=>{
 };
 function addSolvedNote(){
   const s = SLIDES[current];
-  if(!s.solvedNote) return;
-  const note = `<p class="solved-note">${s.solvedNote}</p>`;
-  $('n-boardr').insertAdjacentHTML('beforeend', s.solvedCard ? `<div class="great">${note}</div>` : note);
+  if(!s.solvedTitle) return;
+  $('n-boardr').appendChild(solvedBadge(s.solvedTitle, s.solvedNote, { animate: true }));
 }
 
 /* ── Slide 4: empty spaces ──
@@ -858,8 +862,8 @@ function explainEmptySpaces(){
   const card = document.createElement('div');
   card.className = 'recap-card callout';
   card.innerHTML = `
-    <div class="recap-item"><p>These dark squares are the <b>empty spaces</b> not covered by the pieces.</p></div>
-    <div class="recap-item"><p>These dark squares with X&rsquo;s on them are <b>permanent empty spaces</b>, which aren&rsquo;t allowed to be covered by the pieces.</p></div>`;
+    <div class="recap-item"><p>The dark squares are the <b>empty spaces</b>.</p></div>
+    <div class="recap-item"><p>The dark squares with a red X are the <b>permanent empty spaces</b>.</p></div>`;
   const [one, two] = card.querySelectorAll('.recap-item');
   one.prepend(squareSvg(false));
   two.prepend(squareSvg(true));
@@ -895,7 +899,7 @@ function showEmptyCount(){
     card.className = 'recap-card';
     card.innerHTML = `
       <p class="recap-item">When you remove the pieces from the solution, you can clearly see that there is an even number of <b>empty spaces</b> in every row and column.</p>
-      <div class="recap-item recap-split"><span class="recap-pair"></span><p>When counting empty spaces, count X&rsquo;s and dark squares together.</p></div>`;
+      <div class="recap-item recap-split"><span class="recap-pair"></span><p>When counting empty spaces, count these together.</p></div>`;
     card.querySelector('.recap-pair').append(squareSvg(false, 34), squareSvg(true, 34));
     $('n-boardr').appendChild(card);
     requestAnimationFrame(()=>{ card.classList.add('shown'); card.querySelectorAll('.recap-item').forEach(el=>el.classList.add('shown')); });
