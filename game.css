@@ -175,6 +175,11 @@ body {
 @keyframes winPress  { 0% { transform: scale(1); } 50% { transform: scale(0.8); animation-timing-function: cubic-bezier(.2,.9,.3,1.4); }
                        66% { transform: scale(1.16); } 100% { transform: scale(1); } }
 @keyframes winText   { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+/* No sound (the tutorial): the same animation, a little quicker */
+.win-badge.animate.quick .win-circle { animation-delay: 0.05s; }
+.win-badge.animate.quick .win-check  { animation-duration: 0.5s; animation-delay: 0.1s; }
+.win-badge.animate.quick .win-icon   { animation-delay: 0.75s; }
+.win-badge.animate.quick .win-text   { animation-delay: 1.03s; }
 .win-badge.stack.animate .win-text { animation-name: winTextUp; }
 @keyframes winTextUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .win-badge.animate, .win-badge.animate * { animation: none !important; } }

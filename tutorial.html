@@ -7,30 +7,31 @@
   and from "Play the tutorial" in the Rules popup. It can also be opened
   on its own: tutorial.html.
 
-  Seven slides:
+  Eight slides:
     1  Game objectives and the 12 pentominoes   (no task: Next is ready)
     2  Rotate (click / tap, or R), then drag onto the grid: a two-step
-       note, each step glowing in turn. On solving, each row then column
-       flashes green and its count of blocks appears, then "Solved!"
+       note, each step glowing in turn. On solving, the other text fades,
+       each row then column flashes green and its count of blocks
+       appears, then a "Solved!" badge (celebrate.js; no sound here)
     3  "Don't place a piece over…": four pictures animate one at a time
     4  Reflect (double-click / tap twice, or E), then drag: same two-step
        note, plus "you can also rotate and reflect pieces on the grid".
-       On solving, the blocks are counted, then a note beside the board
-       explains empty spaces and permanent empty spaces while those
-       squares glow
-    5  Same board, same place: all the text fades, the pieces are taken
-       away, a note says the empty spaces are even too (count X's and
-       dark squares together), and the empty spaces are counted
-    6  Empty-spaces puzzle: drag four single empty spaces onto a grid
+       On solving, the blocks are counted
+    5  Same board, same place, all other text gone: a note explains
+       empty spaces and permanent empty spaces while those squares glow
+    6  Same board again: the note fades, the pieces are taken away, a
+       note says the empty spaces are even too (count both kinds
+       together), and the empty spaces are counted
+    7  Empty-spaces puzzle: drag four single empty spaces onto a grid
        with two permanent ones so every row and column has an even
        number of empty spaces. A Hint button appears after 3 minutes.
        On solving, "Great work! … only works with an even grid"
-    7  Make every row and column even (the parity puzzle). If they place
+    8  Make every row and column even (the parity puzzle). If they place
        every piece but the rows/columns aren't all even, a glowing Hint
        button appears: it darkens the page, spotlights the permanent
        empty space and explains. On solving, the blocks are counted. Last
        button says "Finish"
-  Slides 2 and 4–7 run on the game's own code
+  Slides 2 and 4–8 run on the game's own code
   (game.js / game.css), with some pieces fixed in place. Next turns green
   only once the slide's task (and any animation) is finished.
   Refreshing the page comes back to the same slide (sessionStorage
@@ -185,6 +186,8 @@
      Slide 5 keeps the board exactly where it was: the text above it only
      fades out (it keeps its space), and the pieces fade away. */
   .play.quiet .n-trayl, .play.quiet .tray, .play.quiet .status { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+  /* While a solved board's rows and columns are counted, the other text fades */
+  .play.counting .n-trayl, .play.counting .status, .play.counting .n-boardl, .play.counting .n-below { opacity: 0; transition: opacity 0.5s; }
   .fading { opacity: 0; transition: opacity 0.5s; }
   #pieces-layer.gone { opacity: 0; transition: opacity 1s; }
   .sq-ring { fill: rgba(240, 170, 90, 0.15); stroke: var(--color-accent); stroke-width: 3;
@@ -593,13 +596,14 @@ function playDont(svg){
                        appears under the orange note (see showHint)
      hintAfterMs       or: the Hint button appears after this long on the slide
      hintText          what the Hint says
-     countAnimation    on solving, count the blocks in each row and column;
-                       Next waits for it
-     explainEmpty      after counting, a note beside the board explains empty
-                       spaces and permanent empty spaces while they glow
+     countAnimation    on solving, count the blocks in each row and column
+                       (all other text fades first); Next waits for it
      quiet             (with tiling) the previous slide's solved board stays
-                       exactly where it was; the text fades, the pieces fade
-                       away, and the empty spaces are counted
+                       exactly where it was and all the text fades; then:
+       explainEmpty    a note beside the board explains empty spaces and
+                       permanent empty spaces while they glow
+       emptyCount      the pieces fade away, a note appears, and the empty
+                       spaces are counted
      solvedTitle       once solved, a solved badge (celebrate.js: checkmark
      solvedNote        animation + jingle) appears beside the board with this
                        title and text                                        */
@@ -622,10 +626,12 @@ const SLIDES = [
   { kind: 'dont' },
   { kind: 'play', puzzle: PUZZLE_3, steps: REFLECT_STEPS,
     boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.',
-    countAnimation: true, explainEmpty: true },
-  // The same solved board, with the pieces taken away. (It keeps slide 4's
-  // steps, invisible, so the board stays exactly where it was.)
-  { kind: 'play', puzzle: PUZZLE_3, tiling: PUZZLE_3_SOLVED, steps: REFLECT_STEPS, quiet: true },
+    countAnimation: true },
+  // Slide 4's solved board again, exactly where it was (it keeps slide 4's
+  // steps, invisible, so nothing moves): first the explanation of empty
+  // spaces on its own, then the pieces taken away and the empty spaces counted
+  { kind: 'play', puzzle: PUZZLE_3, tiling: PUZZLE_3_SOLVED, steps: REFLECT_STEPS, quiet: true, explainEmpty: true },
+  { kind: 'play', puzzle: PUZZLE_3, tiling: PUZZLE_3_SOLVED, steps: REFLECT_STEPS, quiet: true, emptyCount: true },
   { kind: 'play', puzzle: PUZZLE_E,
     boardRight: `<p class="hint" style="margin:0 0 8px">Before re-introducing the blocks, try this parity puzzle.</p>
       <div class="big-note" id="big-note">Drag the four empty spaces onto the grid so that every row and column has an even number of empty spaces in it.</div>
@@ -709,6 +715,7 @@ function showSlide(i){
   const onBoard = s.kind === 'play';   // slides that show the game's board
   $('play').hidden = !onBoard;
   $('play').classList.toggle('quiet', !!s.quiet);
+  $('play').classList.remove('counting');
   $('pieces-layer').classList.remove('gone');
   hideHint();
   // (A quiet slide fades out the previous slide's notes and counts instead)
@@ -733,7 +740,7 @@ function showSlide(i){
     loadPuzzle(s.puzzle);
     lightSteps();             // (now that it's in play mode, the first step glows)
   }
-  if(s.quiet) showEmptyCount();
+  if(s.quiet) showQuiet(s);
   renderDots();
   updateNext();
   $('play').parentElement.scrollTop = 0;
@@ -842,20 +849,43 @@ gameHooks.onSolved = ()=>{
   if($('hint-btn')) $('hint-btn').hidden = true;     // (gives its space to the solved note)
   hideHint();
   // (The solved note waits until any counting is done)
-  if(s.countAnimation) drawCounts(true);
+  if(s.countAnimation){
+    // All the other text fades first. (It keeps its space, so the board
+    // doesn't move; the note beside the board is then cleared, making room
+    // for the solved badge.)
+    $('play').classList.add('counting');
+    $('n-boardr').classList.add('fading');
+    later(TEXT_FADE_MS, ()=>{ $('n-boardr').innerHTML = ''; $('n-boardr').classList.remove('fading'); });
+    drawCounts(true);
+  }
   else { addSolvedNote(); markDone(); }
 };
+const TEXT_FADE_MS = 500;      // how long text takes to fade out (see .fading)
 function addSolvedNote(){
   const s = SLIDES[current];
   if(!s.solvedTitle) return;
-  $('n-boardr').appendChild(solvedBadge(s.solvedTitle, s.solvedNote, { animate: true }));
+  $('n-boardr').appendChild(solvedBadge(s.solvedTitle, s.solvedNote, { animate: true }));   // (no sound in the tutorial)
 }
 
-/* ── Slide 4: empty spaces ──
-   After the reflect puzzle's blocks are counted, its note beside the board
-   is replaced by a highlighted one that appears a line at a time, while
-   the squares each line is about glow: first the empty spaces, then the
-   permanent ones. Then Next lights up. */
+/* ── Slides 5 and 6: slide 4's solved board, exactly where it was ──
+   The text from the slide before (notes and counts) fades out first. */
+function showQuiet(s){
+  $('n-boardr').classList.add('fading');
+  $('tut-overlay').classList.add('fading');
+  later(TEXT_FADE_MS, ()=>{
+    $('tut-overlay').innerHTML = '';
+    $('tut-overlay').classList.remove('fading');
+    $('n-boardr').innerHTML = '';
+    $('n-boardr').classList.remove('fading');
+    if(s.explainEmpty) explainEmptySpaces();
+    if(s.emptyCount) showEmptyCount();
+  });
+}
+
+/* ── Slide 5: what empty spaces are ──
+   The only thing on the slide: a highlighted note beside the board that
+   appears a line at a time, while the squares each line is about glow:
+   first the empty spaces, then the permanent ones. Then Next lights up. */
 const EXPLAIN_LINE_MS = [300, 2100];   // when each line of the note appears
 const EXPLAIN_DONE_MS = 3900;          // the glow ends and Next lights up
 function explainEmptySpaces(){
@@ -869,31 +899,21 @@ function explainEmptySpaces(){
   two.prepend(squareSvg(true));
   $('n-boardr').innerHTML = '';
   $('n-boardr').appendChild(card);
-  const emptyRings = squareRings(solvedView[current].empty), permRings = squareRings(puzzle.blocked);
+  const emptyRings = squareRings(SLIDES[current].tiling.empty), permRings = squareRings(puzzle.blocked);
   const glow = (rings, on)=>rings.forEach(el=>el.classList.toggle('on', on));
   later(EXPLAIN_LINE_MS[0], ()=>{ card.classList.add('shown', 'lit'); one.classList.add('shown'); glow(emptyRings, true); });
   later(EXPLAIN_LINE_MS[1], ()=>{ two.classList.add('shown'); glow(emptyRings, false); glow(permRings, true); });
   later(EXPLAIN_DONE_MS, ()=>{ glow(permRings, false); card.classList.remove('lit'); markDone(); });
 }
 
-/* ── Slide 5: count the empty spaces ──
-   Slide 4's solved board stays where it is. The text fades, then the
-   pieces fade away, leaving only the empty spaces (dark squares and X's).
-   A note appears beside the board, then each row and column's empty
-   spaces are counted. Then Next lights up. */
-const EMPTY_FADE_MS = 600;     // the text has faded; the pieces start to fade
-const EMPTY_NOTE_MS = 1900;    // the note appears
-const EMPTY_COUNT_MS = 3400;   // the counting starts
+/* ── Slide 6: count the empty spaces ──
+   (Once slide 5's note has faded.) The pieces fade away, leaving only the
+   empty spaces (dark squares and X's). A note appears beside the board,
+   then each row and column's empty spaces are counted. Then Next lights up. */
+const EMPTY_NOTE_MS = 1300;    // the note appears (after the pieces start to fade)
+const EMPTY_COUNT_MS = 2800;   // the counting starts
 function showEmptyCount(){
-  $('n-boardr').classList.add('fading');
-  $('tut-overlay').classList.add('fading');
-  later(EMPTY_FADE_MS, ()=>{
-    $('tut-overlay').innerHTML = '';
-    $('tut-overlay').classList.remove('fading');
-    $('n-boardr').innerHTML = '';
-    $('n-boardr').classList.remove('fading');
-    $('pieces-layer').classList.add('gone');
-  });
+  $('pieces-layer').classList.add('gone');
   later(EMPTY_NOTE_MS, ()=>{
     const card = document.createElement('div');
     card.className = 'recap-card';
@@ -951,7 +971,7 @@ function showDontSlide(){
    animate = false, just draw all the counts. */
 function countedSquares(){
   const s = SLIDES[current], set = new Set();
-  if(s.quiet) s.tiling.empty.concat(puzzle.blocked).forEach(([r,c])=>set.add(r+','+c));
+  if(s.emptyCount) s.tiling.empty.concat(puzzle.blocked).forEach(([r,c])=>set.add(r+','+c));
   else solvedView[current].pieces.forEach(p=>p.cells.forEach(([r,c])=>set.add((p.row+r)+','+(p.col+c))));
   return set;
 }
@@ -976,9 +996,9 @@ function drawCounts(animate){
     t.textContent = line.cells.length;
   };
   if(!animate){ lines.forEach(addCount); return; }
-  const STEP = 650;    // ms per row/column: slow enough to follow each one
-  const PAUSE = 500;   // extra pause between the rows and the columns
-  const at = i => 400 + i*STEP + (i >= puzzle.rows ? PAUSE : 0);
+  const STEP = 490;    // ms per row/column: slow enough to follow each one
+  const PAUSE = 375;   // extra pause between the rows and the columns
+  const at = i => 300 + i*STEP + (i >= puzzle.rows ? PAUSE : 0);
   lines.forEach((line, i)=>{
     later(at(i), ()=>{
       const glows = line.cells.map(([r,c])=>svgEl('rect', { x: pxPos(c), y: pxPos(r), width: CELL, height: CELL, rx: 4, class:'row-glow' }, svg));
@@ -988,10 +1008,7 @@ function drawCounts(animate){
       later(STEP * 0.8 + 200, ()=>glows.forEach(g=>g.remove()));
     });
   });
-  later(at(lines.length) + 150, ()=>{
-    if(SLIDES[current].explainEmpty) explainEmptySpaces();
-    else { addSolvedNote(); markDone(); }
-  });
+  later(at(lines.length) + 150, ()=>{ addSolvedNote(); markDone(); });
 }
 
 function closeTutorial(finished){
@@ -1022,7 +1039,7 @@ $('text-size-btn').onclick = ()=>{
   if(!$('play').hidden){
     setupBoard(); renderAll();                       // re-fit the board to the new space
     const s = SLIDES[current];
-    if(gameMode === 'view' && (s.countAnimation || s.quiet) && done[current]) drawCounts(false);   // re-place the counts
+    if(gameMode === 'view' && (s.countAnimation || s.emptyCount) && done[current]) drawCounts(false);   // re-place the counts
   }
 };
 showLargeText();

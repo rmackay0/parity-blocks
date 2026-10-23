@@ -207,13 +207,14 @@ function restoreBoard(){
   renderAll();
   restoring = false;
 }
+enableSolvedSound();         // the jingle plays when a puzzle is solved (celebrate.js)
 gameHooks.onSolved = time=>{
   const badge = document.getElementById('solved-badge');
   badge.replaceChildren(solvedBadge('Solved in ' + time));
   badge.hidden = false;
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
-  document.getElementById('solved-win').replaceChildren(solvedBadge('Solved!', 'Your time: ' + time, { animate: true, stack: true }));
+  document.getElementById('solved-win').replaceChildren(solvedBadge('Solved!', 'Your time: ' + time, { animate: true, sound: true, stack: true }));
   document.getElementById('solved-popup').hidden = false;
   if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime, saveKey);
 };

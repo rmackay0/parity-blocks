@@ -15,7 +15,7 @@ previous project; don't push there.
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html |
-| `tutorial.html` | Interactive 7-slide tutorial (real mini puzzles via game.js) |
+| `tutorial.html` | Interactive 8-slide tutorial (real mini puzzles via game.js) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): items 1–4 done, **5–17 are the to-do list** |
 | `tests/browser/` | Playwright checks (see Testing below); `solved_state_test.js` covers the review fixes |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
@@ -87,6 +87,15 @@ previous project; don't push there.
   the puzzle's stored colors; `pieceColors(p)` is also used by the
   sandbox's solution views. Tutorial keeps its own `COLOR` map (F is now
   blue).
+
+**Tutorial now 8 slides (2026-10-23, later):** the empty-spaces
+explanation is its own slide 5 (`quiet` + `explainEmpty`: slide 4's
+board, same place, only that note); slide 6 is the empty-space count
+(`quiet` + `emptyCount`). Counting is 25% faster (490 ms per line). While
+a solved board is counted, all other text fades (`.play.counting`; the
+note beside the board is cleared for the badge). **No sound in the
+tutorial** (user): only pages that call `enableSolvedSound()` (play.html)
+load/play the jingle; without sound the badge uses `.quick` timings.
 
 **Solved badge + v6 tweaks (2026-10-23, "instructions for claude v6" PDF)**
 - `celebrate.js` (loaded by play.html + tutorial.html; styles "Solved
