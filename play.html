@@ -50,7 +50,12 @@
     </div>
   </div>
 
-  <div class="tray" id="tray" aria-label="Available pieces"></div>
+  <!-- The pieces to place. Once solved (every piece is on the board, so
+       this space is empty) it says "Solved in 2:31" instead -->
+  <div class="tray-area">
+    <div class="tray" id="tray" aria-label="Available pieces"></div>
+    <p class="solved-badge" id="solved-badge" hidden></p>
+  </div>
 
   <!-- Mistakes only glow red here (no written explanation; see
        gameSettings.explain below), so the message area is hidden and the
@@ -91,7 +96,7 @@
 <div class="popup-backdrop" id="reset-popup" hidden>
   <div class="popup" role="dialog" aria-modal="true" aria-labelledby="reset-title">
     <h2 id="reset-title">Start over?</h2>
-    <p>This takes every piece off the board and restarts the timer.</p>
+    <p id="reset-text">This takes every piece off the board and restarts the timer.</p>
     <div class="popup-buttons">
       <button type="button" class="secondary" id="reset-cancel">Keep playing</button>
       <button type="button" id="reset-confirm">Reset</button>
@@ -151,32 +156,42 @@ try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch(er
 const wasRefreshed = (performance.getEntriesByType('navigation')[0] || {}).type === 'reload';
 try { tutorialInProgress = wasRefreshed && sessionStorage.getItem('pb_tutorialSlide') !== null; } catch(err){}
 
-// Reset: asks first, then clears the board and restarts the timer
-document.getElementById('reset-btn').onclick = ()=>{ document.getElementById('reset-popup').hidden = false; };
+// Reset: asks first, then clears the board and restarts the timer. On a
+// solved puzzle it's the way to play it again.
+document.getElementById('reset-btn').onclick = ()=>{
+  document.getElementById('reset-title').textContent = solved ? 'Play again?' : 'Start over?';
+  document.getElementById('reset-text').textContent = solved
+    ? 'This clears the board so you can solve it again. Your star stays in the Archive.'
+    : 'This takes every piece off the board and restarts the timer.';
+  document.getElementById('reset-popup').hidden = false;
+};
 document.getElementById('reset-cancel').onclick = ()=>{ document.getElementById('reset-popup').hidden = true; };
 document.getElementById('reset-confirm').onclick = ()=>{
   document.getElementById('reset-popup').hidden = true;
   clearSavedBoard(saveKey);
+  document.getElementById('solved-badge').hidden = true;
   loadPuzzle(puzzle);
 };
 gameSettings.explain = false;        // a wrong board just glows red; no "Uneven rows…" message
+gameSettings.lockWhenSolved = true;  // a solved board stays as it is (Reset to play again)
 
 /* ── Saving progress (progress.js; this browser only) ──
    The board is saved as you play (pieces on it, how the ones at the top
    are turned, and the time so far), and comes back when you return.
-   Time away from the page doesn't count. Solving or Reset clears it.
+   Time away from the page doesn't count. Reset clears it.
+   A solved board is saved too, marked solved, so coming back shows the
+   finished puzzle and its time instead of an empty board.
    Solving an Easy / Medium / Hard puzzle is recorded for the Archive
-   calendar on the splash screen. */
+   calendar on the splash screen: one star per puzzle, so solving the same
+   puzzle again (after Reset, or on another day) doesn't add another. */
 const saveKey = level ? 'level:' + level + ':' + ((PUBLISHED[level] || {}).publishedAt || '')
                       : 'puzzle:' + params.get('puzzle');
+const myPieces = ()=>placedPieces.filter(p=>!p.locked).map(p=>({ name:p.name, cells:p.cells, row:p.row, col:p.col }));
 function saveBoard(){
-  if(!puzzle || gameMode !== 'play') return;
-  if(solved){ clearSavedBoard(saveKey); return; }
-  saveBoardState(saveKey, {
-    placed: placedPieces.filter(p=>!p.locked).map(p=>({ name:p.name, cells:p.cells, row:p.row, col:p.col })),
-    tray: trayCells, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString(),
-  });
+  if(!puzzle || gameMode !== 'play' || solved) return;   // (a solved board was saved when it was solved)
+  saveBoardState(saveKey, { placed: myPieces(), tray: trayCells, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
 }
+let restoring = false;     // true while a saved board is being put back
 function restoreBoard(){
   const saved = loadSavedBoard(saveKey);
   if(!saved) return;
@@ -187,13 +202,19 @@ function restoreBoard(){
                         cells: p.cells, row: p.row, col: p.col });
   });
   startTime = Date.now() - (saved.elapsedMs || 0);
+  restoring = true;          // (a saved solved board "solves" again here: no popup, no new star)
   renderAll();
+  restoring = false;
 }
 gameHooks.onSolved = time=>{
+  const badge = document.getElementById('solved-badge');
+  badge.textContent = '✓ Solved in ' + time;
+  badge.hidden = false;
+  saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
+  if(restoring) return;
   document.getElementById('solved-time').textContent = 'Your time: ' + time;
   document.getElementById('solved-popup').hidden = false;
-  clearSavedBoard(saveKey);
-  if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime);
+  if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime, saveKey);
 };
 
 if(wantedPuzzle){

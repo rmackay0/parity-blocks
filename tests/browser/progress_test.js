@@ -36,7 +36,7 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
       placedPieces.push({ id: 'p' + (placedIdCounter++), name: p.name, color: d.color, cells: p.cells, row: p.row, col: p.col }); }); renderAll(); }, sol['test-puzzle-1']);
     await page.waitForTimeout(200);
     console.log(`[${label}] solved Hard: popup ${await page.isVisible('#solved-popup')} | recorded`, await page.evaluate(() => JSON.stringify(loadSolves().map(s => [s.date === localDay(), s.level]))),
-      '| save left:', await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('pb_progress') || '{}')).filter(k => k.startsWith('level:hard')).length), '(expected 0)');
+      '| saved as solved:', await page.evaluate(() => Object.entries(JSON.parse(localStorage.getItem('pb_progress') || '{}')).filter(([k, v]) => k.startsWith('level:hard') && v.solved).length), '(expected 1: kept so reopening shows it finished)');
     // A practice puzzle by link earns no star
     await page.goto(BASE + 'play.html?puzzle=test-puzzle-1'); await page.waitForTimeout(300);
     await page.evaluate(ps => { ps.forEach(p => { const d = puzzle.pieces.find(x => x.name === p.name);

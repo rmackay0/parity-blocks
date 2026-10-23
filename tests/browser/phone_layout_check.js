@@ -11,9 +11,11 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
     if (process.env.LARGE === '1') await ctx.addInitScript(() => localStorage.setItem('pb_largeText', '1'));
     const page = await ctx.newPage();
     await page.goto(BASE + 'tutorial.html');
-    for (let i = 0; i < 5; i++) {
+    const slides = await page.evaluate(() => SLIDES.length);
+    for (let i = 0; i < slides; i++) {
       await page.evaluate(n => showSlide(n), i);
-      await page.waitForTimeout(i === 2 ? 12000 : 400);    // slide 3: let the animations finish
+      // let the animations finish: slide 3 (empty spaces) ~4.2 s, slide 4 ("don't place a piece over") ~10 s
+      await page.waitForTimeout({ 2: 4800, 3: 12000 }[i] || 400);
       const r = await page.evaluate(() => {
         const W = document.documentElement.clientWidth;
         const box = el => el.getBoundingClientRect();

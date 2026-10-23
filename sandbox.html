@@ -683,8 +683,8 @@ document.addEventListener('keydown', e=>{
 function tilingPieces(t){
   return t.placements.map(pl=>{
     const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));
-    const d = draft.pieces.find(q=>q.name === pl.piece);
-    return { name: pl.piece, color: d ? d.color : '#888', row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
+    const color = pieceColors(draft)[pl.piece];      // (the colors the game shows, game.js)
+    return { name: pl.piece, color: color || '#888', row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
   });
 }
 
@@ -962,8 +962,8 @@ function showSolution(){
   const t = solutionList[solutionPos];
   const pieces = t ? t.placements.map(pl=>{
     const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));
-    const d = p.pieces.find(q=>q.name === pl.piece);
-    return { color: d ? d.color : '#888', row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
+    const color = pieceColors(p)[pl.piece];          // (the colors the game shows, game.js)
+    return { color: color || '#888', row: r0, col: c0, cells: pl.cells.map(([r,c])=>[r-r0, c-c0]) };
   }) : [];
   box.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, pieces, gaps:p.blocked, removed:p.removed, dotted:p.hintOutline,
                               show: t ? 'solved' : null, markEmpty: !!t }));

@@ -1,6 +1,6 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-10-20, end of session)
+## START HERE (updated 2026-10-22, end of session)
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -15,7 +15,9 @@ previous project; don't push there.
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html |
-| `tutorial.html` | Interactive 5-slide tutorial (real mini puzzles via game.js) |
+| `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js) |
+| `APP_REVIEW.md` | Whole-app review (2026-10-20): items 1–4 done, **5–17 are the to-do list** |
+| `tests/browser/` | Playwright checks (see Testing below); `solved_state_test.js` covers the review fixes |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
 | `puzzles.js` | `PUZZLES` registry (test puzzles; analyzer/sandbox read it) |
 | `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter) |
@@ -42,18 +44,25 @@ previous project; don't push there.
 - Vocabulary below (block / piece / permanent empty space / empty space)
   is mandatory.
 
-**Current state (end of 2026-10-20 session)**
+**Current state (end of 2026-10-22 session)**
 - Always check what's pushed with `git log origin/main..HEAD` /
   `git log HEAD..origin/main`, and ask the user before pushing.
+- Tutorial v5 (new empty-spaces slide) is pushed and live.
+- The review fixes (APP_REVIEW.md items 1–4) are committed; check
+  `git log origin/main..HEAD` to see whether they've been pushed yet.
+- The user plans to publish a **new Medium** themselves through the
+  sandbox (that commits to GitHub, so `git pull` first next session).
 
 **Open items / ideas for next session**
-- **Change the Medium puzzle** (user asked 2026-10-20, after the tutorial
-  v5 work). An older Medium had only one way to fit the pieces at all, so
-  the even rule never mattered — check the published one with the solver.
+- **The to-do list is APP_REVIEW.md items 5–17** (puzzle design, phone
+  dragging, screens, site polish) plus its iPhone SE scrolling note.
+- **Puzzle variety:** Easy AND Medium each fit together only one way
+  (solver), so the even rule never decides anything; Hard has 13 ways /
+  1 solution. Check "ways to fit" when making new puzzles.
 - Double-tap zoom fix on iPhone (`touch-action: manipulation` + touchend
   guard in game.js): user says it doesn't seem to zoom; still checking.
-- Phones: iPhone SE and Large text still need a little scrolling on
-  tutorial slides 4–5 (normal text on an iPhone 14 needs none).
+- Phones: iPhone SE needs some scrolling on tutorial slides 1, 3, 5, 6
+  (slide 3 the most, ~108px); Large text scrolls more. iPhone 14 needs none.
 - Archive calendar only shows stars; past days can't be replayed because
   published.js keeps only the current three puzzles. Replaying would need
   a history of published puzzles (e.g. keep each publish, keyed by date).
@@ -61,6 +70,23 @@ previous project; don't push there.
   stars (only Easy/Medium/Hard do).
 - The admin sandbox still says "gap"/"fixed gap" in its own labels (user
   said that's fine).
+
+**Review fixes (2026-10-20/22, APP_REVIEW.md items 1–4)**
+- game.js `gameSettings` (now at the top): `explain`, `lockWhenSolved`
+  (play.html turns it on; sandbox leaves it off so placed solutions can
+  still be moved), `distinctColors` (tutorial turns it off).
+- Empty spaces go dark (`.gap-dark`) in the real game once every piece is
+  on the grid (`markEmptySpaces`), solved or not.
+- Solved board: locked (`#board-outer.locked`), "✓ Solved in m:ss" shows
+  in the empty pieces area (`#solved-badge` in `.tray-area`, play.html),
+  and it's saved with `solved: true` so reopening shows it finished (no
+  popup). Reset on a solved puzzle says "Play again?".
+- One star per puzzle: `recordSolve(level, title, ms, puzzleKey)` skips a
+  puzzleKey already recorded.
+- Piece colors come from `PIECE_PALETTE` (game.js) in puzzle order, not
+  the puzzle's stored colors; `pieceColors(p)` is also used by the
+  sandbox's solution views. Tutorial keeps its own `COLOR` map (F is now
+  blue).
 
 **Tutorial v5: empty-spaces slide (2026-10-20, "claude notes v4" PDF)** —
 now 6 slides. Slide 1 no longer explains permanent empty spaces, and

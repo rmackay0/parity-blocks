@@ -126,6 +126,19 @@ body {
   transition: background 0.15s;
 }
 .tray-slot:hover { background: rgba(255, 255, 255, 0.05); }
+/* Puzzle page: the pieces' space, which says "Solved in 2:31" once solved
+   (by then every piece is on the board, so the space is empty) */
+.tray-area { flex: 0 0 auto; position: relative; width: 100%; display: flex; justify-content: center; }
+.tray-area > .tray { flex: 0 1 auto; min-width: 0; }   /* (may shrink, so the pieces still wrap on phones) */
+.solved-badge {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0.04em;
+  color: var(--color-valid);
+  animation: badgeIn 0.5s ease both;
+}
+.solved-badge[hidden] { display: none; }
+@keyframes badgeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
 
 /* ── Board ── */
@@ -345,8 +358,9 @@ body.shaping .board-cell.removed {
   border: 2px dashed var(--color-cell-border);
   opacity: 0.7;
 }
-/* A piece that starts on the board and can't be moved (tutorial) */
-.placed-piece.locked .blk { cursor: default; }
+/* A piece that starts on the board and can't be moved (tutorial), and every
+   piece once the puzzle page's puzzle is solved */
+.placed-piece.locked .blk, #board-outer.locked .placed-piece .blk { cursor: default; }
 
 /* ── Tutorial popup (play.html) ── */
 .tutorial-overlay {

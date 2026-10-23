@@ -32,6 +32,43 @@ const gameHooks = {
   onPlace: null,              // () => {}  a piece was put on the grid from the top
 };
 
+/* [BEHAVIOR] Settings a page can change after loading this file:
+     explain          a wrong finished board gets a written explanation after
+                      EXPLAIN_DELAY_MS. The puzzle page turns it off (user,
+                      2026-10-20: "in game there should only be red glow, no
+                      telling why"); the tutorial and the sandbox keep it.
+     lockWhenSolved   once solved, pieces can't be moved or turned. The puzzle
+                      page turns it on; the sandbox leaves it off so a placed
+                      solution can still be moved around to test ideas.
+     distinctColors   pieces take their colors from PIECE_PALETTE (below)
+                      instead of the puzzle's own colors. The tutorial turns
+                      it off to keep its hand-picked colors. */
+const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true };
+
+/* [COLORS] Piece colors, given out in the order the puzzle lists its
+   pieces, so no two pieces in a puzzle look alike. The first six are six
+   different color families (a puzzle usually has six pieces). */
+const PIECE_PALETTE = [
+  '#4f9a8e',   // teal
+  '#c49a3c',   // gold
+  '#7e68b0',   // purple
+  '#b45a46',   // brick red
+  '#789e4e',   // green
+  '#b0577f',   // rose
+  '#5f7fb5',   // blue
+  '#c9a877',   // tan
+  '#8c6a4a',   // brown
+  '#6b8a9c',   // slate
+  '#9d8fc4',   // lavender
+  '#a8714a',   // copper
+];
+// Each piece's color in puzzle p, as { name: color }
+function pieceColors(p){
+  const colors = {};
+  p.pieces.forEach((d, i)=>{ colors[d.name] = gameSettings.distinctColors ? PIECE_PALETTE[i % PIECE_PALETTE.length] : d.color; });
+  return colors;
+}
+
 const boardWrapEl   = document.getElementById('board-wrap');
 const boardEl       = document.getElementById('board');
 const piecesLayerEl = document.getElementById('pieces-layer');
@@ -61,6 +98,9 @@ let startTime = Date.now();
    sandbox uses this when you edit the board you're testing on. */
 function loadPuzzle(p, opts){
   opts = opts || {};
+  // (A copy with the pieces' display colors; the puzzle passed in isn't changed)
+  const colors = pieceColors(p);
+  p = Object.assign({}, p, { pieces: p.pieces.map(d=>Object.assign({}, d, { color: colors[d.name] })) });
   puzzle = p;
   dottedRegion = new Set((p.hintOutline || []).map(([r,c])=>r+','+c));
   removedSet = new Set((p.removed || []).map(([r,c])=>r+','+c));
@@ -434,6 +474,7 @@ document.addEventListener('keydown', e=>{
   if(e.metaKey || e.ctrlKey || e.altKey) return;
   if(e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
   if(gameMode !== 'play' || !puzzle) return;
+  if(solved && gameSettings.lockWhenSolved) return;
   const k = e.key.toLowerCase();
   if(k === 'r' || k === 'e'){ e.preventDefault(); keyTransform(k === 'r' ? rotateCells : reflectCells); }
 });
@@ -506,6 +547,7 @@ let press = null;   // {source, startX, startY, grabDR, grabDC, dragging, ghost,
 
 function onPiecePointerDown(e, source){
   if(gameMode !== 'play') return;
+  if(solved && gameSettings.lockWhenSolved) return;                     // a solved puzzle stays as it is
   if(e.button !== undefined && e.button !== 0) return;
   if(source.kind === 'board' && (placedPieces.find(q=>q.id===source.id) || {}).locked) return;   // fixed piece
   e.preventDefault();
@@ -655,12 +697,9 @@ const markOverlayEl = document.getElementById('mark-overlay');
 
 // [BEHAVIOR] How long a wrong finished board just glows red before the
 // written explanation appears (the user may change this; 0 = explain
-// straight away). Any move restarts the wait.
+// straight away). Any move restarts the wait. (Whether it appears at all:
+// gameSettings.explain, at the top.)
 const EXPLAIN_DELAY_MS = 3000;
-// [BEHAVIOR] Whether the written explanation appears at all. The puzzle
-// page turns it off (user, 2026-10-20: "in game there should only be red
-// glow, no telling why"); the tutorial and the sandbox keep it.
-const gameSettings = { explain: true };
 let explainTimer = null, explainKey = '';
 function cancelExplain(){ clearTimeout(explainTimer); explainTimer = null; explainKey = ''; }
 // Show `msg` once the board has stayed the same for EXPLAIN_DELAY_MS
@@ -733,9 +772,25 @@ function drawUnevenMarks(oddRows, oddCols){
   });
 }
 
+/* [BEHAVIOR] Once every piece is on the grid, the squares left over (the
+   empty spaces) turn dark, like permanent empty spaces, as the tutorial
+   teaches. Picking a piece back up turns them back to normal. */
+function markEmptySpaces(full){
+  boardEl.querySelectorAll('.gap-dark').forEach(el=>el.classList.remove('gap-dark'));
+  if(!full) return;
+  const covered = new Set();
+  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
+  boardEl.querySelectorAll('.board-cell').forEach(el=>{
+    const r = +el.dataset.r, c = +el.dataset.c;
+    if(inBounds(r,c) && !isVisiblyBlocked(r,c) && !covered.has(r+','+c)) el.classList.add('gap-dark');
+  });
+}
+
 function checkSolved(){
   markOverlayEl.innerHTML = '';
   boardOuterEl.classList.remove('uneven');
+  markEmptySpaces(boardFull());
+  boardOuterEl.classList.toggle('locked', solved && gameSettings.lockWhenSolved);
   if(solved) return;
   if(!boardFull()){ explainLater(''); return; }
 
@@ -762,6 +817,7 @@ function checkSolved(){
 
   if(!oddRows.length && !oddCols.length && !problems.length && !onHiddenGap){
     solved = true;
+    boardOuterEl.classList.toggle('locked', gameSettings.lockWhenSolved);
     cancelExplain();
     statusEl.textContent = '';
     const time = formatElapsed(Date.now() - startTime);
