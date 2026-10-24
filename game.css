@@ -126,26 +126,16 @@ body {
   transition: background 0.15s;
 }
 .tray-slot:hover { background: rgba(255, 255, 255, 0.05); }
-/* Puzzle page: the pieces' space, which says "Solved in 2:31" once solved
-   (by then every piece is on the board, so the space is empty) */
+/* Puzzle page: the pieces' space */
 .tray-area { flex: 0 0 auto; position: relative; width: 100%; display: flex; justify-content: center; }
 .tray-area > .tray { flex: 0 1 auto; min-width: 0; }   /* (may shrink, so the pieces still wrap on phones) */
-.solved-badge {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  animation: badgeIn 0.5s ease both;
-}
-.solved-badge[hidden] { display: none; }
-.solved-badge .win-badge { padding: 8px 16px 8px 10px; }
-.solved-badge .win-icon { width: 36px; height: 36px; }
-@keyframes badgeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* ── Solved badge (celebrate.js): every success message ──
    A green check in a circle, then a title and text, in one box. With
    .animate it plays along with the jingle (assets/solved.mp3): the circle
-   pops in on the first note (0.16 s), the check draws over the first three
-   notes, it's "pressed" (shrinks) and pops back out on the big last note
-   (1.62 s), and the text slides in with it. */
+   pops in on the first note (0.11 s), the check draws until the note at
+   1.08 s, it's "pressed" (shrinks) and pops back out on the big last note
+   (1.46 s), and the text slides in with it. */
 .win-badge {
   display: flex; align-items: center; gap: 14px;
   padding: 12px 18px 12px 12px; border-radius: 14px; text-align: left;
@@ -165,10 +155,10 @@ body {
 .win-text span { display: block; margin-top: 3px; font-size: 1rem; line-height: 1.4; color: var(--color-text); }
 .win-badge.stack .win-text span { font-size: 1.05rem; }
 .win-badge.animate { animation: winFade 0.25s ease both; }
-.win-badge.animate .win-circle { animation: winCircle 0.3s 0.16s cubic-bezier(.3,1.5,.5,1) both; }
-.win-badge.animate .win-check  { animation: winDraw 0.75s 0.2s ease-in-out both; }
-.win-badge.animate .win-icon   { animation: winPress 0.5s 1.3s both; }
-.win-badge.animate .win-text   { animation: winText 0.45s 1.58s ease-out both; }
+.win-badge.animate .win-circle { animation: winCircle 0.3s 0.11s cubic-bezier(.3,1.5,.5,1) both; }
+.win-badge.animate .win-check  { animation: winDraw 0.93s 0.15s ease-in-out both; }
+.win-badge.animate .win-icon   { animation: winPress 0.5s 1.16s both; }   /* (smallest at 1.41 s, popped out at 1.49 s) */
+.win-badge.animate .win-text   { animation: winText 0.45s 1.44s ease-out both; }
 @keyframes winFade   { from { opacity: 0; } to { opacity: 1; } }
 @keyframes winCircle { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes winDraw   { from { stroke-dashoffset: 34; } to { stroke-dashoffset: 0; } }

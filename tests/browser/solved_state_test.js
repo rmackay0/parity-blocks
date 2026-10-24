@@ -67,13 +67,12 @@ function check(label, got, want){
     check('solved: dark squares (36 - 4 X - 30 blocks)', await dark(), 2);
     await page.screenshot({ path:`solved-${label}-popup.png` });
 
-    // 2. Solved: popup, "Solved in" where the pieces were, and the board is locked
+    // 2. Solved: popup, nothing above the board, and the board is locked
     check('solved: popup shown', await visible('solved-popup'), true);
+    check('solved: popup time', (await page.textContent('#solved-win')).includes('Your time: 0:00'), true);
     await page.click('#solved-close'); await page.waitForTimeout(200);
-    check('solved: badge', (await page.textContent('#solved-badge')).trim(), 'Solved in 0:00');
-    check('solved: badge has the checkmark', await page.locator('#solved-badge .win-icon').count(), 1);
+    check('solved: no "Solved in" above the board', await page.locator('.tray-area .win-badge').count(), 0);
     check('solved: popup has the animated badge', await page.locator('#solved-win .win-badge.animate').count(), 1);
-    check('solved: badge visible', await visible('solved-badge'), true);
     const before = await page.evaluate(()=>JSON.stringify(placedPieces.map(p=>[p.row, p.col, p.cells])));
     const piece = page.locator('.placed-piece .blk').first();      // (a piece's squares take the clicks)
     const box = await piece.boundingBox(), cx = box.x + box.width/2, cy = box.y + box.height/2;
@@ -90,7 +89,6 @@ function check(label, got, want){
     await page.reload(); await page.waitForTimeout(400);
     check('reopened: pieces on the board', await page.locator('.placed-piece').count(), 6);
     check('reopened: popup shown', await visible('solved-popup'), false);
-    check('reopened: badge visible', await visible('solved-badge'), true);
     check('reopened: dark squares', await dark(), 2);
     check('reopened: board locked', await page.evaluate(()=>document.getElementById('board-outer').classList.contains('locked')), true);
     check('reopened: stars', await page.evaluate(()=>loadSolves().length), 1);
@@ -101,11 +99,24 @@ function check(label, got, want){
     check('Reset asks', await page.textContent('#reset-title'), 'Play again?');
     await page.click('#reset-confirm'); await page.waitForTimeout(200);
     check('after Reset: pieces on the board', await page.locator('.placed-piece').count(), 0);
-    check('after Reset: badge visible', await visible('solved-badge'), false);
     check('after Reset: board locked', await page.evaluate(()=>document.getElementById('board-outer').classList.contains('locked')), false);
     await place(page, sol); await page.waitForTimeout(200);
     check('solved again: popup shown', await visible('solved-popup'), true);
     check('solved again: still one star', await page.evaluate(()=>loadSolves().length), 1);
+
+    // 5. The timer: time asleep, in the background or in the tutorial doesn't count
+    await page.goto(BASE + 'play.html?level=easy'); await page.waitForTimeout(300);
+    const elapsed = ()=>page.evaluate(()=>Math.round((Date.now() - startTime) / 1000));
+    // (Pretends ms passed since the last tick: both clocks move back)
+    const pass = ms=>page.evaluate(ms=>{ startTime -= ms; lastTick -= ms; timerTick(); }, ms);
+    await pass(10 * 60 * 1000);                                     // as if the laptop slept 10 min
+    check('timer: 10 min asleep counts as ~1 s', (await elapsed()) <= 2, true);
+    await page.evaluate(()=>openTutorial());
+    await pass(5 * 60 * 1000);                                      // 5 min in the tutorial
+    check('timer: time in the tutorial doesn\'t count', (await elapsed()) <= 2, true);
+    await page.evaluate(()=>{ tutorialOverlay.hidden = true; timerTick(); });
+    await page.waitForTimeout(2100);
+    check('timer: counts again after the tutorial', (await elapsed()) >= 2, true);
     await ctx.close();
   }
   await browser.close();

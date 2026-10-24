@@ -7,10 +7,10 @@
 
    With animate + sound (the puzzle page), it plays the jingle
    (assets/solved.mp3) and moves along with it:
-     0.16 s  first note: the green circle pops in
-     0.2–0.95 s  the first three notes: the checkmark draws itself
-     1.3 s   the checkmark shrinks, as if pressed...
-     1.62 s  the big last note: it pops back out, and the text appears
+     0.11 s  first note: the green circle pops in
+     0.15–1.08 s  the checkmark draws itself (ends on the note at 1.08 s)
+     1.16 s  the checkmark shrinks, as if pressed...
+     1.46 s  the big last note: it pops back out, and the text appears
    With animate alone (the tutorial: no sound), the same animation runs
    a little quicker. (The timings live in game.css, "Solved badge".)
 

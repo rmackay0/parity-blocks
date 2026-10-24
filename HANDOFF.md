@@ -96,6 +96,21 @@ previous project; don't push there.
 - The admin sandbox still says "gap"/"fixed gap" in its own labels (user
   said that's fine).
 
+**Timer, badge, new jingle (2026-10-23, late)**
+- Timer bug: it was wall-clock time since the page opened, so a tab left
+  open in the background (or a sleeping laptop, or the tutorial) added
+  minutes, and the save carried them over (user saw 96:45 on a quick
+  Easy). Now play.html's `timerTick()` (every second, on visibilitychange,
+  and when the tutorial opens/closes) adds time that shouldn't count to
+  `startTime`: hidden tab, tutorial open, or a gap over 5 s (asleep).
+  Thinking time with the page open still counts.
+- The "Solved in m:ss" badge above the board is gone (user); the time
+  shows only in the Solved popup. (Reopening a solved puzzle shows no time.)
+- New jingle (was "Output 1-2-3-4.mp3", now `assets/solved.mp3`): notes at
+  0.11, 0.51, 0.70, 0.88, 1.08, 1.25 s, big last note 1.46 s. Animation
+  retimed in game.css (circle 0.11 s, check 0.15–1.08 s, press 1.16 s,
+  pop + text 1.44–1.49 s). Tutorial's `.quick` timings unchanged.
+
 **Review fixes (2026-10-20/22, APP_REVIEW.md items 1–4)**
 - game.js `gameSettings` (now at the top): `explain`, `lockWhenSolved`
   (play.html turns it on; sandbox leaves it off so placed solutions can

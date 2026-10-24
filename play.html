@@ -51,11 +51,9 @@
     </div>
   </div>
 
-  <!-- The pieces to place. Once solved (every piece is on the board, so
-       this space is empty) it says "Solved in 2:31" instead -->
+  <!-- The pieces to place -->
   <div class="tray-area">
     <div class="tray" id="tray" aria-label="Available pieces"></div>
-    <p class="solved-badge" id="solved-badge" hidden></p>
   </div>
 
   <!-- Mistakes only glow red here (no written explanation; see
@@ -144,12 +142,14 @@ const tutorialFrame = document.getElementById('tutorial-frame');
 window.openTutorial = ()=>{
   tutorialFrame.src = 'tutorial.html';
   tutorialOverlay.hidden = false;
+  timerTick();                       // (the timer pauses while it's open)
   tutorialFrame.focus();
 };
 // The tutorial asks to be closed (X button, Esc, or Finish)
 window.addEventListener('message', e=>{
   if(e.source !== tutorialFrame.contentWindow || !e.data || e.data.type !== 'pb-tutorial-close') return;
   tutorialOverlay.hidden = true;
+  timerTick();                       // (and starts again)
   tutorialFrame.src = 'about:blank';
   try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(err){}
 });
@@ -173,7 +173,6 @@ document.getElementById('reset-cancel').onclick = ()=>{ document.getElementById(
 document.getElementById('reset-confirm').onclick = ()=>{
   document.getElementById('reset-popup').hidden = true;
   clearSavedBoard(saveKey);
-  document.getElementById('solved-badge').hidden = true;
   loadPuzzle(puzzle);
 };
 gameSettings.explain = false;        // a wrong board just glows red; no "Uneven rows…" message
@@ -194,6 +193,7 @@ const saveKey = level ? 'level:' + level + ':' + ((PUBLISHED[level] || {}).publi
 const myPieces = ()=>placedPieces.filter(p=>!p.locked).map(p=>({ name:p.name, cells:p.cells, row:p.row, col:p.col }));
 function saveBoard(){
   if(!puzzle || gameMode !== 'play' || solved) return;   // (a solved board was saved when it was solved)
+  timerTick();
   saveBoardState(saveKey, { placed: myPieces(), tray: trayCells, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
 }
 let restoring = false;     // true while a saved board is being put back
@@ -211,11 +211,26 @@ function restoreBoard(){
   renderAll();
   restoring = false;
 }
+/* ── The timer only counts time spent looking at the puzzle ──
+   game.js times a solve as "now - startTime". Every second, any time that
+   shouldn't count is added to startTime, which takes it off the clock:
+     - the tab was in the background or the window minimised
+     - the tutorial was open over the puzzle
+     - a jump of more than 5 seconds between ticks (the computer slept;
+       the timer can't tick while it's asleep) */
+let lastTick = Date.now(), wasCounting = true;
+function timerTick(){
+  const now = Date.now(), gap = now - lastTick;
+  lastTick = now;
+  if(!wasCounting) startTime += gap;               // paused the whole time since the last tick
+  else if(gap > 5000) startTime += gap - 1000;     // asleep: count just one second of it
+  wasCounting = !document.hidden && tutorialOverlay.hidden;
+}
+setInterval(timerTick, 1000);
+document.addEventListener('visibilitychange', timerTick);
+
 enableSolvedSound();         // the jingle plays when a puzzle is solved (celebrate.js)
 gameHooks.onSolved = time=>{
-  const badge = document.getElementById('solved-badge');
-  badge.replaceChildren(solvedBadge('Solved in ' + time));
-  badge.hidden = false;
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
   document.getElementById('solved-win').replaceChildren(solvedBadge('Solved!', 'Your time: ' + time, { animate: true, sound: true, stack: true }));
