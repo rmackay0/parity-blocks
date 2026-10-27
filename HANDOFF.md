@@ -1,6 +1,6 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-10-24, end of session)
+## START HERE (updated 2026-10-27, end of session)
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -15,17 +15,17 @@ previous project; don't push there.
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html. `gameSettings` at the top: `explain`, `lockWhenSolved`, `distinctColors`, `showCaption` |
-| `celebrate.js` | The solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker |
+| `celebrate.js` | The solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker. Sound unlocks on the first real tap (touchend/pointerup/click/keydown) |
 | `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
-| `tutorial.html` | Interactive 8-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` |
+| `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (slide 5's in `EMPTY_LINES`) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
-| `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 8 slides, `next_level_test.js` the Solved popup |
+| `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 6 slides, `next_level_test.js` the Solved popup, `dotted_squares_screens.js` screenshots of the dotted lines |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
 | `puzzles.js` | `PUZZLES` registry (test puzzles; analyzer/sandbox read it) |
-| `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter) |
+| `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter, `drawDottedLines` + `groupSquares` for every dotted line) |
 | `rules.js` / `rules.css` | Rules popup (Rules button); "Play the tutorial" button on puzzle pages |
 | `solver.js` | DLX exact-cover solver + parity check + puzzle finder (pure JS; Node + browser + Worker) |
-| `sandbox.html` | Admin puzzle builder: archive (localStorage), notes, publish, analyze & flip through solutions, Shape/Fixed gap/Dotted editing |
+| `sandbox.html` | Admin puzzle builder: archive (localStorage), notes, publish, analyze & flip through solutions, Shape/Dotted square/Dotted area editing |
 | `analyzer.html` | Admin analyzer + puzzle finder |
 | `sandbox-classic.html` | The original free-form sandbox (old, mostly described further down) |
 | `tests/solver.test.js` | `node tests/solver.test.js` — 52 checks |
@@ -93,17 +93,19 @@ previous project; don't push there.
   uncovered so that every row and column has an even number of blocks?"
 - Rules popup: the empty-spaces hint under goal 2 is gone; "You can't
   place a piece on a dotted square." with a dotted-square picture.
-- Tests updated: `solved_state_test.js` (squares all look the same; one
-  dotted line per dotted square), `tutorial_test.js` (5 slides). New
-  `dotted_squares_screens.js` takes screenshots. `play_test.js` was
-  already out of date (it plays the old Medium, which had a U piece).
-- Not pushed yet.
+- Tests updated: `solved_state_test.js` (squares all look the same; no
+  dotted line drawn twice), `tutorial_test.js` (6 slides, incl. slide 5's
+  timings). New `dotted_squares_screens.js` takes screenshots.
+  `play_test.js` was already out of date (it plays the old Medium, which
+  had a U piece); not fixed.
 
-**Current state (end of 2026-10-24 session)**
+**Current state (end of 2026-10-27 session)**
 - **Everything is committed and pushed** (live on Vercel). Still check
   `git log HEAD..origin/main` first: the user may publish a puzzle from
-  the sandbox in between, which commits to GitHub (it happened this
-  session: the new Medium).
+  the sandbox in between, which commits to GitHub.
+- 2026-10-27 session: everything in the section just above (empty spaces
+  removed, dotted squares, shared dotted lines, 6-slide tutorial with the
+  new empty-spaces slide 5, jingle fix for phones).
 - 2026-10-24 session (details in "Timer, badge, new jingle" below):
   - **Timer fixed**: only time with the puzzle on screen counts (no
     background tab, sleep or tutorial time). It had shown 96:45 for a
@@ -121,7 +123,7 @@ previous project; don't push there.
 - 2026-10-23 session (all from the user's PDFs "instructions for claude on
   parity blocks" and "instructions for claude v6", plus chat requests;
   details in the dated sections just below):
-  - Tutorial rebuilt to **8 slides**: block counting on slides 2, 4, 8
+  - (Superseded 2026-10-27, now 6 slides.) Tutorial rebuilt to **8 slides**: block counting on slides 2, 4, 8
     (25% faster; other text fades while counting) with a "Solved!"
     badge; slide 5 explains empty spaces on its own; slide 6 removes the
     pieces and counts the empty spaces; slide 7 is a new puzzle where you
@@ -137,6 +139,12 @@ previous project; don't push there.
 - Easy still needs remaking (only 1 way to fit); see APP_REVIEW.md #5.
 
 **Open items / ideas for next session**
+- **Ask the user (from 2026-10-27):** does the jingle now play on their
+  phone? Is the reworded final-slide hint OK? How do the bolder dotted
+  lines and slide 5 feel?
+- `tests/browser/play_test.js` still plays the old Medium; update it to
+  the published puzzles (or have it use the solver like
+  solved_state_test.js does).
 - **The to-do list is APP_REVIEW.md "Still to do"** (puzzle design, phone
   dragging, screens, site polish).
 - **Share button** (APP_REVIEW.md #13): ask which option the user wants.
@@ -145,19 +153,15 @@ previous project; don't push there.
 - **The timer still counts thinking time with the page open but idle**
   (on purpose). If long idle stretches cause odd times, consider pausing
   after a few minutes without any input.
-- **Slide 7's hint text:** the user's notes stopped mid-sentence; Claude
-  finished it ("…two of the lines crossing it will be left with only one.
-  So every row and column needs either 0 or 2 empty spaces.") — never
-  confirmed by the user. It's `hintText` on that slide in tutorial.html.
 - **Puzzle variety:** Easy fits together only one way (solver), so the
   even rule never decides anything; new Medium 36 ways / 1 solution, Hard
   13 ways / 1 solution. Check "ways to fit" when making new puzzles.
 - Untested on a real iPhone: the jingle (unlocked silently on the first
-  tap, `unlockSolvedSound`), and the double-tap zoom guard.
-- Phones scroll a little on tutorial slides 5–7 (the note sits below the
-  board, ~30–120px on a 390 × 800 screen); Large text scrolls more
-  (~250–290px on a laptop on slides 4–7). iPhone SE not re-measured since
-  the 8-slide rebuild.
+  real tap, `unlockSolvedSound`; fixed 2026-10-27, see above), and the
+  double-tap zoom guard.
+- Phones: tutorial slide 5's note sits below the board (~180px on a
+  390 × 844 screen), so that slide scrolls itself to each new line. Large
+  text and the iPhone SE not re-measured since the 6-slide rebuild.
 - The rules popup still says "You can't place a piece across a dotted
   perimeter." (the user removed only the caption under the board; ask if
   they want that line changed too).

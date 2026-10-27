@@ -72,6 +72,17 @@ Test: `tests/browser/next_level_test.js`.
 - **New Medium published** ("new_med-second_made"): 36 ways to fit the
   pieces, 1 real solution (see #5).
 
+## Done (2026-10-27)
+
+- **Empty spaces removed; red X squares became dotted squares.** Uncovered
+  squares never change color. All dotted lines run down the middle of the
+  gaps, a little bolder, and touching shapes share one line. Hidden
+  squares are shown dotted too (#6 resolved).
+- **Tutorial is 6 slides**, with a new slide 5 that lights up and counts
+  the empty spaces of slide 4's solved board.
+- **Jingle on phones:** the sound now unlocks on a real tap (it used a
+  finger-down event phones don't count). Needs checking on a real phone.
+
 ---
 
 ## Still to do
@@ -124,10 +135,10 @@ Test: `tests/browser/next_level_test.js`.
    checking for a double-tap. You notice it when rotating several times.
    The piece could rotate straight away instead, and undo that rotation
    and reflect if a second tap follows.
-- **Some tutorial slides scroll on phones.** (Updated 2026-10-23 for the
-  8-slide tutorial.) On slides 5–7 the note sits below the board and
-  needs about 30–120px of scrolling on a 390 × 800 screen; more on an
-  iPhone SE (not re-measured) and with Large text.
+- **A tutorial slide scrolls on phones.** (Updated 2026-10-27 for the
+  6-slide tutorial.) On slide 5 the note sits below the board (~180px on
+  a 390 × 844 screen); the slide scrolls itself to each new line. iPhone
+  SE and Large text not re-measured.
 
 ### Screens
 
