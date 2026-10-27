@@ -20,24 +20,42 @@
 const SOLVED_SOUND = 'assets/solved.mp3';
 let solvedAudio = null;
 
+// Events that count as a real tap or click for the browser. (A finger
+// going DOWN doesn't count on phones, only lifting it does: listening for
+// pointerdown is why the jingle used to stay silent on phones.)
+const UNLOCK_EVENTS = ['touchend', 'pointerup', 'click', 'keydown'];
+let soundUnlocked = false, unlocking = false, realPlay = false;
+
 function enableSolvedSound(){
   try { solvedAudio = new Audio(SOLVED_SOUND); solvedAudio.preload = 'auto'; } catch(e){ return; }
-  document.addEventListener('pointerdown', unlockSolvedSound, true);
+  UNLOCK_EVENTS.forEach(t=>document.addEventListener(t, unlockSolvedSound, true));
 }
-// iPhones only let a page play sound it has already started during a tap.
+// Phones only let a page play sound it has already started during a tap.
 // So on the first tap or click, play the jingle silently for a moment;
-// after that it can play by itself.
+// after that it can play by itself. If the browser refuses, try again on
+// the next tap.
 function unlockSolvedSound(){
-  document.removeEventListener('pointerdown', unlockSolvedSound, true);
-  if(!solvedAudio) return;
+  if(!solvedAudio || soundUnlocked || unlocking) return;
+  unlocking = true;
   solvedAudio.muted = true;
-  const p = solvedAudio.play();
-  const reset = ()=>{ solvedAudio.pause(); solvedAudio.currentTime = 0; solvedAudio.muted = false; };
-  if(p && p.then) p.then(reset, ()=>{ solvedAudio.muted = false; }); else reset();
+  const done = ok=>{
+    unlocking = false;
+    // (If that same tap solved the puzzle, the real jingle is playing now: leave it)
+    if(!realPlay){ solvedAudio.pause(); solvedAudio.currentTime = 0; solvedAudio.muted = false; }
+    if(ok){
+      soundUnlocked = true;
+      UNLOCK_EVENTS.forEach(t=>document.removeEventListener(t, unlockSolvedSound, true));
+    }
+  };
+  try {
+    const p = solvedAudio.play();
+    if(p && p.then) p.then(()=>done(true), ()=>done(false)); else done(true);
+  } catch(e){ done(false); }
 }
 
 function playSolvedSound(){
   if(!solvedAudio) return;
+  realPlay = true;
   try {
     solvedAudio.muted = false;
     solvedAudio.currentTime = 0;

@@ -59,6 +59,19 @@ previous project; don't push there.
   "Dotted square" mode just toggles open ↔ dotted and no longer writes it.
 - **Dotted squares that share a side get one dotted line** around them
   together (`groupSquares` in shapes.js; game + pictures).
+- **All dotted lines are drawn by `drawDottedLines`** (shapes.js): each
+  line runs down the middle of the gap between squares; shapes that touch
+  share ONE line (each grid edge drawn once, never two lines side by side);
+  each straight run starts and ends on a dash. Board look: `BOARD_DOTTED`
+  in game.js (4px, a bit bolder than before); pictures: `PICTURE_DOTTED`.
+- **Jingle on phones fixed (untested on a real iPhone):** the sound was
+  unlocked on `pointerdown`, which phones don't count as a tap; now it
+  unlocks on touchend / pointerup / click / keydown, retrying until it
+  works (celebrate.js). An iPhone on silent still plays no sound.
+- Tutorial slide 4: dotted squares (3,3) and (4,3) (under the F's dotted
+  area) removed at the user's request; still one solution, the same one.
+  Slide 5 waits 1.5 s longer before the pieces fade (`EMPTY_FADE_MS`
+  3400; the steps after it moved by the same amount).
 - **Tutorial is 6 slides**: the old slides 5–7 (empty spaces explained,
   counted, and the drag-four-empty-spaces puzzle) were removed. Slide 3
   now has three pictures (dotted line, edge, another piece) in one row;

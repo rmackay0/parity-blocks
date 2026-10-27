@@ -133,11 +133,13 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] slide 5 board moved: ${board4 !== await boardAt()} (expected false) | Next ready ${await nextReady()} (expected false)`);
     await page.waitForTimeout(1200);
     console.log(`[${label}] slide 5 at 1.3 s:`, JSON.stringify(await emptyState()), '(expected 1 line, 0 lit)');
-    await page.waitForTimeout(2600);
-    console.log(`[${label}] slide 5 at 3.9 s:`, JSON.stringify(await emptyState()), '(expected 2 lines, 6 lit, pieces 0, dotted 0, 0 counts)');
+    await page.waitForTimeout(1700);
+    console.log(`[${label}] slide 5 at 3 s:`, JSON.stringify(await emptyState()), '(expected 1 line, 6 lit, pieces 1, dotted 1: pieces wait until 3.9 s)');
+    await page.waitForTimeout(2400);
+    console.log(`[${label}] slide 5 at 5.4 s:`, JSON.stringify(await emptyState()), '(expected 2 lines, 6 lit, pieces 0, dotted 0, 0 counts)');
     await page.screenshot({ path:`tut-${label}-5-lit.png` });
     await page.waitForTimeout(7300);
-    console.log(`[${label}] slide 5 at 11.2 s: counts "${await counts()}" (expected 2 0 0 2 2 0 | 0 2 0 2 0 2) | Next ready ${await nextReady()} (expected false)`);
+    console.log(`[${label}] slide 5 at 12.7 s: counts "${await counts()}" (expected 2 0 0 2 2 0 | 0 2 0 2 0 2) | Next ready ${await nextReady()} (expected false)`);
     await page.waitForTimeout(3300);
     console.log(`[${label}] slide 5 done:`, JSON.stringify(await emptyState()), `(expected 3 lines, 6 lit) | Next ready ${await nextReady()} (expected true) | board moved ${board4 !== await boardAt()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-5-done.png` });

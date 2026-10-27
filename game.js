@@ -285,29 +285,26 @@ boardEl.addEventListener('pointerdown', e=>{
   if(cell){ e.preventDefault(); gameHooks.onCellClick(+cell.dataset.r, +cell.dataset.c); }
 });
 
-// The dotted lines: one around the puzzle's dotted area (hintOutline), if
-// it has one, and one around each dotted square (puzzle.blocked); dotted
-// squares that share a side get one line around them together.
+// [COLORS] How the board's dotted lines look (px)
+const BOARD_DOTTED = { stroke: 'var(--color-accent)', width: 4, dash: 9, space: 6 };
+
+// The dotted lines: around the puzzle's dotted area (hintOutline), if it
+// has one, and around the dotted squares (puzzle.blocked; squares that
+// share a side are one shape). They run down the middle of the gaps
+// between squares, and shapes that touch share one line (see
+// drawDottedLines in shapes.js).
 function renderHint(){
   const overlay = document.getElementById('hint-overlay');
   overlay.innerHTML = '';
-  const outline = cells=>{
-    const minR = Math.min(...cells.map(c=>c[0]));
-    const minC = Math.min(...cells.map(c=>c[1]));
-    const rel = cells.map(([r,c])=>[r-minR, c-minC]);
-    const {rows, cols} = bounds(rel);
-    const w = cols*CELL + (cols-1)*GAP, h = rows*CELL + (rows-1)*GAP;
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width', w);
-    svg.setAttribute('height', h);
-    Object.assign(svg.style, { position:'absolute', left: pxPos(minC)+'px', top: pxPos(minR)+'px', overflow:'visible' });
-    svg.appendChild(svgPath(buildOutlinePath(rel, CELL, GAP), {
-      fill:'none', stroke:'var(--color-accent)', 'stroke-width':'3', 'stroke-dasharray':'7 5', 'stroke-linejoin':'round'
-    }));
-    overlay.appendChild(svg);
-  };
-  if(puzzle.hintOutline && puzzle.hintOutline.length) outline(puzzle.hintOutline);
-  groupSquares(puzzle.blocked || []).forEach(outline);
+  const shapes = (puzzle.hintOutline && puzzle.hintOutline.length ? [puzzle.hintOutline] : [])
+    .concat(groupSquares(puzzle.blocked || []));
+  if(!shapes.length) return;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('width', puzzle.cols*CELL + (puzzle.cols-1)*GAP);
+  svg.setAttribute('height', puzzle.rows*CELL + (puzzle.rows-1)*GAP);
+  Object.assign(svg.style, { position:'absolute', left:'0', top:'0', overflow:'visible' });
+  drawDottedLines(svg, shapes, CELL + GAP, GAP, 0, 0, BOARD_DOTTED);
+  overlay.appendChild(svg);
 }
 
 /* ═══════════════════════════════════════════════════════════════════

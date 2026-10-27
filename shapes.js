@@ -211,6 +211,64 @@ function groupSquares(cells){
   return groups;
 }
 
+/* Dotted lines (the dotted area and the dotted squares), drawn so that:
+   • each line runs down the middle of the gap between squares;
+   • where two dotted shapes touch they share ONE line, never two side by
+     side (every edge is drawn once, whichever shapes it belongs to);
+   • every straight run starts and ends with a dash, so corners look neat.
+   regions  a list of shapes, each a list of squares [[r,c]]
+   step     square size + gap (px); gap: the gap between squares (px)
+   ox, oy   where square (0,0)'s top-left corner is drawn
+   look     { stroke, width, dash, space } */
+function drawDottedLines(parent, regions, step, gap, ox, oy, look){
+  // Each edge of a square is a unit edge on the grid lines: 'h,row line,col'
+  // (horizontal) or 'v,col line,row' (vertical). A shape's border edges are
+  // those whose neighbour isn't in the same shape.
+  const edges = new Set();
+  regions.forEach(cells=>{
+    const inside = new Set(cells.map(([r,c])=>r+','+c));
+    cells.forEach(([r,c])=>{
+      if(!inside.has((r-1)+','+c)) edges.add(`h,${r},${c}`);
+      if(!inside.has((r+1)+','+c)) edges.add(`h,${r+1},${c}`);
+      if(!inside.has(r+','+(c-1))) edges.add(`v,${c},${r}`);
+      if(!inside.has(r+','+(c+1))) edges.add(`v,${c+1},${r}`);
+    });
+  });
+  // Join unit edges that continue in a straight line into one run
+  const runs = [];
+  ['h', 'v'].forEach(dir=>{
+    const byLine = {};
+    edges.forEach(e=>{ const [d, line, at] = e.split(','); if(d === dir) (byLine[line] = byLine[line] || []).push(+at); });
+    Object.entries(byLine).forEach(([line, ats])=>{
+      ats.sort((a,b)=>a-b);
+      let start = ats[0], prev = ats[0];
+      ats.slice(1).concat([null]).forEach(a=>{
+        if(a === prev + 1){ prev = a; return; }
+        runs.push({ dir, line: +line, from: start, to: prev + 1 });
+        start = prev = a;
+      });
+    });
+  });
+  // Grid line k sits in the middle of the gap before square k
+  const at = k => k*step - gap/2;
+  const w = look.width, dash = look.dash, space = look.space;
+  runs.forEach(run=>{
+    const len = (run.to - run.from) * step;
+    // Stretch the pattern slightly so the run starts and ends on a dash.
+    // (Square line ends make each dash w longer, so the pattern allows for it.)
+    const n = Math.max(1, Math.round((len + space) / (dash + space)));
+    const k = (len + space) / (n * (dash + space));
+    const d = run.dir === 'h'
+      ? `M${ox + at(run.from)},${oy + at(run.line)} H${ox + at(run.to)}`
+      : `M${ox + at(run.line)},${oy + at(run.from)} V${oy + at(run.to)}`;
+    svgEl('path', { d, fill:'none', stroke: look.stroke, 'stroke-width': w, 'stroke-linecap':'square',
+      'stroke-dasharray': `${Math.max(1, dash*k - w)} ${space*k + w}`, class:'dotted-line' }, parent);
+  });
+}
+
+// [COLORS] How dotted lines look in the small pictures (rules popup, tutorial slide 3, sandbox)
+const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #d99a4e)', width: 3, dash: 6, space: 4 };
+
 /* A picture of a board, as an <svg>.
    opts:
      rows, cols, cell   board size and square size in px
@@ -271,17 +329,9 @@ function miniBoard(opts){
     }
   }
 
-  if(dotted){
-    const minR = Math.min(...dotted.map(c=>c[0])), minC = Math.min(...dotted.map(c=>c[1]));
-    const rel = dotted.map(([r,c])=>[r-minR, c-minC]);
-    svgEl('path', { d: buildOutlinePath(rel, cell, gap), class:'rb-dotted', transform:`translate(${pad + minC*step},${pad + minR*step})` }, svg);
-  }
-  // A dotted line around each dotted square (one line around squares that share a side)
-  groupSquares(gaps).forEach(group=>{
-    const minR = Math.min(...group.map(c=>c[0])), minC = Math.min(...group.map(c=>c[1]));
-    const rel = group.map(([r,c])=>[r-minR, c-minC]);
-    svgEl('path', { d: buildOutlinePath(rel, cell, gap), class:'rb-dotted', transform:`translate(${pad + minC*step},${pad + minR*step})` }, svg);
-  });
+  // The dotted area and the dotted squares (squares that share a side are one shape)
+  const dottedShapes = (dotted && dotted.length ? [dotted] : []).concat(groupSquares(gaps));
+  if(dottedShapes.length) drawDottedLines(svg, dottedShapes, step, gap, pad, pad, PICTURE_DOTTED);
 
   // Count filled blocks per row/column and mark each green (even) or red (odd)
   if(show){

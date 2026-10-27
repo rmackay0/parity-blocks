@@ -14,8 +14,8 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
 
     for(const level of ['easy', 'medium', 'hard']){
       await page.goto(BASE + 'play.html?level=' + level); await page.waitForTimeout(400);
-      const n = await page.evaluate(()=>({ dotted: puzzle.blocked.length, lines: document.querySelectorAll('#hint-overlay svg').length }));
-      console.log(`${label} ${level}: ${n.dotted} dotted squares, ${n.lines} dotted lines drawn`);
+      const n = await page.evaluate(()=>({ dotted: puzzle.blocked.length, lines: document.querySelectorAll('#hint-overlay .dotted-line').length }));
+      console.log(`${label} ${level}: ${n.dotted} dotted squares, ${n.lines} straight dotted runs drawn`);
       await page.screenshot({ path:`dotted-${label}-${level}.png` });
     }
 
@@ -31,14 +31,19 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
     await page.evaluate(()=>showSlide(2)); await page.waitForTimeout(9800);
     await page.screenshot({ path:`dotted-${label}-tut3.png` });
     await page.evaluate(()=>showSlide(3)); await page.waitForTimeout(600);
-    console.log(`${label} slide 4: ${await page.evaluate(()=>puzzle.blocked.length)} dotted squares, ${await page.locator('#hint-overlay svg').count()} dotted lines (incl. the dotted area)`);
+    console.log(`${label} slide 4: ${await page.evaluate(()=>puzzle.blocked.length)} dotted squares, ${await page.locator('#hint-overlay .dotted-line').count()} straight dotted runs (incl. the dotted area)`);
     await page.screenshot({ path:`dotted-${label}-tut4.png` });
+    // Slide 5 (empty spaces): pieces still there at 3 s, gone at 5 s
     await page.evaluate(()=>showSlide(4)); await page.waitForTimeout(3000);
-    console.log(`${label} slide 5: ${await page.evaluate(()=>puzzle.blocked.length)} dotted squares`);
-    await page.screenshot({ path:`dotted-${label}-tut5.png` });
-    await page.click('#hint-btn', { force: true }).catch(()=>{});
+    console.log(`${label} slide 5 at 3 s: pieces showing ${await page.evaluate(()=>getComputedStyle(document.getElementById('pieces-layer')).opacity)} (expected 1)`);
+    await page.screenshot({ path:`dotted-${label}-tut5-3s.png` });
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path:`dotted-${label}-tut5-5s.png` });
+    await page.evaluate(()=>showSlide(5)); await page.waitForTimeout(3000);
+    console.log(`${label} slide 6: ${await page.evaluate(()=>puzzle.blocked.length)} dotted squares`);
+    await page.screenshot({ path:`dotted-${label}-tut6.png` });
     await page.evaluate(()=>showHint()); await page.waitForTimeout(500);
-    await page.screenshot({ path:`dotted-${label}-tut5-hint.png` });
+    await page.screenshot({ path:`dotted-${label}-tut6-hint.png` });
     await ctx.close();
   }
   await browser.close();

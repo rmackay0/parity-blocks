@@ -62,8 +62,12 @@ function check(label, got, want){
     // 1. Squares all look the same, before and after every piece is down;
     //    one dotted line per dotted square (+ one for the dotted area)
     await page.goto(BASE + 'play.html?level=hard'); await page.waitForTimeout(300);
-    check('dotted lines drawn', await page.evaluate(()=>document.querySelectorAll('#hint-overlay svg').length),
-      await page.evaluate(()=>groupSquares(puzzle.blocked).length + (puzzle.hintOutline && puzzle.hintOutline.length ? 1 : 0)));
+    // Dotted lines: drawn, and never two on the same spot (shapes that touch share one line)
+    check('dotted lines drawn', await page.evaluate(()=>document.querySelectorAll('#hint-overlay .dotted-line').length > 0), true);
+    check('no dotted line drawn twice', await page.evaluate(()=>{
+      const ds = [...document.querySelectorAll('#hint-overlay .dotted-line')].map(p=>p.getAttribute('d'));
+      return new Set(ds).size === ds.length;
+    }), true);
     check('no red X squares', await page.locator('.board-cell.blocked').count(), 0);
     await place(page, sol.slice(0, 5));
     check('5 of 6 pieces placed: squares all look the same', await looks(), 1);

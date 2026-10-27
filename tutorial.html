@@ -432,7 +432,7 @@ const PUZZLE_2 = {
 };
 const PUZZLE_3 = {
   title: 'Tutorial 2', rows: 6, cols: 6,
-  blocked: [[0,5],[3,3],[3,5],[4,3]],
+  blocked: [[0,5],[3,5]],   // ((3,3) and (4,3) removed 2026-10-27; still exactly one solution)
   hintOutline: [[1,3],[2,2],[2,3],[2,4],[3,2]],
   fixedPieces: [
     fixedPiece('I', [[0,0],[1,0],[2,0],[3,0],[4,0]]),
@@ -450,7 +450,7 @@ const PUZZLE_3_SOLVED = {
     fixedPiece('F', [[1,3],[2,2],[2,3],[2,4],[3,2]]),
     fixedPiece('N', [[0,2],[1,1],[1,2],[2,1],[3,1]]),
   ]),
-  empty: [[0,1],[4,1]], oddRows: [], oddCols: [], rings: false, status: '',
+  empty: [[0,1],[3,3],[4,1],[4,3]], oddRows: [], oddCols: [], rings: false, status: '',
 };
 const PUZZLE_4 = {
   title: 'Tutorial 3', rows: 6, cols: 6,
@@ -505,7 +505,7 @@ function dontPicture(kind, animated){
   const mover = svgEl('g', { class:'mover' });
   let dx = 0, dy = 0;
   if(kind === 'dotted'){
-    svgEl('path', { d: buildOutlinePath([[0,0],[0,1],[1,0],[1,1]], cell, gap), class:'rb-dotted', transform:`translate(${pad},${pad})` }, svg);
+    drawDottedLines(svg, [[[0,0],[0,1],[1,0],[1,1]]], step, gap, pad, pad, PICTURE_DOTTED);
     svg.appendChild(mover);
     drawPiece(mover, [[0,0],[0,1],[0,2]], COLOR.I, xAt(1), yAt(1), cell, gap);
     dx = 2*step;                                          // slides in from the right
@@ -835,9 +835,9 @@ const EMPTY_LINES = [   // [CONTENT]
   'If the grid is even (4&nbsp;&times;&nbsp;4, 6&nbsp;&times;&nbsp;6, 8&nbsp;&times;&nbsp;8, etc.), the easiest way to solve the puzzle is to first figure out where the empty spaces can and cannot go.',
 ];
 const EMPTY_GLOW_MS   = 900;    // the empty spaces light up (after line 1)
-const EMPTY_FADE_MS   = 1900;   // the pieces and dotted lines start fading (1 s)
-const EMPTY_LINE2_MS  = 3300;   // line 2 appears
-const EMPTY_COUNT_MS  = 5300;   // the counting starts
+const EMPTY_FADE_MS   = 3400;   // the pieces and dotted lines start fading (1 s)
+const EMPTY_LINE2_MS  = 4800;   // line 2 appears
+const EMPTY_COUNT_MS  = 6800;   // the counting starts
 const EMPTY_DONE_MS   = 1500;   // after the counting: line 3, then this long until Next lights up
 function emptySquares(){ return SLIDES[current].tiling.empty.concat(puzzle.blocked); }
 // A highlight on every empty space (stays until the slide changes)
