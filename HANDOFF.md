@@ -59,7 +59,9 @@ previous project; don't push there.
   - **New jingle** (`assets/solved.mp3`), animation retimed to it. Not
     yet heard by the user with the animation; ask how it feels.
   - **New Medium** published by the user ("new_med-second_made"): 36 ways
-    to fit, 1 solution. Medium now has more ways than Hard (13).
+    to fit, 1 solution (Hard: 13). That's fine: the user says tilings
+    aren't a difficulty measure (more tilings can still mean a clearer
+    solution). Don't suggest remaking puzzles on tiling counts alone.
   - **Sharing a time without spoiling the answer**: options written up
     in APP_REVIEW.md #13; user hasn't picked one. Claude recommended a
     Share button in the Solved popup that copies a text line.

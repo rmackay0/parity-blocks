@@ -90,9 +90,15 @@ Test: `tests/browser/next_level_test.js`.
    When making new puzzles, check how many ways the pieces fit in the
    sandbox analyzer, not just that there's 1 solution. A rough starting
    point: a handful of ways for Easy, a few dozen for Medium, many for
-   Hard. Medium now has more ways than Hard, so Hard may want a remake
-   too (ways aren't the only thing that makes a puzzle hard, though).
-   Easy still needs a remake.
+   Hard. **But ways to fit are not a difficulty score** (user,
+   2026-10-24): a puzzle can have more tilings yet a clearer solution.
+   Medium having more ways than Hard is fine. What also matters: how long
+   wrong tilings look right, whether there's an obvious first move, how
+   many rows/columns you must reason across, look-alike pieces. Possible
+   solver measures (not built): wrong tilings that survive until the last
+   piece; guesses needed when checking parity as rows fill. The user's
+   own judgement decides. Easy still needs a remake (1 way = the even
+   rule never matters).
 6. **Hidden permanent empty spaces aren't explained anywhere.** Easy and
    Medium each have 2. A piece sitting on one never glows, so a board
    that was otherwise right would just quietly fail to solve. None of the
