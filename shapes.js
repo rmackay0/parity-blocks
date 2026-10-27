@@ -191,6 +191,26 @@ function drawNoMark(parent, cx, cy, radius){
   return g;
 }
 
+/* Split squares [[r,c]] into groups of squares joined by a side, e.g. two
+   dotted squares next to each other get one dotted line around both. */
+function groupSquares(cells){
+  const left = new Set(cells.map(([r,c])=>r+','+c)), groups = [];
+  cells.forEach(([r,c])=>{
+    if(!left.has(r+','+c)) return;
+    const group = [], todo = [[r,c]];
+    left.delete(r+','+c);
+    while(todo.length){
+      const [a,b] = todo.pop();
+      group.push([a,b]);
+      [[a+1,b],[a-1,b],[a,b+1],[a,b-1]].forEach(([x,y])=>{
+        if(left.has(x+','+y)){ left.delete(x+','+y); todo.push([x,y]); }
+      });
+    }
+    groups.push(group);
+  });
+  return groups;
+}
+
 /* A picture of a board, as an <svg>.
    opts:
      rows, cols, cell   board size and square size in px
@@ -256,9 +276,11 @@ function miniBoard(opts){
     const rel = dotted.map(([r,c])=>[r-minR, c-minC]);
     svgEl('path', { d: buildOutlinePath(rel, cell, gap), class:'rb-dotted', transform:`translate(${pad + minC*step},${pad + minR*step})` }, svg);
   }
-  // A dotted line around each dotted square
-  gaps.forEach(([r,c])=>{
-    svgEl('path', { d: buildOutlinePath([[0,0]], cell, gap), class:'rb-dotted', transform:`translate(${pad + c*step},${pad + r*step})` }, svg);
+  // A dotted line around each dotted square (one line around squares that share a side)
+  groupSquares(gaps).forEach(group=>{
+    const minR = Math.min(...group.map(c=>c[0])), minC = Math.min(...group.map(c=>c[1]));
+    const rel = group.map(([r,c])=>[r-minR, c-minC]);
+    svgEl('path', { d: buildOutlinePath(rel, cell, gap), class:'rb-dotted', transform:`translate(${pad + minC*step},${pad + minR*step})` }, svg);
   });
 
   // Count filled blocks per row/column and mark each green (even) or red (odd)

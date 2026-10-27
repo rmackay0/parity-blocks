@@ -57,13 +57,27 @@ previous project; don't push there.
 - **Hidden ones** (`hiddenBlocked`, Easy had 2) are now shown dotted like
   the rest (user's choice). game.js ignores `hiddenBlocked`; the sandbox's
   "Dotted square" mode just toggles open ↔ dotted and no longer writes it.
-- **Tutorial is 5 slides**: the old slides 5–7 (empty spaces explained,
-  counted, and the drag-four-empty-spaces puzzle) were removed. Slide 3's
-  fourth picture is now "a dotted square". The final slide's hint was
-  reworded by Claude (not yet confirmed by the user): "The dotted area
-  must be completely filled by two pieces." / "…look at the dotted
-  square. Which other squares have to be left uncovered so that every row
-  and column has an even number of blocks?"
+- **Dotted squares that share a side get one dotted line** around them
+  together (`groupSquares` in shapes.js; game + pictures).
+- **Tutorial is 6 slides**: the old slides 5–7 (empty spaces explained,
+  counted, and the drag-four-empty-spaces puzzle) were removed. Slide 3
+  now has three pictures (dotted line, edge, another piece) in one row;
+  on phones the third sits centred under the first two (user: "a dotted
+  line is all we need").
+- **New slide 5** (user's spec, same day): slide 4's solved board, same
+  place; a note beside it line by line (`EMPTY_LINES`): "Look at the
+  empty spaces…", then the empty spaces (uncovered + dotted squares) light
+  up and stay lit while the pieces and dotted lines fade; "Since the grid
+  is even (6 × 6 blocks)…", then the empty spaces are counted; "If the
+  grid is even (4 × 4, 6 × 6, 8 × 8, etc.)…", then Next lights up (~14 s).
+  On phones the note is below the board, so the slide scrolls gently to
+  each new line. "Empty space" is used again here (user's wording).
+- **Final slide (6)**: its dotted square at (3,4) was removed (still one
+  solution, the same one; checked with solver.js). Its hint now lights up
+  the dotted area. Hint text reworded by Claude (not yet confirmed by the
+  user): "The dotted area must be completely filled by two pieces." /
+  "Knowing this about the dotted area, which squares have to be left
+  uncovered so that every row and column has an even number of blocks?"
 - Rules popup: the empty-spaces hint under goal 2 is gone; "You can't
   place a piece on a dotted square." with a dotted-square picture.
 - Tests updated: `solved_state_test.js` (squares all look the same; one
@@ -395,8 +409,9 @@ testing play.html; game state (`placedPieces`, `trayCells`, `puzzle`,
 | **piece** | a pentomino |
 | **dotted square** | a square with its own dotted line; no piece can go on it (code: `blocked`). Was "permanent empty space" (red X) until 2026-10-27 |
 
-"Empty space" and "permanent empty space" are no longer used (removed
-2026-10-27). Don't say "cell", "gap", "fixed gap" or "blocked square" to
+"Permanent empty space" is no longer used (removed 2026-10-27). "Empty
+space" appears only on tutorial slide 5 (a square no piece covers,
+dotted squares included). Don't say "cell", "gap", "fixed gap" or "blocked square" to
 players. (Code and the analyzer still say gap / fixed gap internally;
 that's fine.)
 

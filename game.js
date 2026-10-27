@@ -286,7 +286,8 @@ boardEl.addEventListener('pointerdown', e=>{
 });
 
 // The dotted lines: one around the puzzle's dotted area (hintOutline), if
-// it has one, and one around each dotted square (puzzle.blocked).
+// it has one, and one around each dotted square (puzzle.blocked); dotted
+// squares that share a side get one line around them together.
 function renderHint(){
   const overlay = document.getElementById('hint-overlay');
   overlay.innerHTML = '';
@@ -306,7 +307,7 @@ function renderHint(){
     overlay.appendChild(svg);
   };
   if(puzzle.hintOutline && puzzle.hintOutline.length) outline(puzzle.hintOutline);
-  (puzzle.blocked || []).forEach(rc=>outline([rc]));
+  groupSquares(puzzle.blocked || []).forEach(outline);
 }
 
 /* ═══════════════════════════════════════════════════════════════════

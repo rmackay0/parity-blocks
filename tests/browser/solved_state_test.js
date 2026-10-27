@@ -63,7 +63,7 @@ function check(label, got, want){
     //    one dotted line per dotted square (+ one for the dotted area)
     await page.goto(BASE + 'play.html?level=hard'); await page.waitForTimeout(300);
     check('dotted lines drawn', await page.evaluate(()=>document.querySelectorAll('#hint-overlay svg').length),
-      await page.evaluate(()=>puzzle.blocked.length + (puzzle.hintOutline && puzzle.hintOutline.length ? 1 : 0)));
+      await page.evaluate(()=>groupSquares(puzzle.blocked).length + (puzzle.hintOutline && puzzle.hintOutline.length ? 1 : 0)));
     check('no red X squares', await page.locator('.board-cell.blocked').count(), 0);
     await place(page, sol.slice(0, 5));
     check('5 of 6 pieces placed: squares all look the same', await looks(), 1);
