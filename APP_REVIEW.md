@@ -24,8 +24,9 @@ are consistent everywhere, and the Archive looks good on a phone.
 2. **A solved board is locked and says so.** After solving, pieces can't
    be dragged, tapped or turned with R/E (`gameSettings.lockWhenSolved`,
    on for the puzzle page only, so the sandbox can still move a placed
-   solution around). The empty space where the pieces were now says
-   "✓ Solved in 2:31".
+   solution around). ~~The empty space where the pieces were now says
+   "✓ Solved in 2:31".~~ (Removed 2026-10-24 at the user's request; the
+   time shows only in the Solved popup.)
 3. **Reopening a solved puzzle shows it finished.** The solved board is
    saved (marked solved), so coming back shows the finished puzzle, its
    time and the dark empty spaces, with no popup. Reset says "Play
@@ -57,27 +58,41 @@ and a phone. The other browser tests and the solver tests still pass.
 
 Test: `tests/browser/next_level_test.js`.
 
+## Done (2026-10-24)
+
+- **Timer fixed.** It used to count all the time since the page opened,
+  including a tab left in the background, a sleeping laptop and the
+  tutorial, and the saved board carried that over (a quick Easy showed
+  96:45). Now only time with the puzzle on screen counts (`timerTick` in
+  play.html). Test: `tests/browser/solved_state_test.js` part 5.
+- **No "Solved in" box above the board** (user's request).
+- **New jingle** in `assets/solved.mp3`, with the checkmark animation
+  retimed to its notes (game.css, "Solved badge").
+- **New Medium published** ("new_med-second_made"): 36 ways to fit the
+  pieces, 1 real solution (see #5).
+
 ---
 
 ## Still to do
 
 ### Puzzle design
 
-5. **Easy and Medium can only be fitted together one way**, so the even
-   rows and columns rule, which is the whole idea of the game, never
-   matters in them. Hard has 13 ways to fit the pieces and 1 real
-   solution.
+5. **Easy can only be fitted together one way**, so the even rows and
+   columns rule, which is the whole idea of the game, never matters in
+   it. (Updated 2026-10-24: the new Medium fixes this for Medium.)
 
    | Puzzle | Ways to fit the pieces | Real solutions |
    |---|---|---|
    | Easy   | 1  | 1 |
-   | Medium | 1  | 1 |
+   | Medium (new) | 36 | 1 |
    | Hard   | 13 | 1 |
 
    When making new puzzles, check how many ways the pieces fit in the
    sandbox analyzer, not just that there's 1 solution. A rough starting
    point: a handful of ways for Easy, a few dozen for Medium, many for
-   Hard. (A new Medium is already planned; Easy needs the same check.)
+   Hard. Medium now has more ways than Hard, so Hard may want a remake
+   too (ways aren't the only thing that makes a puzzle hard, though).
+   Easy still needs a remake.
 6. **Hidden permanent empty spaces aren't explained anywhere.** Easy and
    Medium each have 2. A piece sitting on one never glows, so a board
    that was otherwise right would just quietly fail to solve. None of the
@@ -118,7 +133,12 @@ Test: `tests/browser/next_level_test.js`.
     button and new look are in; the Share button isn't.)* It could offer a "Next: Hard" button,
     plus a Share button that copies something like
     "Parity Blocks · Oct 20 · Hard ✓ 2:31". That's how daily puzzles
-    spread.
+    spread. *(Ideas discussed 2026-10-24, none chosen yet: (a) Share
+    button in the popup copying a text line (phone share sheet / laptop
+    clipboard), Claude's recommendation; (b) one line for the day's three
+    levels, e.g. "🟩 0:48 🟧 2:14 🟪 —"; (c) a picture of the empty puzzle
+    (Xs only) + time + level color; (d) hints used, if hints are ever
+    added. Never share the solved board, which gives the answer away.)*
 14. **The green and red squares shown while dragging are hard to tell
     apart for red-green colorblind players** (about 1 in 12 men). A
     second sign on the red squares, such as stripes or a small ✕, would

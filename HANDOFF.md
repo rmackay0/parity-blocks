@@ -1,6 +1,6 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-10-23, end of session)
+## START HERE (updated 2026-10-24, end of session)
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -15,7 +15,7 @@ previous project; don't push there.
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html. `gameSettings` at the top: `explain`, `lockWhenSolved`, `distinctColors`, `showCaption` |
-| `celebrate.js` | The solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3`, animation timed to it; tutorial = no sound, quicker |
+| `celebrate.js` | The solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker |
 | `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
 | `tutorial.html` | Interactive 8-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
@@ -46,11 +46,24 @@ previous project; don't push there.
 - Vocabulary below (block / piece / permanent empty space / empty space)
   is mandatory.
 
-**Current state (end of 2026-10-23 session)**
-- **Everything is committed and pushed** (last commit 5867117, live on
-  Vercel). Still check `git log HEAD..origin/main` first: the user may
-  publish a puzzle from the sandbox in between, which commits to GitHub.
-- This session (all from the user's PDFs "instructions for claude on
+**Current state (end of 2026-10-24 session)**
+- **Everything is committed and pushed** (live on Vercel). Still check
+  `git log HEAD..origin/main` first: the user may publish a puzzle from
+  the sandbox in between, which commits to GitHub (it happened this
+  session: the new Medium).
+- 2026-10-24 session (details in "Timer, badge, new jingle" below):
+  - **Timer fixed**: only time with the puzzle on screen counts (no
+    background tab, sleep or tutorial time). It had shown 96:45 for a
+    quick Easy.
+  - **"Solved in" box above the board removed**; time is only in the popup.
+  - **New jingle** (`assets/solved.mp3`), animation retimed to it. Not
+    yet heard by the user with the animation; ask how it feels.
+  - **New Medium** published by the user ("new_med-second_made"): 36 ways
+    to fit, 1 solution. Medium now has more ways than Hard (13).
+  - **Sharing a time without spoiling the answer**: options written up
+    in APP_REVIEW.md #13; user hasn't picked one. Claude recommended a
+    Share button in the Solved popup that copies a text line.
+- 2026-10-23 session (all from the user's PDFs "instructions for claude on
   parity blocks" and "instructions for claude v6", plus chat requests;
   details in the dated sections just below):
   - Tutorial rebuilt to **8 slides**: block counting on slides 2, 4, 8
@@ -66,19 +79,24 @@ previous project; don't push there.
     "Play Hard →" after Medium, in the start screen's level colors; Menu
     and Close always plain.
   - Puzzle page shows no caption under the board; back arrow centred.
-- The user still plans to make a **new Medium** (and revisit Easy) in the
-  sandbox; see APP_REVIEW.md #5.
+- Easy still needs remaking (only 1 way to fit); see APP_REVIEW.md #5.
 
 **Open items / ideas for next session**
 - **The to-do list is APP_REVIEW.md "Still to do"** (puzzle design, phone
   dragging, screens, site polish).
+- **Share button** (APP_REVIEW.md #13): ask which option the user wants.
+- **Reopening a solved puzzle shows no time anywhere** now that the
+  "Solved in" box is gone; ask if they want it shown somewhere quieter.
+- **The timer still counts thinking time with the page open but idle**
+  (on purpose). If long idle stretches cause odd times, consider pausing
+  after a few minutes without any input.
 - **Slide 7's hint text:** the user's notes stopped mid-sentence; Claude
   finished it ("…two of the lines crossing it will be left with only one.
   So every row and column needs either 0 or 2 empty spaces.") — never
   confirmed by the user. It's `hintText` on that slide in tutorial.html.
-- **Puzzle variety:** Easy AND Medium each fit together only one way
-  (solver), so the even rule never decides anything; Hard has 13 ways /
-  1 solution. Check "ways to fit" when making new puzzles.
+- **Puzzle variety:** Easy fits together only one way (solver), so the
+  even rule never decides anything; new Medium 36 ways / 1 solution, Hard
+  13 ways / 1 solution. Check "ways to fit" when making new puzzles.
 - Untested on a real iPhone: the jingle (unlocked silently on the first
   tap, `unlockSolvedSound`), and the double-tap zoom guard.
 - Phones scroll a little on tutorial slides 5–7 (the note sits below the
@@ -96,7 +114,7 @@ previous project; don't push there.
 - The admin sandbox still says "gap"/"fixed gap" in its own labels (user
   said that's fine).
 
-**Timer, badge, new jingle (2026-10-23, late)**
+**Timer, badge, new jingle (2026-10-24)**
 - Timer bug: it was wall-clock time since the page opened, so a tab left
   open in the background (or a sleeping laptop, or the tutorial) added
   minutes, and the save carried them over (user saw 96:45 on a quick
@@ -117,9 +135,8 @@ previous project; don't push there.
   still be moved), `distinctColors` (tutorial turns it off).
 - Empty spaces go dark (`.gap-dark`) in the real game once every piece is
   on the grid (`markEmptySpaces`), solved or not.
-- Solved board: locked (`#board-outer.locked`), "✓ Solved in m:ss" shows
-  in the empty pieces area (`#solved-badge` in `.tray-area`, play.html),
-  and it's saved with `solved: true` so reopening shows it finished (no
+- Solved board: locked (`#board-outer.locked`), ~~"✓ Solved in m:ss" in
+  the empty pieces area~~ (removed 2026-10-24), and it's saved with `solved: true` so reopening shows it finished (no
   popup). Reset on a solved puzzle says "Play again?".
 - One star per puzzle: `recordSolve(level, title, ms, puzzleKey)` skips a
   puzzleKey already recorded.
