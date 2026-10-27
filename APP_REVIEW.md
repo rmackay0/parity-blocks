@@ -16,7 +16,8 @@ are consistent everywhere, and the Archive looks good on a phone.
 
 ## Done (2026-10-20)
 
-1. **Empty spaces now turn dark in the real game.** The tutorial says
+1. *(Undone 2026-10-27 at the user's request: uncovered squares now
+   never change color.)* **Empty spaces now turn dark in the real game.** The tutorial says
    the leftover squares turn dark once all the pieces are on the grid,
    but only the tutorial used to do it. Now the puzzle page does too,
    whether the board is solved or wrong, and they go back to normal when
@@ -99,7 +100,9 @@ Test: `tests/browser/next_level_test.js`.
    piece; guesses needed when checking parity as rows fill. The user's
    own judgement decides. Easy still needs a remake (1 way = the even
    rule never matters).
-6. **Hidden permanent empty spaces aren't explained anywhere.** Easy and
+6. *(Resolved 2026-10-27: hidden ones are now shown as dotted squares,
+   and empty spaces were removed from the game.)*
+   **Hidden permanent empty spaces aren't explained anywhere.** Easy and
    Medium each have 2. A piece sitting on one never glows, so a board
    that was otherwise right would just quietly fail to solve. None of the
    current puzzles allow that (checked with the solver), but a future one

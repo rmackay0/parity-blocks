@@ -26,14 +26,13 @@ const RULES_TEXT = {
   goalsHeading: 'Goals',
   goal1: 'Fit all of the pieces onto the grid.',
   goal2: 'Make sure that every row and every column has an even number of blocks in it.',
-  goal2Hint: 'Hint: pay attention to the empty spaces too. On an even-sized grid, an even number of empty spaces means an even number of blocks.',
   checkRows: 'Check rows',
   checkCols: 'Check columns',
   allEven: 'All even: solved!',
   rulesHeading: 'Rules',
   reflect: TOUCH ? 'Pieces can be reflected: tap one twice.' : 'Pieces can be reflected: double-click one.',
   rotate: TOUCH ? 'Pieces can be rotated: tap one.' : 'Pieces can be rotated: click one.',
-  gap: 'You can’t place a piece on a permanent empty space.',
+  gap: 'You can’t place a piece on a dotted square.',
   dotted: 'You can’t place a piece across a dotted perimeter.',
   ok: 'Got it',
   tutorial: 'Play the tutorial',
@@ -153,7 +152,7 @@ function build(){
   item(popup, [[T.goal1, null, '1.']], [
     figure(miniBoard({ rows:6, cols:6, cell:24, pieces:EXAMPLE.solved })),
   ]);
-  item(popup, [[T.goal2, null, '2.'], [T.goal2Hint, 'rules-hint']], [
+  item(popup, [[T.goal2, null, '2.']], [
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'rows'   }), T.checkRows),
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'cols'   }), T.checkCols),
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.solved, show:'solved' }), T.allEven),

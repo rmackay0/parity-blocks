@@ -216,7 +216,7 @@
     <div class="segmented" id="mode-seg">
       <button data-mode="play" class="on">Play</button>
       <button data-mode="shape">Shape</button>
-      <button data-mode="block" title="Fixed gaps">Fixed gap</button>
+      <button data-mode="block" title="Dotted squares">Dotted square</button>
       <button data-mode="dotted">Dotted</button>
     </div>
     <p class="note" id="mode-note"></p>
@@ -302,8 +302,8 @@
     <p class="modal-note">Nothing in the archive is affected.</p>
     <div class="levels">
       <div class="level-opt" id="clear-pieces"><span>Clear pieces</span><small>take every piece off the board</small></div>
-      <div class="level-opt" id="clear-board"><span>Clear board</span><small>restore cut-out squares; remove fixed gaps
-(hidden ones too) and the dotted area (keeps size and pieces)</small></div>
+      <div class="level-opt" id="clear-board"><span>Clear board</span><small>restore cut-out squares; remove dotted squares
+and the dotted area (keeps size and pieces)</small></div>
     </div>
     <div class="popup-buttons"><button type="button" class="secondary" id="clear-cancel">Cancel</button></div>
   </div>
@@ -401,7 +401,7 @@ const DRAFT_KEY = 'pb_sandboxDraft';
 const key = (r,c) => r + ',' + c;
 
 function blankDraft(){
-  return { title:'Sandbox puzzle', rows:6, cols:6, removed:[], blocked:[], hiddenBlocked:[], hintOutline:[], hintText:'',
+  return { title:'Sandbox puzzle', rows:6, cols:6, removed:[], blocked:[], hintOutline:[], hintText:'',
            pieces: ['L','I','X','N','P','U'].map(catalogPiece) };
 }
 function catalogPiece(name){
@@ -413,7 +413,6 @@ function copyPuzzle(p){
     title: p.title, rows: p.rows, cols: p.cols,
     removed: (p.removed || []).map(c=>c.slice()),
     blocked: (p.blocked || []).map(c=>c.slice()),
-    hiddenBlocked: (p.hiddenBlocked || []).map(c=>c.slice()),
     hintOutline: (p.hintOutline || []).map(c=>c.slice()),
     hintText: p.hintText || '',
     pieces: p.pieces.map(d=>({ name:d.name, color:d.color, cells:d.cells.map(c=>c.slice()) })),
@@ -424,6 +423,7 @@ let draft;
 try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch(e){}
 if(!draft || !draft.pieces) draft = blankDraft();
 if(!draft.removed) draft.removed = [];   // drafts saved before irregular boards existed
+delete draft.hiddenBlocked;              // (hidden ones are now ordinary dotted squares)
 // Colors/shapes remembered per piece name, so toggling a piece off and on keeps its puzzle color
 const pieceMemory = {};
 draft.pieces.forEach(d=>{ pieceMemory[d.name] = d; });
@@ -466,7 +466,7 @@ function renderPanel(){
   const empty = open - 5*draft.pieces.length;
   $('board-note').textContent =
     (draft.removed.length ? `${draft.removed.length} cut out · ` : '') +
-    `${draft.blocked.length} fixed gap${draft.blocked.length===1?'':'s'} (${draft.hiddenBlocked.length} hidden) · ${open} open · ` +
+    `${draft.blocked.length} dotted square${draft.blocked.length===1?'':'s'} · ${open} open · ` +
     `${draft.pieces.length} pieces cover ${5*draft.pieces.length} · ` +
     (empty >= 0 ? `${empty} gap${empty===1?'':'s'}` : `${-empty} too few squares!`);
   $('hint-text').value = draft.hintText || '';
@@ -480,7 +480,6 @@ $('rows-input').onchange = $('cols-input').onchange = ()=>{
   draft.rows = rows; draft.cols = cols;
   draft.removed = draft.removed.filter(inside);
   draft.blocked = draft.blocked.filter(inside);
-  draft.hiddenBlocked = draft.hiddenBlocked.filter(inside);
   draft.hintOutline = draft.hintOutline.filter(inside);
   draftChanged();
 };
@@ -490,7 +489,7 @@ let clickMode = 'play';
 const MODE_NOTES = {
   play: 'Drag pieces onto the board to play-test, just like the game.',
   shape: 'Click a square to cut it out of the board; click a dashed spot to put it back. To add squares past the edge, raise Rows/Columns first, then cut away what you don\u2019t want.',
-  block: 'Click a square to cycle it: open → fixed gap (X) → hidden fixed gap (players see a normal square) → open.',
+  block: 'Click a square to make it a dotted square (no piece can go on it); click it again to open it.',
   dotted: 'Click squares to add or remove them from the dotted area. Pieces must sit wholly inside it or wholly outside it.',
 };
 function setMode(mode){
@@ -511,13 +510,11 @@ gameHooks.onCellClick = (r, c)=>{
     if(has(draft.removed)) draft.removed = without(draft.removed);                          // put it back
     else {                                                                                   // cut it out
       draft.removed.push([r,c]);
-      draft.blocked = without(draft.blocked); draft.hiddenBlocked = without(draft.hiddenBlocked);
+      draft.blocked = without(draft.blocked);
       draft.hintOutline = without(draft.hintOutline);
     }
   } else if(clickMode === 'block'){
-    if(!has(draft.blocked)){ draft.blocked.push([r,c]); }                                    // open → X
-    else if(!has(draft.hiddenBlocked)){ draft.hiddenBlocked.push([r,c]); }                   // X → hidden
-    else { draft.blocked = without(draft.blocked); draft.hiddenBlocked = without(draft.hiddenBlocked); }  // hidden → open
+    draft.blocked = has(draft.blocked) ? without(draft.blocked) : draft.blocked.concat([[r,c]]);   // open ↔ dotted square
   } else if(clickMode === 'dotted'){
     draft.hintOutline = has(draft.hintOutline) ? without(draft.hintOutline) : draft.hintOutline.concat([[r,c]]);
   }
@@ -564,7 +561,7 @@ $('clear-cancel').onclick = ()=>{ $('clear-modal').hidden = true; };
 $('clear-pieces').onclick = ()=>{ $('clear-modal').hidden = true; clearPieces(); };
 $('clear-board').onclick = ()=>{
   $('clear-modal').hidden = true;
-  draft.removed = []; draft.blocked = []; draft.hiddenBlocked = []; draft.hintOutline = []; draft.hintText = '';
+  draft.removed = []; draft.blocked = []; draft.hintOutline = []; draft.hintText = '';
   draftChanged();
 };
 
@@ -727,7 +724,6 @@ $('export-btn').onclick = ()=>{
     `    blocked: ${cells(draft.blocked)},`,
   ];
   if(draft.removed.length) lines.push(`    removed: ${cells(draft.removed)},`);
-  if(draft.hiddenBlocked.length) lines.push(`    hiddenBlocked: ${cells(draft.hiddenBlocked)},`);
   if(draft.hintOutline.length) lines.push(`    hintOutline: ${cells(draft.hintOutline)},`);
   if(draft.hintText) lines.push(`    hintText: '${draft.hintText.replace(/'/g, "\\'")}',`);
   lines.push('    pieces: [');

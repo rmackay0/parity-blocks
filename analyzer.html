@@ -234,7 +234,6 @@ function renderPuzzleInfo(){
   const open = p.rows*p.cols - (p.blocked || []).length - (p.removed || []).length;
   const empty = open - 5*p.pieces.length;
   const extras = [];
-  if(p.hiddenBlocked && p.hiddenBlocked.length) extras.push(p.hiddenBlocked.length + ' of them hidden from players');
   if(p.hintOutline && p.hintOutline.length) extras.push('has a dotted outline (pieces can’t cross it)');
   $('puzzle-info').textContent =
     `${p.rows}×${p.cols} board` + ((p.removed||[]).length ? ` (${p.removed.length} squares cut out)` : '') + ` · ${(p.blocked||[]).length} fixed gaps` + (extras.length ? ' (' + extras.join('; ') + ')' : '') +

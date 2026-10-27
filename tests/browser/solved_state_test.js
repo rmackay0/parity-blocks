@@ -1,5 +1,6 @@
 // Checks the four fixes from the 2026-10-20 review, on a laptop and a phone:
-//   1. empty spaces turn dark once every piece is on the grid
+//   1. (changed 2026-10-27) uncovered squares never change color, and each
+//      dotted square has its own dotted line
 //   2. a solved board is locked, and says "Solved in …" where the pieces were
 //   3. reopening a solved puzzle shows it finished (no popup, no new star);
 //      Reset plays it again, and solving it again adds no star
@@ -52,19 +53,26 @@ function check(label, got, want){
     }
 
     const sol = solution('hard');
-    const dark = ()=>page.locator('.board-cell.gap-dark').count();
+    // How many different looks the board's squares have (1 = all the same)
+    const looks = ()=>page.evaluate(()=>new Set([...document.querySelectorAll('.board-cell')].map(el=>{
+      const s = getComputedStyle(el); return s.backgroundColor + ' ' + s.borderStyle + ' ' + s.borderColor;
+    })).size);
     const visible = id=>page.evaluate(i=>!document.getElementById(i).hidden, id);
 
-    // 1. Empty spaces: normal until every piece is down, dark once it is (wrong or right)
+    // 1. Squares all look the same, before and after every piece is down;
+    //    one dotted line per dotted square (+ one for the dotted area)
     await page.goto(BASE + 'play.html?level=hard'); await page.waitForTimeout(300);
+    check('dotted lines drawn', await page.evaluate(()=>document.querySelectorAll('#hint-overlay svg').length),
+      await page.evaluate(()=>puzzle.blocked.length + (puzzle.hintOutline && puzzle.hintOutline.length ? 1 : 0)));
+    check('no red X squares', await page.locator('.board-cell.blocked').count(), 0);
     await place(page, sol.slice(0, 5));
-    check('5 of 6 pieces placed: dark squares', await dark(), 0);
+    check('5 of 6 pieces placed: squares all look the same', await looks(), 1);
     await place(page, sol.map((p, i)=>i === 0 ? { ...p, col: p.col + 1 } : p));
     check('all placed, wrong board: board glows red', await page.evaluate(()=>document.getElementById('board-outer').classList.contains('uneven') || !!document.querySelector('.placed-piece.invalid')), true);
-    check('all placed, wrong board: some squares dark', (await dark()) > 0, true);
+    check('all placed, wrong board: squares all look the same', await looks(), 1);
     await place(page, sol);
     await page.waitForTimeout(200);
-    check('solved: dark squares (36 - 4 X - 30 blocks)', await dark(), 2);
+    check('solved: squares all look the same', await looks(), 1);
     await page.screenshot({ path:`solved-${label}-popup.png` });
 
     // 2. Solved: popup, nothing above the board, and the board is locked
@@ -89,7 +97,7 @@ function check(label, got, want){
     await page.reload(); await page.waitForTimeout(400);
     check('reopened: pieces on the board', await page.locator('.placed-piece').count(), 6);
     check('reopened: popup shown', await visible('solved-popup'), false);
-    check('reopened: dark squares', await dark(), 2);
+    check('reopened: squares all look the same', await looks(), 1);
     check('reopened: board locked', await page.evaluate(()=>document.getElementById('board-outer').classList.contains('locked')), true);
     check('reopened: stars', await page.evaluate(()=>loadSolves().length), 1);
     await page.screenshot({ path:`solved-${label}-reopened.png` });

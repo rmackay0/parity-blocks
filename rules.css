@@ -28,7 +28,6 @@
   --rules-highlight-even-opacity: 0.55;  /* green highlighter strength */
   --rules-board:         #1c1714;    /* frame behind picture boards */
   --rules-cell:          #443830;    /* an empty square in pictures */
-  --rules-gap-x:         #e05252;    /* the X on a gap square */
   --rules-dotted:        #d99a4e;    /* dotted perimeter line */
   --rules-arrow:         #e8ddd0;    /* reflect / rotate arrows */
   --rules-empty:         #f2c48a;    /* ring marking an empty open square (analyzer) */
@@ -205,8 +204,6 @@ html.large-text .rules-popup .rules-ok { font-size: 1.8rem; height: 60px; }
 /* ── Picture parts (SVG classes used by rules.js) ── */
 .rb-frame    { fill: var(--rules-board); }
 .rb-cell     { fill: var(--rules-cell); }
-.rb-gap      { fill: var(--rules-board); stroke: var(--rules-panel-border); stroke-dasharray: 3 2; }
-.rb-gap-x    { stroke: var(--rules-gap-x); stroke-width: 3; stroke-linecap: round; fill: none; }
 .rb-divider  { fill: none; stroke: rgba(0, 0, 0, 0.25); stroke-width: 1.5; }
 .rb-outline  { fill: none; stroke: rgba(0, 0, 0, 0.45); stroke-width: 2; stroke-linejoin: round; }
 .rb-hl       { opacity: var(--rules-highlight-opacity); }   /* highlighter strokes */

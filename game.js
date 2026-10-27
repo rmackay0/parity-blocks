@@ -90,7 +90,7 @@ let GAP = 4;
 // tray piece changes it here; it's the orientation the piece is placed in.
 let trayCells = {};
 let placedPieces = [];        // {id, name, color, cells, row, col}
-let invalidIds = new Set();   // pieces overlapping, off-grid, or on a blocked square
+let invalidIds = new Set();   // pieces overlapping, off-grid, or on a dotted square
 let keyPieceId = null;        // piece just turned with R / E (see Keyboard shortcuts)
 let placedIdCounter = 1;
 let solved = false;
@@ -105,7 +105,6 @@ function loadPuzzle(p, opts){
   const colors = pieceColors(p);
   p = Object.assign({}, p, { pieces: p.pieces.map(d=>Object.assign({}, d, { color: colors[d.name] })) });
   puzzle = p;
-  document.body.classList.toggle('empty-space-pieces', !!p.piecesAreEmptySpaces);   // (see game.css)
   dottedRegion = new Set((p.hintOutline || []).map(([r,c])=>r+','+c));
   removedSet = new Set((p.removed || []).map(([r,c])=>r+','+c));
   const names = new Set(p.pieces.map(d=>d.name));
@@ -153,11 +152,12 @@ function setViewTiling(t){
    BOARD RULES  (piece shapes and drawing are in shapes.js)
 ═══════════════════════════════════════════════════════════════════ */
 
+/* A dotted square (puzzle.blocked): a single square with a dotted line
+   around it. No piece can go on it (a piece can't cross a dotted line, and
+   no piece fits inside one square). It looks like any other square, and
+   it stays that way when the puzzle is finished. (Older puzzles may also
+   list some of them in hiddenBlocked; those are drawn dotted too now.) */
 function isBlocked(r, c){ return puzzle.blocked.some(([br,bc])=>br===r && bc===c); }
-function isVisiblyBlocked(r, c){
-  if(!isBlocked(r, c)) return false;
-  return !(puzzle.hiddenBlocked || []).some(([hr,hc])=>hr===r && hc===c);
-}
 function inBounds(r, c){ return r>=0 && c>=0 && r<puzzle.rows && c<puzzle.cols && !removedSet.has(r+','+c); }
 
 function occupiedExcept(excludeId){
@@ -179,23 +179,15 @@ function crossesDottedLine(cells, row, col){
   const inside = cells.map(([r,c])=>dottedRegion.has((row+r)+','+(col+c)));
   return inside.some(Boolean) && !inside.every(Boolean);
 }
-// visibleOnly: ignore hidden gaps (puzzle.hiddenBlocked). Used for anything
-// the player SEES -- the red glow and the green/red drop preview -- so a
-// hidden gap is never given away. A piece on a hidden gap still stops the
-// puzzle from counting as solved (see checkSolved).
-function fits(cells, row, col, excludeId, visibleOnly){
-  return fitsAgainst(cells, row, col, occupiedExcept(excludeId), visibleOnly);
+function fits(cells, row, col, excludeId){
+  return fitsAgainst(cells, row, col, occupiedExcept(excludeId));
 }
 // Same check, against a given set of taken squares ("r,c")
-function fitsAgainst(cells, row, col, occ, visibleOnly){
-  const blocked = visibleOnly ? isVisiblyBlocked : isBlocked;
+function fitsAgainst(cells, row, col, occ){
   return !crossesDottedLine(cells, row, col) && cells.every(([r,c])=>{
     const rr = row+r, cc = col+c;
-    return inBounds(rr, cc) && !blocked(rr, cc) && !occ.has(rr+','+cc);
+    return inBounds(rr, cc) && !isBlocked(rr, cc) && !occ.has(rr+','+cc);
   });
-}
-function coversHiddenGap(p){
-  return p.cells.some(([r,c])=>isBlocked(p.row+r, p.col+c) && !isVisiblyBlocked(p.row+r, p.col+c));
 }
 function completelyOffBoard(cells, row, col){
   return cells.every(([r,c])=>!inBounds(row+r, col+c));
@@ -203,7 +195,7 @@ function completelyOffBoard(cells, row, col){
 // Rechecked for every piece after each change, so moving one piece off
 // another clears the red state on both.
 function recomputeValidity(){
-  invalidIds = new Set(placedPieces.filter(p=>!fitsAgainst(p.cells, p.row, p.col, occupiedBefore(p.id), true)).map(p=>p.id));
+  invalidIds = new Set(placedPieces.filter(p=>!fitsAgainst(p.cells, p.row, p.col, occupiedBefore(p.id))).map(p=>p.id));
 }
 
 /* [BEHAVIOR] When two pieces overlap, only the one moved most recently
@@ -246,16 +238,12 @@ function setupBoard(){
   boardEl.style.gridTemplateColumns = `repeat(${puzzle.cols}, ${CELL}px)`;
   boardEl.style.gridTemplateRows = `repeat(${puzzle.rows}, ${CELL}px)`;
   boardEl.style.gap = GAP + 'px';
-  boardEl.style.fontSize = (CELL/40) + 'rem';   // scales the blocked-square X
   boardEl.innerHTML = '';
   for(let r=0; r<puzzle.rows; r++) for(let c=0; c<puzzle.cols; c++){
     const cell = document.createElement('div');
-    // Hidden gaps look like open squares in the game; the sandbox shows
-    // them (class hidden-gap) everywhere except while play-testing
-    const hidden = isBlocked(r,c) && !isVisiblyBlocked(r,c);
-    cell.className = 'board-cell' + (removedSet.has(r+','+c) ? ' removed' : '')
-      + (isVisiblyBlocked(r,c) ? ' blocked' : '')
-      + (hidden && gameMode !== 'play' ? ' hidden-gap' : '');
+    // (A dotted square looks like any other square; its dotted line is
+    // drawn by renderHint)
+    cell.className = 'board-cell' + (removedSet.has(r+','+c) ? ' removed' : '');
     cell.dataset.r = r;
     cell.dataset.c = c;
     boardEl.appendChild(cell);
@@ -297,25 +285,28 @@ boardEl.addEventListener('pointerdown', e=>{
   if(cell){ e.preventDefault(); gameHooks.onCellClick(+cell.dataset.r, +cell.dataset.c); }
 });
 
-// Optional dashed outline around a region (puzzle #2). Its caption is set
-// once at start, before the board measures how much room it has.
+// The dotted lines: one around the puzzle's dotted area (hintOutline), if
+// it has one, and one around each dotted square (puzzle.blocked).
 function renderHint(){
   const overlay = document.getElementById('hint-overlay');
   overlay.innerHTML = '';
-  if(!puzzle.hintOutline || !puzzle.hintOutline.length) return;
-  const minR = Math.min(...puzzle.hintOutline.map(c=>c[0]));
-  const minC = Math.min(...puzzle.hintOutline.map(c=>c[1]));
-  const rel = puzzle.hintOutline.map(([r,c])=>[r-minR, c-minC]);
-  const {rows, cols} = bounds(rel);
-  const w = cols*CELL + (cols-1)*GAP, h = rows*CELL + (rows-1)*GAP;
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('width', w);
-  svg.setAttribute('height', h);
-  Object.assign(svg.style, { position:'absolute', left: pxPos(minC)+'px', top: pxPos(minR)+'px', overflow:'visible' });
-  svg.appendChild(svgPath(buildOutlinePath(rel, CELL, GAP), {
-    fill:'none', stroke:'var(--color-accent)', 'stroke-width':'3', 'stroke-dasharray':'7 5', 'stroke-linejoin':'round'
-  }));
-  overlay.appendChild(svg);
+  const outline = cells=>{
+    const minR = Math.min(...cells.map(c=>c[0]));
+    const minC = Math.min(...cells.map(c=>c[1]));
+    const rel = cells.map(([r,c])=>[r-minR, c-minC]);
+    const {rows, cols} = bounds(rel);
+    const w = cols*CELL + (cols-1)*GAP, h = rows*CELL + (rows-1)*GAP;
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    Object.assign(svg.style, { position:'absolute', left: pxPos(minC)+'px', top: pxPos(minR)+'px', overflow:'visible' });
+    svg.appendChild(svgPath(buildOutlinePath(rel, CELL, GAP), {
+      fill:'none', stroke:'var(--color-accent)', 'stroke-width':'3', 'stroke-dasharray':'7 5', 'stroke-linejoin':'round'
+    }));
+    overlay.appendChild(svg);
+  };
+  if(puzzle.hintOutline && puzzle.hintOutline.length) outline(puzzle.hintOutline);
+  (puzzle.blocked || []).forEach(rc=>outline([rc]));
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -347,9 +338,8 @@ function boardFull(){ return placedPieces.filter(p=>!p.locked).length === puzzle
 function renderBoardPieces(){
   piecesLayerEl.querySelectorAll('.placed-piece').forEach(el=>el.remove());
   // A piece that breaks a placement rule glows red. Once every piece is
-  // down, only pieces breaking a rule the player can see glow (a piece on
-  // a hidden gap stays secret); the written explanation follows a few
-  // seconds later (see checkSolved).
+  // down, the written explanation follows a few seconds later (see
+  // checkSolved).
   const full = boardFull();
   placedPieces.forEach(p=>{
     const bad = full ? !p.locked && !!pieceProblem(p) : invalidIds.has(p.id);
@@ -379,7 +369,8 @@ function renderAll(){
 }
 
 // View mode: draw viewTiling's pieces (not the player's), mark odd
-// rows/columns with the highlighter and ring the empty squares
+// rows/columns with the highlighter and (sandbox only) ring the squares
+// no piece covers
 function renderView(){
   const t = viewTiling || { pieces:[], oddRows:[], oddCols:[], empty:[], status:'' };
   cancelExplain();
@@ -395,14 +386,11 @@ function renderView(){
     piecesLayerEl.appendChild(wrap);
   });
   drawUnevenMarks(t.oddRows, t.oddCols);
-  // Empty spaces in a finished board: dark like a permanent empty space, with a ring
-  boardEl.querySelectorAll('.gap-dark').forEach(el=>el.classList.remove('gap-dark'));
-  t.empty.forEach(([r,c])=>{
-    const cell = boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
-    if(cell) cell.classList.add('gap-dark');
-    if(t.rings !== false)     // the tutorial turns the rings off
+  // (The squares themselves stay as they are)
+  if(t.rings !== false)       // the tutorial turns the rings off
+    (t.empty || []).forEach(([r,c])=>{
       markOverlayEl.appendChild(svgEl('circle', { cx: pxPos(c) + CELL/2, cy: pxPos(r) + CELL/2, r: CELL*0.22, class:'empty-ring' }));
-  });
+    });
   statusEl.textContent = t.status || '';
   statusEl.classList.toggle('good', !!t.good);
 }
@@ -635,7 +623,7 @@ function onPointerMove(e){
   if(overTray(e.clientX, e.clientY)) return;
   const {row, col} = landingSpot(e.clientX, e.clientY, press);
   const excludeId = press.source.kind==='board' ? press.source.id : null;
-  const ok = fits(press.cells, row, col, excludeId, true);
+  const ok = fits(press.cells, row, col, excludeId);
   press.cells.forEach(([r,c])=>{
     const el = boardEl.querySelector(`.board-cell[data-r="${row+r}"][data-c="${col+c}"]`);
     if(el) el.classList.add(ok ? 'hl-valid' : 'hl-invalid');
@@ -686,9 +674,9 @@ function onPointerUp(e){
 
 /* ═══════════════════════════════════════════════════════════════════
    WIN CHECK
-   Solved = every piece placed, none overlapping/off-grid/on a gap/across
-   a dotted line, and every row and column has an even number of filled
-   squares.
+   Solved = every piece placed, none overlapping/off-grid/across a dotted
+   line (or on a dotted square), and every row and column has an even
+   number of filled squares.
    Once every piece is down but it isn't solved, it glows red straight
    away (the rule-breaking pieces, or the board's frame if it's only the
    rows/columns), and if nothing moves for EXPLAIN_DELAY_MS the message
@@ -730,7 +718,6 @@ const SHOW_UNEVEN_MARKS = false;
 const PROBLEM_TEXT = {
   overlap: 'Pieces overlap',
   off:     'A piece is off the board',
-  gap:     'A piece is on a permanent empty space',
   dotted:  'A piece crosses a dotted line',
 };
 
@@ -752,9 +739,8 @@ function pieceProblem(p){
   const occ = occupiedBefore(p.id);      // overlaps count against the newer piece only
   const abs = p.cells.map(([r,c])=>[p.row+r, p.col+c]);
   if(abs.some(([r,c])=>!inBounds(r,c))) return 'off';
-  if(abs.some(([r,c])=>isVisiblyBlocked(r,c))) return 'gap';   // hidden gaps stay secret
   if(abs.some(([r,c])=>occ.has(r+','+c))) return 'overlap';
-  if(crossesDottedLine(p.cells, p.row, p.col)) return 'dotted';
+  if(abs.some(([r,c])=>isBlocked(r,c)) || crossesDottedLine(p.cells, p.row, p.col)) return 'dotted';
   return null;
 }
 
@@ -776,36 +762,18 @@ function drawUnevenMarks(oddRows, oddCols){
   });
 }
 
-/* [BEHAVIOR] Once every piece is on the grid, the squares left over (the
-   empty spaces) turn dark, like permanent empty spaces, as the tutorial
-   teaches. Picking a piece back up turns them back to normal. */
-function markEmptySpaces(full){
-  boardEl.querySelectorAll('.gap-dark').forEach(el=>el.classList.remove('gap-dark'));
-  if(!full || puzzle.piecesAreEmptySpaces) return;
-  const covered = new Set();
-  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>covered.add((p.row+r)+','+(p.col+c))));
-  boardEl.querySelectorAll('.board-cell').forEach(el=>{
-    const r = +el.dataset.r, c = +el.dataset.c;
-    if(inBounds(r,c) && !isVisiblyBlocked(r,c) && !covered.has(r+','+c)) el.classList.add('gap-dark');
-  });
-}
-
 function checkSolved(){
   markOverlayEl.innerHTML = '';
   boardOuterEl.classList.remove('uneven');
-  markEmptySpaces(boardFull());
   boardOuterEl.classList.toggle('locked', solved && gameSettings.lockWhenSolved);
   if(solved) return;
   if(!boardFull()){ explainLater(''); return; }
 
-  // Count filled squares on the board (overlapping squares count once).
-  // puzzle.piecesAreEmptySpaces (a tutorial puzzle): the pieces are single
-  // empty spaces, so the permanent empty spaces count along with them.
+  // Count filled squares on the board (overlapping squares count once)
   const filled = new Set();
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
     if(inBounds(p.row+r, p.col+c)) filled.add((p.row+r)+','+(p.col+c));
   }));
-  if(puzzle.piecesAreEmptySpaces) puzzle.blocked.forEach(([r,c])=>filled.add(r+','+c));
   const oddRows = [], oddCols = [];
   for(let r=0; r<puzzle.rows; r++){
     let n = 0;
@@ -819,10 +787,8 @@ function checkSolved(){
   }
 
   const problems = [...new Set(placedPieces.map(pieceProblem).filter(Boolean))];
-  // A piece on a hidden gap silently prevents solving: no glow, no message
-  const onHiddenGap = placedPieces.some(coversHiddenGap);
 
-  if(!oddRows.length && !oddCols.length && !problems.length && !onHiddenGap){
+  if(!oddRows.length && !oddCols.length && !problems.length){
     solved = true;
     boardOuterEl.classList.toggle('locked', gameSettings.lockWhenSolved);
     cancelExplain();
@@ -835,7 +801,6 @@ function checkSolved(){
   }
   if(SHOW_UNEVEN_MARKS) drawUnevenMarks(oddRows, oddCols);
   // Only the rows/columns are wrong: no piece glows, so the board's frame does
-  // (A piece on a hidden gap alone shows nothing: hidden gaps stay secret.)
   if(!problems.length && (oddRows.length || oddCols.length)) boardOuterEl.classList.add('uneven');
   explainLater([unevenMessage(oddRows.length, oddCols.length), ...problems.map(k=>PROBLEM_TEXT[k])]
     .filter(Boolean).join(' · '));

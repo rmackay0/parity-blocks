@@ -25,7 +25,6 @@
   --color-valid-bg:     #3c5638;
   --color-invalid:      #c25a5a;   /* drop preview: doesn't fit; odd row/column */
   --color-invalid-bg:   #5a3838;
-  --color-blocked-x:    #e05252;   /* the X on a blocked square */
   --color-select:       #f2c48a;   /* ring around a selected piece at the top */
   --color-highlight:    #e0484f;   /* highlighter over an uneven row/column */
   --color-status:       #ef8a8a;   /* "Uneven rows" message above the board */
@@ -174,13 +173,6 @@ body {
 @keyframes winTextUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .win-badge.animate, .win-badge.animate * { animation: none !important; } }
 
-/* Tutorial empty-spaces puzzle (puzzle.piecesAreEmptySpaces): its single
-   squares look exactly like a permanent empty space, without the X */
-body.empty-space-pieces .piece-svg { display: none; }
-body.empty-space-pieces .piece-box {
-  background: var(--color-bg); border: 1px dashed var(--color-cell-border); border-radius: 4px; box-sizing: border-box;
-}
-body.empty-space-pieces .placed-piece.invalid .piece-box { box-shadow: 0 0 0 2px rgba(220,70,70,0.95), 0 0 8px rgba(220,70,70,0.9); }
 .tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
 
 /* ── Board ── */
@@ -208,23 +200,6 @@ body.empty-space-pieces .placed-piece.invalid .piece-box { box-shadow: 0 0 0 2px
   background: var(--color-cell);
   border: 1px solid var(--color-cell-border);
   border-radius: 4px;
-}
-.board-cell.blocked {
-  position: relative;
-  background: var(--color-bg);
-  border-style: dashed;
-}
-.board-cell.blocked::after {
-  content: '\2715';
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-blocked-x);
-  font-family: sans-serif;
-  font-size: 1.4em;
-  font-weight: 700;
 }
 .board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid); }
 .board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid); }
@@ -346,27 +321,8 @@ body.editing .board-cell { cursor: pointer; }
 body.editing .board-cell:hover { filter: brightness(1.25); }
 /* View mode: a solver tiling is shown; nothing can be dragged */
 body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
-/* A hidden gap, as the builder sees it (players never do) */
-.board-cell.hidden-gap {
-  position: relative;
-  background: var(--color-bg);
-  border: 2px dashed var(--color-blocked-x);
-}
-.board-cell.hidden-gap::after {
-  content: 'hidden';
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-blocked-x);
-  font-size: 0.55em;
-  letter-spacing: 0.05em;
-}
-/* View mode: ring on an open square no piece covers */
+/* View mode (sandbox only): ring on an open square no piece covers */
 .empty-ring { fill: none; stroke: var(--color-select); stroke-width: 3; }
-/* A gap in a finished board: the same dark background as a fixed gap */
-.board-cell.gap-dark { background: var(--color-bg); border-style: dashed; }
 /* Two pulses of glowing light on a ring (the tutorial uses this) */
 @keyframes ringPulse {
   0%, 100% { filter: none; }

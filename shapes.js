@@ -195,7 +195,7 @@ function drawNoMark(parent, cx, cy, radius){
    opts:
      rows, cols, cell   board size and square size in px
      pieces             [{cells, color, row, col}]
-     gaps               [[r,c]] blocked squares (drawn with an X)
+     gaps               [[r,c]] dotted squares (blocked: a dotted line around each)
      removed            [[r,c]] squares that aren't part of the board (left
                         out; the frame follows the board's shape)
      show               'rows' | 'cols': green/red highlighter on every row or
@@ -237,13 +237,7 @@ function miniBoard(opts){
   for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
     const x = pad + c*step, y = pad + r*step;
     if(removed.has(r+','+c)) continue;
-    if(isGap(r,c)){
-      svgEl('rect', { x:x+0.5, y:y+0.5, width:cell-1, height:cell-1, rx:3, class:'rb-gap' }, svg);
-      const k = cell*0.28;
-      svgEl('path', { d:`M${x+cell/2-k},${y+cell/2-k} L${x+cell/2+k},${y+cell/2+k} M${x+cell/2+k},${y+cell/2-k} L${x+cell/2-k},${y+cell/2+k}`, class:'rb-gap-x' }, svg);
-    } else {
-      svgEl('rect', { x, y, width:cell, height:cell, rx:3, class:'rb-cell' }, svg);
-    }
+    svgEl('rect', { x, y, width:cell, height:cell, rx:3, class:'rb-cell' }, svg);
   }
 
   pieces.forEach(p=>drawPiece(svg, p.cells, p.color, pad + p.col*step, pad + p.row*step, cell, gap));
@@ -262,6 +256,10 @@ function miniBoard(opts){
     const rel = dotted.map(([r,c])=>[r-minR, c-minC]);
     svgEl('path', { d: buildOutlinePath(rel, cell, gap), class:'rb-dotted', transform:`translate(${pad + minC*step},${pad + minR*step})` }, svg);
   }
+  // A dotted line around each dotted square
+  gaps.forEach(([r,c])=>{
+    svgEl('path', { d: buildOutlinePath([[0,0]], cell, gap), class:'rb-dotted', transform:`translate(${pad + c*step},${pad + r*step})` }, svg);
+  });
 
   // Count filled blocks per row/column and mark each green (even) or red (odd)
   if(show){

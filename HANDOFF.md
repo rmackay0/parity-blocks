@@ -43,8 +43,34 @@ previous project; don't push there.
   test scripts in files (not long inline commands); explain pipes etc.
 - **Specs come as PDFs** ("instructions v1/v2/v3") with notes beside
   screenshots; follow them closely, flag any typos/ambiguities briefly.
-- Vocabulary below (block / piece / permanent empty space / empty space)
-  is mandatory.
+- Vocabulary below (block / piece / dotted square) is mandatory.
+
+**2026-10-27: empty spaces removed, dotted squares instead (user request)**
+- "Empty spaces" and "permanent empty spaces" are gone from the game,
+  rules and tutorial. The old red-X squares (`puzzle.blocked`) are now
+  **dotted squares**: a normal-looking square with its own dotted line
+  (drawn by `renderHint` in game.js; `miniBoard` draws them the same way).
+  No piece can go on one; a piece there glows red like one crossing a
+  dotted line ('dotted' problem). Solver/data unchanged (`blocked`).
+- **Uncovered squares never change color** (the dark `.gap-dark` squares
+  and `markEmptySpaces` are gone).
+- **Hidden ones** (`hiddenBlocked`, Easy had 2) are now shown dotted like
+  the rest (user's choice). game.js ignores `hiddenBlocked`; the sandbox's
+  "Dotted square" mode just toggles open ↔ dotted and no longer writes it.
+- **Tutorial is 5 slides**: the old slides 5–7 (empty spaces explained,
+  counted, and the drag-four-empty-spaces puzzle) were removed. Slide 3's
+  fourth picture is now "a dotted square". The final slide's hint was
+  reworded by Claude (not yet confirmed by the user): "The dotted area
+  must be completely filled by two pieces." / "…look at the dotted
+  square. Which other squares have to be left uncovered so that every row
+  and column has an even number of blocks?"
+- Rules popup: the empty-spaces hint under goal 2 is gone; "You can't
+  place a piece on a dotted square." with a dotted-square picture.
+- Tests updated: `solved_state_test.js` (squares all look the same; one
+  dotted line per dotted square), `tutorial_test.js` (5 slides). New
+  `dotted_squares_screens.js` takes screenshots. `play_test.js` was
+  already out of date (it plays the old Medium, which had a U piece).
+- Not pushed yet.
 
 **Current state (end of 2026-10-24 session)**
 - **Everything is committed and pushed** (live on Vercel). Still check
@@ -361,17 +387,18 @@ both laptop and phone checked before pushes. Tips: mark the tutorial seen with
 testing play.html; game state (`placedPieces`, `trayCells`, `puzzle`,
 `keyPieceId`, `CELL`) are globals readable via page.evaluate.
 
-## Words to use (user's decision, updated 2026-10-20) — in ALL player-facing text
+## Words to use (user's decision, updated 2026-10-27) — in ALL player-facing text
 
 | Word | Means |
 |---|---|
 | **block** | one square of a piece |
 | **piece** | a pentomino |
-| **permanent empty space** | a square with a red X (code: `blocked`; `hiddenBlocked` = hidden one). Was "fixed gap" until 2026-10-20 |
-| **empty space** | an empty open square left between pieces (solver JSON: `gaps`). Was "gap" |
+| **dotted square** | a square with its own dotted line; no piece can go on it (code: `blocked`). Was "permanent empty space" (red X) until 2026-10-27 |
 
-Don't say "cell", "gap", "fixed gap" or "blocked square" to players. (Code
-and the admin sandbox still say gap / fixed gap internally; that's fine.)
+"Empty space" and "permanent empty space" are no longer used (removed
+2026-10-27). Don't say "cell", "gap", "fixed gap" or "blocked square" to
+players. (Code and the analyzer still say gap / fixed gap internally;
+that's fine.)
 
 ## Working style with this user
 
