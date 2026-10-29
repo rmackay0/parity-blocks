@@ -62,24 +62,6 @@ check('I on a 1x6 with the last square removed: only 1 tiling left',
 check('removed squares appear in the JSON as "removed"',
   S.analyzePuzzle({ rows:1, cols:6, removed:[[0,5]], pieces:[piece('I')] }).removed, [[0,5]]);
 
-// Cut boards count EMPTY SPACES per row/column (removed squares don't count).
-// The user's 8x8 sandbox puzzle (2026-10-29): 3 corners removed, 6 dotted
-// squares, every other square covered (55 blocks). Bottom row and right
-// column have 5 blocks but 2 empty spaces each, so it's solved.
-const cutRemoved = [[0,0],[0,7],[7,0]];
-const cutDotted = [[1,3],[1,5],[3,3],[3,7],[7,5],[7,7]];
-const cutFilled = [];
-for(let r=0; r<8; r++) for(let c=0; c<8; c++){
-  const isIn = list => list.some(([a,b])=>a===r && b===c);
-  if(!isIn(cutRemoved) && !isIn(cutDotted)) cutFilled.push([r,c]);
-}
-check('user’s cut 8x8 board passes (even empty spaces everywhere)',
-  S.checkParity(8, 8, cutFilled, cutRemoved).pass, true);
-check('same board without the cut rule fails (bottom row + right column have 5 blocks)',
-  S.checkParity(8, 8, cutFilled).failingRows.concat(S.checkParity(8, 8, cutFilled).failingCols), [7, 7]);
-check('cut board: one uncovered square in a full row makes it odd',
-  S.checkParity(2, 4, [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]], [[1,3]]).failingRows, [0]);
-
 /* ── Pre-placed (prefilled) blocks ── */
 console.log('Prefilled blocks');
 // 1x6 row: block [0,0] already filled. I fits only at cols 1-5 → row has 6 filled → passes parity.

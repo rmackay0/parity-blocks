@@ -337,11 +337,8 @@ function miniBoard(opts){
   if(show){
     const filled = new Set();
     pieces.forEach(p=>p.cells.forEach(([r,c])=>filled.add((p.row+r)+','+(p.col+c))));
-    // A board with removed squares counts EMPTY SPACES instead of blocks
-    // (removed squares don't count at all), like the game does
-    const counts = (r,c)=>removed.size ? (!removed.has(r+','+c) && !filled.has(r+','+c)) : filled.has(r+','+c);
-    const rowCount = r=>{ let n=0; for(let c=0;c<cols;c++) if(counts(r,c)) n++; return n; };
-    const colCount = c=>{ let n=0; for(let r=0;r<rows;r++) if(counts(r,c)) n++; return n; };
+    const rowCount = r=>{ let n=0; for(let c=0;c<cols;c++) if(filled.has(r+','+c)) n++; return n; };
+    const colCount = c=>{ let n=0; for(let r=0;r<rows;r++) if(filled.has(r+','+c)) n++; return n; };
     const cls = n=>(n % 2 ? 'rb-odd' : 'rb-even');
 
     // Highlighter strokes, same look as the game (buildHighlighterPath in
