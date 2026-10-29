@@ -45,6 +45,18 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
+**2026-10-29: cut boards count empty spaces (user's choice)**
+- On a board with removed squares (`puzzle.removed`), each row/column
+  needs an even number of **empty spaces** (uncovered + dotted squares);
+  removed squares don't count. Normal rectangles keep the blocks rule
+  (the same thing on even grids). Done in game.js `checkSolved`,
+  solver.js `checkParity(rows, cols, filled, removed)` and shapes.js
+  `miniBoard`. Prompted by the user's 8×8 sandbox puzzle with 3 corners
+  cut (55 blocks: bottom row + right column had 5 blocks, 2 empty
+  spaces); it's a test in `tests/solver.test.js`.
+- Open: the rules popup/tutorial still say "even number of blocks"; on
+  cut boards that's no longer the whole story. Ask if wording should change.
+
 **2026-10-27: empty spaces removed, dotted squares instead (user request)**
 - "Empty spaces" and "permanent empty spaces" are gone from the game,
   rules and tutorial. The old red-X squares (`puzzle.blocked`) are now

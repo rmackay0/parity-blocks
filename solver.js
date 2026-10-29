@@ -100,7 +100,9 @@ function orientations(cells){
    DO count as filled blocks for the parity check.
    `removed` squares aren't part of the board at all (irregular shapes).
    For solving they behave exactly like blocked squares: no piece can
-   go there, and they never count as filled.
+   go there, and they never count as filled. They also change the parity
+   rule (see section 6): on a cut board, rows and columns need an even
+   number of EMPTY SPACES, and removed squares aren't empty spaces.
    `dotted` is a puzzle's dotted outline (puzzles.js `hintOutline`): a
    piece must sit entirely inside it or entirely outside it.
    Every OPEN cell gets an index 0..openCells.length-1; those indices
@@ -120,7 +122,8 @@ function makeBoard(config){
     openIndex.set(key(r,c), openCells.length);
     openCells.push([r,c]);
   }
-  return { rows, cols, key, blocked, dotted, openIndex, openCells, prefilled };
+  const removed = (config.removed || []).map(rc=>rc.slice());
+  return { rows, cols, key, blocked, dotted, openIndex, openCells, prefilled, removed };
 }
 
 /* ───────────────────────────────────────────────────────────────────────
@@ -329,13 +332,24 @@ DLX.prototype.search = function(onSolution, opts){
    filledCells: [[r,c], ...]. Counts filled cells in every row and column;
    blocked cells and gaps simply aren't in the list, so they count as
    unfilled. Passes when every count is even.
+   removed (optional): [[r,c], ...] squares cut out of the board. If there
+   are any, the rule becomes "an even number of EMPTY SPACES" (uncovered
+   + dotted squares) in every row and column, where removed squares don't
+   count at all. Empty spaces = (squares in the line − removed ones) −
+   blocks, so we just add the line's length to the block count before
+   testing for odd. On a full rectangle the plain block count is used.
    ─────────────────────────────────────────────────────────────────────── */
-function checkParity(rows, cols, filledCells){
+function checkParity(rows, cols, filledCells, removed){
   const rowCount = new Array(rows).fill(0), colCount = new Array(cols).fill(0);
   for(const [r,c] of filledCells){ rowCount[r]++; colCount[c]++; }
+  const rowExtra = new Array(rows).fill(0), colExtra = new Array(cols).fill(0);
+  if(removed && removed.length){
+    rowExtra.fill(cols); colExtra.fill(rows);
+    for(const [r,c] of removed){ rowExtra[r]--; colExtra[c]--; }
+  }
   const failingRows = [], failingCols = [];
-  rowCount.forEach((n,r)=>{ if(n % 2) failingRows.push(r); });
-  colCount.forEach((n,c)=>{ if(n % 2) failingCols.push(c); });
+  rowCount.forEach((n,r)=>{ if((n + rowExtra[r]) % 2) failingRows.push(r); });
+  colCount.forEach((n,c)=>{ if((n + colExtra[c]) % 2) failingCols.push(c); });
   return { pass: !failingRows.length && !failingCols.length, failingRows, failingCols, rowCount, colCount };
 }
 
@@ -375,7 +389,7 @@ function analyzePuzzle(config, opts){
     const used = new Set();
     placements.forEach(pl=>pl.cells.forEach(i=>used.add(i)));
     const filled = [...used].map(i=>board.openCells[i]).concat(board.prefilled);
-    const parity = checkParity(board.rows, board.cols, filled);
+    const parity = checkParity(board.rows, board.cols, filled, board.removed);
     if(parity.pass) passing++;
     if(tilings.length < maxStored){
       tilings.push({
@@ -460,7 +474,7 @@ function findPuzzles(boardConfig, n, opts){
       total++;
       const filled = board.prefilled.slice();
       rowIds.forEach(id=>rowCells[id].forEach(i=>filled.push(board.openCells[i])));
-      if(checkParity(board.rows, board.cols, filled).pass) passing++;
+      if(checkParity(board.rows, board.cols, filled, board.removed).pass) passing++;
       return passing > 1;          // stop: this combination can't qualify
     });
     if(passing === 1) qualifying.push({ pieces: combo.map(pi=>PENTOMINOES[pi].name), totalTilings: total });

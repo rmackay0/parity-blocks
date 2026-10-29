@@ -772,15 +772,20 @@ function checkSolved(){
   placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
     if(inBounds(p.row+r, p.col+c)) filled.add((p.row+r)+','+(p.col+c));
   }));
+  // A normal board counts blocks. A board with removed squares counts
+  // EMPTY SPACES instead (uncovered + dotted squares), and the removed
+  // squares aren't counted at all (user's rule, 2026-10-29).
+  const cut = removedSet.size > 0;
+  const counts = (r,c)=>cut ? (inBounds(r,c) && !filled.has(r+','+c)) : filled.has(r+','+c);
   const oddRows = [], oddCols = [];
   for(let r=0; r<puzzle.rows; r++){
     let n = 0;
-    for(let c=0; c<puzzle.cols; c++) if(filled.has(r+','+c)) n++;
+    for(let c=0; c<puzzle.cols; c++) if(counts(r,c)) n++;
     if(n % 2) oddRows.push(r);
   }
   for(let c=0; c<puzzle.cols; c++){
     let n = 0;
-    for(let r=0; r<puzzle.rows; r++) if(filled.has(r+','+c)) n++;
+    for(let r=0; r<puzzle.rows; r++) if(counts(r,c)) n++;
     if(n % 2) oddCols.push(c);
   }
 
