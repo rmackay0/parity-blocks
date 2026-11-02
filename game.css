@@ -463,7 +463,7 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
 /* ── Reset button (game page, top-right, next to Rules) ──
    Deliberately small and plain so it isn't hit by accident; it also asks
    "Start over?" before doing anything. */
-.top-right { display: flex; align-items: center; gap: 10px; }
+.top-right, .top-left { display: flex; align-items: center; gap: 10px; }
 .reset-btn {
   height: 32px;
   padding: 0 12px;

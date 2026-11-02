@@ -82,6 +82,19 @@ html.dark {
 .rules-btn:active { transform: translateY(1px); }
 .rules-btn:focus-visible { outline: 3px solid #2443d6; outline-offset: 3px; }
 
+/* ── The moon / sun button (theme.js): dark mode on or off, any time ──
+   Top left of the start screen and the puzzle page. */
+.theme-toggle {
+  width: 40px; height: 40px; border-radius: 50%; padding: 0;
+  border: 1.5px solid var(--rules-btn-line);
+  background: var(--rules-btn-bg); color: var(--rules-text);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s, transform 0.1s;
+}
+.theme-toggle:hover { background: var(--rules-btn-hover); }
+.theme-toggle:active { transform: translateY(1px); }
+.theme-toggle:focus-visible { outline: 3px solid #2B4C7E; outline-offset: 3px; }
+
 /* ── Popup ── */
 .rules-backdrop {
   position: fixed;

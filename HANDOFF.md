@@ -65,6 +65,12 @@ previous project; don't push there.
 - **Buttons:** a fine ink border (2px), 4px corners, a soft shade along
   the bottom. Main buttons ink, plain ones paper. The level dots are gone.
 - Logo in moss / gold / wisteria. Tutorial glow is indigo.
+- **Dark mode any time:** a round moon / sun button at the top left of the
+  start screen (fixed, mirroring Rules) and the puzzle page (right of the
+  back arrow). Any `[data-theme-toggle]` button works (theme.js); styled
+  as `.theme-toggle` in rules.css. The tutorial keeps its "Dark mode" text
+  button at its top left. Test: `theme_toggle_test.js` (screenshots need a
+  short wait: colors fade over ~0.15 s).
 - Possible clash to watch: the vermilion piece and the vermilion dotted
   lines (and the red "wrong" glow).
 

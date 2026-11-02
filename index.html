@@ -241,6 +241,12 @@
     right: var(--rules-right);
     z-index: 10;
   }
+  .theme-top {                     /* the dark mode button, mirroring Rules */
+    position: fixed;
+    top: var(--rules-top);
+    left: var(--rules-right);
+    z-index: 10;
+  }
   .rules-bottom {
     width: 100%;
     max-width: var(--button-width);
@@ -326,6 +332,9 @@
 
 <!-- [POSITIONING] Rules button, pinned to the top-right corner via .rules-top -->
 <button class="rules-btn rules-top" type="button" data-open-rules>Rules</button>
+
+<!-- [POSITIONING] Dark mode on / off (moon / sun; theme.js), pinned to the top-left corner -->
+<button class="theme-toggle theme-top" type="button" data-theme-toggle aria-label="Switch to dark mode"></button>
 
 <main class="splash">
 
