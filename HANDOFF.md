@@ -46,6 +46,28 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
+**2026-11-02 (very latest): "Woodblock" look applied (user's pick)**
+- Chosen from 3 rounds of palette mock-ups (artifact "Parity Blocks
+  Palettes": round 3 had 11 directions; user liked Riso most, then picked
+  Woodblock: "color palette is great, but we need to vastly improve the
+  grid"). The user will give notes next.
+- **Colors** (Japanese woodblock prints): piece palette `INKS` in
+  shapes.js (indigo, gold, vermilion, moss, sakura, asagi + 6 extras;
+  replaces Kelly). Levels: Easy moss #7BA05B (white text), Medium gold
+  #E8B33B (ink text), Hard wisteria #8E6FB0 (white text). Page paper
+  #F5F5F2, ink text #1F2330, accent indigo #2B4C7E. Dark mode: ink-blue
+  #12151D page.
+- **Grid made easy on the eyes** (the mock-up's dark frame + stark white +
+  heavy ink lines were "very hard on the eyes"): light board in light mode
+  (frame #DCDFE6, squares #FBFBF8, no square edges, soft shadow), dark
+  board in dark mode; vermilion dotted lines in the 4px gaps; piece lines
+  thinner (1.5px) in a darker shade of each piece (`PIECE_LOOK`).
+- **Buttons:** a fine ink border (2px), 4px corners, a soft shade along
+  the bottom. Main buttons ink, plain ones paper. The level dots are gone.
+- Logo in moss / gold / wisteria. Tutorial glow is indigo.
+- Possible clash to watch: the vermilion piece and the vermilion dotted
+  lines (and the red "wrong" glow).
+
 **2026-11-02 (latest): the ORIGINAL grid is back, in greys**
 - The crossword grid (thin lines, square cells) was tried and dropped: the
   user found it "much harder to read". Black-and-white was tried next, then

@@ -63,15 +63,15 @@
 <link rel="stylesheet" href="game.css">
 <style>
   :root {
-    --color-next-ready: #1f8a4c;     /* [COLORS] Next / Finish once the slide is done */
-    --color-tut-title:  #121212;     /* [COLORS] the "Tutorial" title */
-    --glow:             36, 67, 214; /* [COLORS] glowing notes and squares (red, green, blue: the accent color) */
+    --color-next-ready: #5E8A3E;     /* [COLORS] Next / Finish once the slide is done (deep moss) */
+    --color-tut-title:  #1F2330;     /* [COLORS] the "Tutorial" title (ink) */
+    --glow:             43, 76, 126; /* [COLORS] glowing notes and squares (red, green, blue: indigo, the accent) */
     --tut-board:        min(360px, 40vh, 86vw);   /* [POSITIONING] board area size */
   }
   html.dark {                        /* [COLORS] dark mode (theme.js) */
-    --color-next-ready: #2f9e5c;
-    --color-tut-title:  #f2f2f2;
-    --glow:             143, 163, 255;
+    --color-next-ready: #6E9A4C;
+    --color-tut-title:  #EDEAE3;
+    --glow:             143, 169, 214;
   }
   body { overflow: hidden; }
   .tut {
@@ -243,7 +243,7 @@
     background: var(--color-cell-border); color: var(--color-text-dim); cursor: default;
     transition: background 0.3s, color 0.3s, box-shadow 0.3s;
   }
-  .ok-btn.ready { background: var(--color-next-ready); color: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(31, 138, 76, 0.22); }
+  .ok-btn.ready { background: var(--color-next-ready); color: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(123, 160, 91, 0.25); }
 
   /* ── "Don't place a piece over" slide ── */
   .dont-slide { max-width: 820px; margin: 0 auto; text-align: center; padding-top: 10px; }
@@ -310,7 +310,7 @@
   .foot-btn.back { min-width: 0; background: transparent; }
   .foot-btn.back:hover { color: var(--color-text); }
   .foot-btn.next[aria-disabled="true"] { cursor: default; }
-  .foot-btn.next.ready { background: var(--color-next-ready); color: #fff; box-shadow: 0 0 0 4px rgba(31, 138, 76, 0.22), 0 4px 0 rgba(0,0,0,0.3); }
+  .foot-btn.next.ready { background: var(--color-next-ready); color: #fff; box-shadow: 0 0 0 4px rgba(123, 160, 91, 0.25), inset 0 -3px 0 rgba(0,0,0,0.15); }
   .foot-btn.next.ready:hover { filter: brightness(1.08); transform: translateY(-1px); }
   /* ── Large text (the button at the top left) ──
      Only reading text grows; titles, buttons and the board stay the same. */
@@ -421,10 +421,10 @@ const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
    solver.js: slides 2 and 3 have one way to fit the pieces; slide 4 has
    6 ways but only one with every row and column even.
 ═══════════════════════════════════════════════════════════════════ */
-// Kelly's colors (KELLY in shapes.js), one per piece, so every slide's
+// The Woodblock colors (INKS in shapes.js), one per piece, so every slide's
 // pieces look different: the first six for the pieces of slides 2–3
-const COLOR = { I:KELLY.blue, F:KELLY.orange, W:KELLY.green, N:KELLY.purple, P:KELLY.yellow, Y:KELLY.pink,
-                U:KELLY.lightBlue, V:KELLY.yellowGreen };
+const COLOR = { I:INKS.indigo, F:INKS.gold, W:INKS.vermilion, N:INKS.moss, P:INKS.sakura, Y:INKS.asagi,
+                U:INKS.wisteria, V:INKS.persimmon };
 gameSettings.distinctColors = false;     // (use these colors, not the game's own palette)
 gameSettings.explain = false;            // mistakes only glow red; no message saying what's wrong
 function fixedPiece(name, absCells, color){

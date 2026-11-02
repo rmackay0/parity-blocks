@@ -13,46 +13,54 @@
   --font-text:    'Nunito', 'Segoe UI', sans-serif;
   --button-size:  1.5rem;
 
-  /* [COLORS] Light mode (the default), 2026-11-02: a clean newspaper-games
-     feel (white page, black text, crossword-style grid) in our own style,
-     not a copy of any publication's: solid rounded "key" buttons, level
-     colors that are light tints of the pieces' Kelly colors. Dark mode is
-     the html.dark block just below. (Same palette as the splash screen.) */
-  --color-bg:           #ffffff;   /* page background */
-  --color-text:         #121212;
-  --color-text-dim:     #5c5c5c;
-  --color-accent:       #2443d6;   /* headings, notes, hint glow */
-  /* The board: the original look (dark frame, lighter squares, light
-     dotted lines) in shades of grey instead of brown (user, 2026-11-02:
-     "monochromatic"). The same in light and dark mode. */
-  --color-board-bg:     #1c1c1c;   /* the frame round the squares (and the gaps between them) */
-  --color-cell:         #424242;   /* an open grid square */
-  --color-cell-line:    #4e4e4e;   /* its thin edge */
-  --color-dotted:       #cfcfcf;   /* dotted lines */
-  --color-valid-bg:     #3c5638;   /* drop preview on the board: fits */
-  --color-invalid-bg:   #5a3838;   /*   doesn't fit */
-  --color-cell-border:  #d6d6d6;   /* soft lines: popup edges, plain buttons */
-  --color-valid:        #1f8a4c;   /* "Solved!"; drop preview's edge */
-  --color-invalid:      #d62828;   /* odd row/column; drop preview's edge */
-  --color-select:       #2443d6;   /* ring on an empty square (sandbox) */
-  --color-highlight:    #e0484f;   /* highlighter over an uneven row/column */
-  --color-status:       #c62828;   /* "Uneven rows" message above the board */
-  --color-button:       #121212;   /* main buttons: fill */
-  --color-button-ink:   #ffffff;   /*   and text */
-  --color-soft:         #ececec;   /* plain buttons (Menu, Close, back): fill */
-  --color-soft-ink:     #121212;   /*   and text */
-  --color-key-edge:     rgba(0, 0, 0, 0.28);   /* the darker edge under a button */
-  --color-panel:        #ffffff;   /* popups */
-  --color-overlay:      rgba(18, 18, 18, 0.45);
-  --color-shadow:       rgba(0, 0, 0, 0.18);   /* under a lifted piece */
+  /* [COLORS] "Woodblock" (user's pick, 2026-11-02): colors from Japanese
+     woodblock prints on a soft paper page, ink-colored text, buttons with
+     a fine ink border. Piece colors: INKS in shapes.js. Dark mode is the
+     html.dark block just below. (Same palette as the splash screen.) */
+  --color-bg:           #F5F5F2;   /* page background (paper) */
+  --color-text:         #1F2330;   /* ink */
+  --color-text-dim:     #5E6270;
+  --color-accent:       #2B4C7E;   /* indigo: headings, notes, hint glow */
+  /* The board, made easy on the eyes (user: the Woodblock mock-up's grid
+     was "very hard on the eyes"): a light board in light mode, with no
+     black and no stark white. A soft indigo-grey frame, warm off-white
+     squares, gentle gaps; the only strong color is the vermilion dotted
+     line. Dark mode has the same layout in dark tones. */
+  --color-board-bg:     #DCDFE6;   /* the frame round the squares (and the gaps between them) */
+  --color-cell:         #FBFBF8;   /* an open grid square */
+  --color-cell-line:    #FBFBF8;   /* its edge (none: the same as the square) */
+  --color-dotted:       #E2483D;   /* dotted lines: vermilion */
+  --color-valid-bg:     #E4EDD9;   /* drop preview on the board: fits */
+  --color-valid-line:   #7BA05B;
+  --color-invalid-bg:   #F8DCD8;   /*   doesn't fit */
+  --color-invalid-line: #E2483D;
+  --color-board-shadow: 0 1px 2px rgba(31, 35, 48, 0.08), 0 8px 24px rgba(31, 35, 48, 0.08);
+  --color-cell-border:  #DCDDD6;   /* soft lines: popup edges */
+  --color-valid:        #5E8A3E;   /* "Solved!" (deep moss) */
+  --color-invalid:      #D23A2F;   /* odd row/column */
+  --color-select:       #2B4C7E;   /* ring on an empty square (sandbox) */
+  --color-highlight:    #E2483D;   /* highlighter over an uneven row/column */
+  --color-status:       #C0392B;   /* "Uneven rows" message above the board */
+  --color-button:       #1F2330;   /* main buttons: fill */
+  --color-button-ink:   #F5F5F2;   /*   and text */
+  --color-soft:         #FBFBF8;   /* plain buttons (Menu, Close): fill */
+  --color-soft-ink:     #1F2330;   /*   and text */
+  --color-btn-line:     #1F2330;   /* the fine ink border on buttons */
+  --color-key-edge:     rgba(0, 0, 0, 0.14);   /* the soft shade along a button's bottom */
+  --color-panel:        #FBFBF8;   /* popups */
+  --color-overlay:      rgba(31, 35, 48, 0.45);
+  --color-shadow:       rgba(31, 35, 48, 0.2);   /* under a lifted piece */
   /* the three levels (start screen buttons, stars, "Play Medium →"):
-     green, yellow, purple, so a shared result can show 🟢 🟡 🟣 (user,
-     2026-11-02); light tints of the Kelly colors, the pieces' colors */
-  --color-easy:         #8fd1ad;
-  --color-medium:       #f6d76b;
-  --color-hard:         #c3a3cc;
-  --color-level-ink:    #121212;   /* text on them */
-  --color-rotate:       #2443d6;   /* (the sandbox's main buttons) */
+     moss green, gold, wisteria purple, so a shared result can show
+     🟢 🟡 🟣 (user, 2026-11-02) */
+  --color-easy:         #7BA05B;
+  --color-medium:       #E8B33B;
+  --color-hard:         #8E6FB0;
+  --color-easy-ink:     #FFFFFF;   /* text on them */
+  --color-medium-ink:   #1F2330;
+  --color-hard-ink:     #FFFFFF;
+  --color-level-ink:    #1F2330;
+  --color-rotate:       #2B4C7E;   /* (the sandbox's main buttons) */
 
   /* [POSITIONING] Sizes and spacing */
   --page-gap:        14px;   /* space between pieces, board and buttons */
@@ -60,7 +68,7 @@
   --tray-gap:        10px;   /* space between pieces at the top */
   --board-max-cell:  84px;   /* largest a board square gets on big screens */
   --board-gap:       4px;    /* gap between board squares (the dotted lines run down it) */
-  --board-pad:       12px;   /* frame thickness around the board */
+  --board-pad:       10px;   /* frame thickness around the board */
   --button-width:    170px;  /* each of Reflect / Rotate */
   --button-height:   56px;
   --button-radius:   14px;
@@ -71,27 +79,37 @@
   --highlight-overhang:  18px;  /* how far it runs past the grid's edge */
 }
 /* [COLORS] Dark mode (theme.js; the "Dark mode" button next to "Large
-   text"). A neutral near-black, not brown (user, 2026-11-02). The level
-   colors stay the same. */
+   text"): Woodblock at night, a deep ink-blue page, never brown. The
+   level and piece colors stay the same. */
 html.dark {
-  --color-bg:           #121212;
-  --color-text:         #f2f2f2;
-  --color-text-dim:     #a6a6a6;
-  --color-accent:       #8fa3ff;
-  --color-cell-border:  #3a3a3a;
-  --color-valid:        #5cc982;
-  --color-invalid:      #ff5c5c;
-  --color-select:       #8fa3ff;
-  --color-status:       #ff8a8a;
-  --color-button:       #f2f2f2;
-  --color-button-ink:   #121212;
-  --color-soft:         #2e2e2e;
-  --color-soft-ink:     #f2f2f2;
-  --color-key-edge:     rgba(0, 0, 0, 0.6);
-  --color-panel:        #1c1c1c;
-  --color-overlay:      rgba(0, 0, 0, 0.65);
+  --color-bg:           #12151D;
+  --color-text:         #EDEAE3;
+  --color-text-dim:     #A3A6B0;
+  --color-accent:       #8FA9D6;
+  --color-board-bg:     #0B0E15;
+  --color-cell:         #1F2533;
+  --color-cell-line:    #1F2533;
+  --color-dotted:       #F06A5E;
+  --color-valid-bg:     #2B3A26;
+  --color-valid-line:   #7BA05B;
+  --color-invalid-bg:   #47231F;
+  --color-invalid-line: #F06A5E;
+  --color-board-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --color-cell-border:  #2C3240;
+  --color-valid:        #9CC57A;
+  --color-invalid:      #F06A5E;
+  --color-select:       #8FA9D6;
+  --color-status:       #F08A80;
+  --color-button:       #EDEAE3;
+  --color-button-ink:   #12151D;
+  --color-soft:         #1F2533;
+  --color-soft-ink:     #EDEAE3;
+  --color-btn-line:     #EDEAE3;
+  --color-key-edge:     rgba(0, 0, 0, 0.3);
+  --color-panel:        #181C26;
+  --color-overlay:      rgba(0, 0, 0, 0.6);
   --color-shadow:       rgba(0, 0, 0, 0.55);
-  --color-rotate:       #5b74f0;
+  --color-rotate:       #8FA9D6;
 }
 
 @media (max-width: 480px) {
@@ -136,7 +154,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: none;
+  border: 1.5px solid var(--color-btn-line);
   background: var(--color-soft);
   color: var(--color-soft-ink);
   font-family: var(--font-display);
@@ -225,9 +243,9 @@ body {
 .win-board { display: block; overflow: visible; transform-origin: center; }
 .win-board.glow { animation: boardGlow 1.4s var(--glow-delay, 0s) ease-out both; }
 @keyframes boardGlow {
-  0%   { filter: drop-shadow(0 0 0 rgba(31, 138, 76, 0)); }
-  25%  { filter: drop-shadow(0 0 14px rgba(31, 138, 76, 0.75)); }
-  100% { filter: drop-shadow(0 0 6px rgba(31, 138, 76, 0.35)); }
+  0%   { filter: drop-shadow(0 0 0 rgba(123, 160, 91, 0)); }
+  25%  { filter: drop-shadow(0 0 14px rgba(123, 160, 91, 0.85)); }
+  100% { filter: drop-shadow(0 0 6px rgba(123, 160, 91, 0.4)); }
 }
 .win-seal { position: absolute; top: -16px; right: -16px; width: 46px; height: 46px; overflow: visible;
             filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)); }
@@ -254,14 +272,14 @@ body {
   align-items: center;
   justify-content: center;
 }
-/* The board: separate rounded squares on a frame, the original look in
-   greys (user, 2026-11-02, after trying a crossword grid). */
+/* The board: separate rounded squares on a soft frame (the original layout;
+   colors at the top: a light board in light mode, a dark one in dark mode) */
 #board-outer {
   position: relative;
   background: var(--color-board-bg);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: var(--board-pad);
-  box-shadow: 0 0 28px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--color-board-shadow);
   touch-action: none;
   transition: box-shadow 0.3s;
 }
@@ -274,8 +292,8 @@ body {
   border-radius: 4px;
   transition: background 0.12s;
 }
-.board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: #6fae5a; }
-.board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: #c25a5a; }
+.board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid-line); }
+.board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid-line); }
 #pieces-layer, #hint-overlay, #mark-overlay {
   position: absolute;
   inset: var(--board-pad);
@@ -372,19 +390,19 @@ body {
 .popup h2 { font-family: var(--font-display); color: var(--color-text); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
 .popup p  { font-size: 1.05rem; line-height: 1.45; margin-bottom: 18px; }
 .popup-buttons { display: flex; gap: 10px; }
-/* [COLORS] Buttons: solid rounded "keys" with a darker edge underneath
-   that press down when tapped. The main one (e.g. Reset) is dark; plain
-   ones (.secondary) are light grey. */
+/* [COLORS] Buttons (Woodblock): a fine ink border, small corners, a soft
+   shade along the bottom; they press down a little when tapped. The main
+   one (e.g. Reset) is ink; plain ones (.secondary) are paper. */
 .popup-buttons a, .popup-buttons button {
   flex: 1;
   height: 46px;
-  border: none;
-  border-radius: 12px;
+  border: 2px solid var(--color-btn-line);
+  border-radius: 4px;
   font-family: var(--font-display);
   font-size: 1.3rem;
   color: var(--color-button-ink);
   background: var(--color-button);
-  box-shadow: 0 3px 0 var(--color-key-edge);
+  box-shadow: inset 0 -3px 0 var(--color-key-edge);
   cursor: pointer;
   text-decoration: none;
   display: flex;
@@ -392,7 +410,7 @@ body {
   justify-content: center;
   transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
 }
-.popup-buttons a:active, .popup-buttons button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-key-edge); }
+.popup-buttons a:active, .popup-buttons button:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--color-key-edge); }
 .popup-buttons .secondary { background: var(--color-soft); color: var(--color-soft-ink); }
 /* The Solved popup (play.html): room between the celebration and the
    buttons. Menu and Close always look the same, plain; the only colorful
@@ -402,26 +420,26 @@ body {
 #solved-popup .popup-buttons a, #solved-popup .popup-buttons button { background: var(--color-soft); color: var(--color-soft-ink); }
 .next-level-btn {
   display: flex; align-items: center; justify-content: center; height: 50px; margin-bottom: 12px;
-  border-radius: 12px; text-decoration: none; font-family: var(--font-display); font-size: 1.45rem;
-  color: var(--color-level-ink); background: var(--color-easy); box-shadow: 0 3px 0 var(--color-key-edge);
+  border: 2px solid var(--color-btn-line); border-radius: 4px; text-decoration: none; font-family: var(--font-display); font-size: 1.45rem;
+  color: var(--color-easy-ink); background: var(--color-easy); box-shadow: inset 0 -3px 0 var(--color-key-edge);
   transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
 }
 .next-level-btn[hidden] { display: none; }
 /* Share (the Solved popup): the main dark key */
 .share-btn {
-  display: block; width: 100%; height: 48px; margin-bottom: 12px; border: none; border-radius: 12px;
+  display: block; width: 100%; height: 48px; margin-bottom: 12px; border: 2px solid var(--color-btn-line); border-radius: 4px;
   font-family: var(--font-display); font-size: 1.4rem; cursor: pointer;
-  background: var(--color-button); color: var(--color-button-ink); box-shadow: 0 3px 0 var(--color-key-edge);
+  background: var(--color-button); color: var(--color-button-ink); box-shadow: inset 0 -3px 0 var(--color-key-edge);
   transition: transform 0.08s, box-shadow 0.08s, background 0.2s;
 }
-.share-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-key-edge); }
-.share-btn.done { background: var(--color-valid); color: #fff; }
+.share-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--color-key-edge); }
+.share-btn.done { background: var(--color-valid); border-color: var(--color-valid); color: #fff; }
 /* [COLORS] the same as the start screen's Medium / Hard buttons
    (--color-medium / --color-hard at the top) */
-.next-level-btn.medium { background: var(--color-medium); }
-.next-level-btn.hard   { background: var(--color-hard); }
+.next-level-btn.medium { background: var(--color-medium); color: var(--color-medium-ink); }
+.next-level-btn.hard   { background: var(--color-hard); color: var(--color-hard-ink); }
 .next-level-btn:hover { filter: brightness(1.05); }
-.next-level-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-key-edge); }
+.next-level-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--color-key-edge); }
 /* ── Sandbox modes (only the puzzle builder uses these) ── */
 /* Edit mode: pieces fade and ignore clicks, so clicks reach the squares */
 body.editing .placed-piece { opacity: 0.45; }

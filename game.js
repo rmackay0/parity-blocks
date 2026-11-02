@@ -49,12 +49,12 @@ const gameHooks = {
 const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true, showCaption: true };
 
 /* [COLORS] Piece colors, given out in the order the puzzle lists its
-   pieces, so no two pieces in a puzzle look alike. They're Kelly's colors
-   of maximum contrast (KELLY in shapes.js); the first six are the six most
-   different from each other (a puzzle usually has six pieces). */
+   pieces, so no two pieces in a puzzle look alike. They're the Woodblock
+   colors (INKS in shapes.js); the first six are the ones the user picked
+   (a puzzle usually has six pieces). */
 const PIECE_PALETTE = [
-  KELLY.blue, KELLY.orange, KELLY.green, KELLY.purple, KELLY.yellow, KELLY.pink,
-  KELLY.lightBlue, KELLY.yellowGreen, KELLY.violet, KELLY.buff, KELLY.purplishRed, KELLY.grey,
+  INKS.indigo, INKS.gold, INKS.vermilion, INKS.moss, INKS.sakura, INKS.asagi,
+  INKS.wisteria, INKS.persimmon, INKS.sky, INKS.plum, INKS.pine, INKS.slate,
 ];
 // Each piece's color in puzzle p, as { name: color }
 function pieceColors(p){

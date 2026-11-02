@@ -3,31 +3,26 @@
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-/* [COLORS] Piece colors: Kenneth Kelly's 22 colors of maximum contrast
-   (the user's chart, 2026-11-02), minus white, black, greenish yellow and
-   yellowish brown. Red and reddish orange are kept for last: red already
-   means "wrong" (the glow on a bad piece) and is the dotted lines' color.
-   The game hands them out in PIECE_PALETTE order (game.js); the rules
-   pictures and the tutorial pick them by name. */
-const KELLY = {
-  blue:          '#0067A5',
-  orange:        '#F38400',
-  green:         '#008856',
-  purple:        '#875692',
-  yellow:        '#F3C300',
-  pink:          '#E68FAC',   // purplish pink
-  lightBlue:     '#A1CAF1',
-  yellowGreen:   '#8DB600',
-  violet:        '#604E97',
-  buff:          '#C2B280',
-  purplishRed:   '#B3446C',
-  yellowishPink: '#F99379',
-  orangeYellow:  '#F6A600',
-  grey:          '#848482',
-  reddishBrown:  '#882D17',
-  oliveGreen:    '#2B3D26',
-  reddishOrange: '#E25822',
-  red:           '#BE0032',
+/* [COLORS] Piece colors: the "Woodblock" palette (user's pick, 2026-11-02),
+   colors from Japanese woodblock prints. The first six are the ones the
+   user saw and liked; the rest are extras in the same spirit, for puzzles
+   with more pieces. The game hands them out in PIECE_PALETTE order
+   (game.js); the rules pictures and the tutorial pick them by name.
+   The level colors (Easy moss, Medium gold, Hard wisteria) are here too.
+   (Kelly's contrast colors were used before this.) */
+const INKS = {
+  indigo:     '#2B4C7E',
+  gold:       '#E8B33B',
+  vermilion:  '#E2483D',
+  moss:       '#7BA05B',
+  sakura:     '#F2A7B8',   // cherry blossom
+  asagi:      '#3E8E9E',   // pale indigo-teal
+  wisteria:   '#8E6FB0',
+  persimmon:  '#EC8A3D',
+  sky:        '#86AED6',
+  plum:       '#A0507A',
+  pine:       '#4E7D5B',
+  slate:      '#8A97A8',
 };
 
 /* ── Geometry ── */
@@ -163,9 +158,9 @@ const PIECE_LOOK = {
   innerSquares: false,
   inset: 0.2,           // inner square's margin, as a fraction of a block
   insetFill: 'rgba(255,255,255,0.17)',
-  lineShade: 0.38,      // how much darker the lines are than the piece
-  outline: 2,           // outline width (px)
-  divider: 2,           // line between blocks (px; at most the gap between squares)
+  lineShade: 0.32,      // how much darker the lines are than the piece
+  outline: 1.5,         // outline width (px; kept fine, easier on the eyes)
+  divider: 1.5,         // line between blocks (px; at most the gap between squares)
 };
 // Draw a piece's fill, inner squares and lines into an SVG element
 function drawPieceParts(parent, cells, color, size, gap){

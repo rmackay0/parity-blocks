@@ -57,7 +57,7 @@ function check(label, got, want){
       }, solution(level));
       await page.waitForTimeout(2400);     // (the badge animation has finished)
       const btn = await page.evaluate(()=>{ const b = document.getElementById('solved-next'); return b.hidden ? null : [b.textContent, b.getAttribute('href'), getComputedStyle(b).backgroundColor]; });
-      check(`${level}: its color (the start screen's)`, btn && btn[2], { easy: 'rgb(246, 215, 107)', medium: 'rgb(195, 163, 204)', hard: null }[level]);   // (--color-medium yellow / --color-hard purple, 2026-11-02)
+      check(`${level}: its color (the start screen's)`, btn && btn[2], { easy: 'rgb(232, 179, 59)', medium: 'rgb(142, 111, 176)', hard: null }[level]);   // (Woodblock --color-medium gold / --color-hard wisteria, 2026-11-02)
       check(`${level}: next-level button`, btn && btn[0], wantText);
       check(`${level}: it goes to`, btn && btn[1], wantHref);
       const gap = await page.evaluate(()=>{

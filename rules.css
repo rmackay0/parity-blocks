@@ -15,26 +15,28 @@
   --rules-count-font:    'Nunito', system-ui, sans-serif;  /* row/column counts */
   --rules-count-size:    19px;
 
-  /* [COLORS] Light mode (default); dark mode is the html.dark block below */
-  --rules-panel:         #ffffff;    /* popup background */
-  --rules-panel-border:  #d6d6d6;
-  --rules-overlay:       rgba(18, 18, 18, 0.45);
-  --rules-title:         #121212;    /* headings */
-  --rules-text:          #121212;
-  --rules-text-dim:      #5c5c5c;    /* hint line, picture captions */
-  --rules-even:          #1f8a4c;    /* green highlighter: even row/column */
-  --rules-odd:           #d62828;    /* red highlighter: odd row/column, "not allowed" mark */
-  --rules-highlight-opacity: 0.45;   /* red highlighter strength */
+  /* [COLORS] Woodblock, light mode (default); dark mode is the html.dark
+     block below. Same colors as game.css. */
+  --rules-panel:         #FBFBF8;    /* popup background */
+  --rules-panel-border:  #DCDDD6;
+  --rules-overlay:       rgba(31, 35, 48, 0.45);
+  --rules-title:         #1F2330;    /* headings */
+  --rules-text:          #1F2330;
+  --rules-text-dim:      #5E6270;    /* hint line, picture captions */
+  --rules-even:          #5E8A3E;    /* green highlighter: even row/column */
+  --rules-odd:           #D23A2F;    /* red highlighter: odd row/column, "not allowed" mark */
+  --rules-highlight-opacity: 0.4;    /* red highlighter strength */
   --rules-highlight-even-opacity: 0.4;   /* green highlighter strength */
-  --rules-board:         #1c1c1c;    /* frame behind picture boards (greys, as on the board; both modes) */
-  --rules-cell:          #424242;    /* an empty square in pictures */
-  --rules-dotted:        #cfcfcf;    /* dotted lines */
-  --rules-arrow:         #121212;    /* reflect / rotate arrows */
-  --rules-empty:         #2443d6;    /* ring marking an empty open square (analyzer) */
-  --rules-button:        #121212;    /* "Got it" button (filled) */
-  --rules-button-text:   #ffffff;
-  --rules-btn-bg:        #ececec;    /* the small plain buttons: Rules, Large text, Dark mode */
-  --rules-btn-hover:     #dedede;
+  --rules-board:         #DCDFE6;    /* frame behind picture boards (as on the board) */
+  --rules-cell:          #FFFFFF;    /* an empty square in pictures */
+  --rules-dotted:        #E2483D;    /* dotted lines: vermilion */
+  --rules-arrow:         #1F2330;    /* reflect / rotate arrows */
+  --rules-empty:         #2B4C7E;    /* ring marking an empty open square (analyzer) */
+  --rules-button:        #1F2330;    /* "Got it" button (filled ink) */
+  --rules-button-text:   #F5F5F2;
+  --rules-btn-bg:        #FBFBF8;    /* the small plain buttons: Rules, Large text, Dark mode */
+  --rules-btn-hover:     #ECECE6;
+  --rules-btn-line:      #1F2330;    /* their fine ink border */
 
   /* [POSITIONING] */
   --rules-width:         600px;      /* popup max width */
@@ -42,28 +44,32 @@
 }
 /* [COLORS] Dark mode (theme.js) */
 html.dark {
-  --rules-panel:         #1c1c1c;
-  --rules-panel-border:  #3a3a3a;
-  --rules-overlay:       rgba(0, 0, 0, 0.65);
-  --rules-title:         #f2f2f2;
-  --rules-text:          #f2f2f2;
-  --rules-text-dim:      #a6a6a6;
-  --rules-even:          #5cc982;
-  --rules-odd:           #ff5c5c;
-  --rules-arrow:         #f2f2f2;
-  --rules-empty:         #8fa3ff;
-  --rules-button:        #f2f2f2;
-  --rules-button-text:   #121212;
-  --rules-btn-bg:        #2e2e2e;
-  --rules-btn-hover:     #3a3a3a;
+  --rules-panel:         #181C26;
+  --rules-panel-border:  #2C3240;
+  --rules-overlay:       rgba(0, 0, 0, 0.6);
+  --rules-title:         #EDEAE3;
+  --rules-text:          #EDEAE3;
+  --rules-text-dim:      #A3A6B0;
+  --rules-even:          #9CC57A;
+  --rules-odd:           #F06A5E;
+  --rules-board:         #0B0E15;
+  --rules-cell:          #1F2533;
+  --rules-dotted:        #F06A5E;
+  --rules-arrow:         #EDEAE3;
+  --rules-empty:         #8FA9D6;
+  --rules-button:        #EDEAE3;
+  --rules-button-text:   #12151D;
+  --rules-btn-bg:        #1F2533;
+  --rules-btn-hover:     #2A3142;
+  --rules-btn-line:      #EDEAE3;
 }
 
 /* ── The "Rules" button (top-right of each page) ── */
 .rules-btn {
   height: 40px;
   padding: 0 16px;
-  border-radius: 10px;
-  border: none;
+  border-radius: 4px;
+  border: 1.5px solid var(--rules-btn-line);
   background: var(--rules-btn-bg);
   color: var(--rules-text);
   font-family: var(--rules-font);
@@ -148,8 +154,8 @@ html.dark {
   display: flex; gap: 8px;
 }
 .text-size-btn {
-  height: 38px; padding: 0 16px; border-radius: 10px;
-  border: none;
+  height: 38px; padding: 0 16px; border-radius: 4px;
+  border: 1.5px solid var(--rules-btn-line);
   background: var(--rules-btn-bg); color: var(--rules-text);
   font-family: var(--rules-text-font); font-size: 1rem; font-weight: 400;
   cursor: pointer; white-space: nowrap;
@@ -209,18 +215,17 @@ html.large-text .rules-popup .rules-ok { font-size: 1.8rem; height: 60px; }
   width: 100%;
   height: 48px;
   margin-top: 6px;
-  border: none;
-  border-radius: 12px;
   background: var(--rules-button);
   color: var(--rules-button-text);
   font-family: var(--rules-font);
   font-size: 1.35rem;
   cursor: pointer;
-  border-radius: 12px;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+  border-radius: 4px;
+  border: 2px solid var(--rules-btn-line);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.14);
 }
 .rules-ok:hover { filter: brightness(1.15); }
-.rules-ok:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28); }
+.rules-ok:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14); }
 /* "Play the tutorial" button (puzzle page only): plain grey */
 .rules-tutorial { background: var(--rules-btn-bg); color: var(--rules-text); margin-bottom: 8px; }
 .rules-ok:focus-visible, .rules-close:focus-visible { outline: 3px solid #2443d6; outline-offset: 2px; }

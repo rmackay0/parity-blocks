@@ -44,17 +44,17 @@ const RULES_TEXT = {
 const SEEN_KEY = 'pb_rulesSeen';
 
 /* ── Example boards (6x6). Each piece: color, cells, top-left row/col ── */
-const EX_P = { color:KELLY.orange, cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
-const EX_U = { color:KELLY.blue,   cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
-const EX_T = { color:KELLY.green,  cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
-const EX_V = { color:KELLY.purple, cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
+const EX_P = { color:INKS.gold,      cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
+const EX_U = { color:INKS.indigo,    cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
+const EX_T = { color:INKS.moss,      cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
+const EX_V = { color:INKS.vermilion, cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
 const EXAMPLE = {
   // Every row and column has an even number of filled blocks
   solved: [ {...EX_P, row:0, col:4}, {...EX_U, row:4, col:0}, {...EX_T, row:3, col:2}, {...EX_V, row:2, col:1} ],
   // Same pieces, V moved up-left one square: rows 2 & 5 and columns 1 & 4 go odd
   wrong:  [ {...EX_P, row:0, col:4}, {...EX_U, row:4, col:0}, {...EX_T, row:3, col:2}, {...EX_V, row:1, col:0} ],
 };
-const F_PIECE = { color:KELLY.pink, cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] };
+const F_PIECE = { color:INKS.sakura, cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] };
 
 /* Drawing helpers (svgEl, drawPiece, drawNoMark, miniBoard) are in shapes.js */
 
@@ -183,7 +183,7 @@ function build(){
     figure(miniBoard({ rows:3, cols:3, cell:30, gaps:[[1,1]] })),
   ]);
   // Half inside the dotted square, half outside
-  const crossing = { color:KELLY.blue, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
+  const crossing = { color:INKS.asagi, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
   item(popup, [[T.dotted]], [
     figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],
       dotted:[[1,1],[1,2],[2,1],[2,2]], noMarkOn: crossing })),

@@ -82,29 +82,28 @@
        [COLORS] Every color on the page is set here.
        Change a value once and it updates everywhere it's used.
        ───────────────────────────────────────────────────────────── */
-    /* Light mode (the default): white page, black text. The level buttons
-       are green, yellow and purple (light tints of the pieces' Kelly
-       colors), raised like keys, each with a round dot in the full color:
-       the same three colors as the 🟢 🟡 🟣 in a shared result
-       (play.html, Share). Dark mode: html.dark below. */
-    --color-bg:          #ffffff;   /* page background */
-    --color-title:       #121212;   /* "Parity Blocks" heading */
-    --color-text:        #121212;   /* main text */
-    --color-text-dim:    #5c5c5c;   /* tagline, secondary text */
+    /* "Woodblock" (user's pick, 2026-11-02): paper page, ink text, level
+       buttons in moss, gold and wisteria with a fine ink border: the same
+       three colors as the 🟢 🟡 🟣 in a shared result (play.html, Share).
+       Same palette as game.css. Dark mode: html.dark below. */
+    --color-bg:          #F5F5F2;   /* page background (paper) */
+    --color-title:       #1F2330;   /* "Parity Blocks" heading (ink) */
+    --color-text:        #1F2330;   /* main text */
+    --color-text-dim:    #5E6270;   /* tagline, secondary text */
 
-    --color-easy:        #8fd1ad;   /* Easy button (light Kelly green) */
-    --color-medium:      #f6d76b;   /* Medium button (light Kelly yellow) */
-    --color-hard:        #c3a3cc;   /* Hard button (light Kelly purple) */
-    --dot-easy:          #008856;   /* the dot on each button: the full Kelly color */
-    --dot-medium:        #f3c300;
-    --dot-hard:          #875692;
-    --color-button-text: #121212;   /* label text on all three buttons */
-    --color-key-edge:    rgba(0, 0, 0, 0.28);   /* the darker edge under each button */
+    --color-easy:        #7BA05B;   /* Easy button (moss) */
+    --color-medium:      #E8B33B;   /* Medium button (gold) */
+    --color-hard:        #8E6FB0;   /* Hard button (wisteria) */
+    --color-easy-text:   #FFFFFF;   /* the label on each */
+    --color-medium-text: #1F2330;
+    --color-hard-text:   #FFFFFF;
+    --color-button-line: #1F2330;   /* the fine ink border on buttons */
+    --color-key-edge:    rgba(0, 0, 0, 0.14);   /* the soft shade along a button's bottom */
 
-    --color-panel:       #ffffff;   /* "coming soon" notice, Archive background */
-    --color-panel-border:#d6d6d6;   /* their outline */
-    --color-focus:       #2443d6;   /* keyboard-focus ring on buttons */
-    --color-overlay:     rgba(18, 18, 18, 0.45);
+    --color-panel:       #FBFBF8;   /* "coming soon" notice, Archive background */
+    --color-panel-border:#DCDDD6;   /* their outline */
+    --color-focus:       #2B4C7E;   /* keyboard-focus ring on buttons (indigo) */
+    --color-overlay:     rgba(31, 35, 48, 0.45);
 
     /* ─────────────────────────────────────────────────────────────
        [POSITIONING] Sizes and spacing.
@@ -114,7 +113,7 @@
     --button-width:    260px;   /* width of each difficulty button */
     --button-height:   56px;    /* height of each difficulty button */
     --button-gap:      14px;    /* space between the three buttons */
-    --button-radius:   14px;    /* corner roundness (0 = square, 999px = pill) */
+    --button-radius:   4px;     /* corner roundness (0 = square, 999px = pill) */
 
     --rules-top:       18px;    /* Rules button distance from top edge */
     --rules-right:     18px;    /* Rules button distance from right edge */
@@ -127,15 +126,16 @@
   /* [COLORS] Dark mode (theme.js; the button is in the Rules popup, next
      to Large text). The level buttons keep their colors. */
   html.dark {
-    --color-bg:          #121212;
-    --color-title:       #f2f2f2;
-    --color-text:        #f2f2f2;
-    --color-text-dim:    #a6a6a6;
-    --color-key-edge:    rgba(0, 0, 0, 0.7);
-    --color-panel:       #1c1c1c;
-    --color-panel-border:#3a3a3a;
-    --color-focus:       #8fa3ff;
-    --color-overlay:     rgba(0, 0, 0, 0.65);
+    --color-bg:          #12151D;
+    --color-title:       #EDEAE3;
+    --color-text:        #EDEAE3;
+    --color-text-dim:    #A3A6B0;
+    --color-button-line: #EDEAE3;
+    --color-key-edge:    rgba(0, 0, 0, 0.3);
+    --color-panel:       #181C26;
+    --color-panel-border:#2C3240;
+    --color-focus:       #8FA9D6;
+    --color-overlay:     rgba(0, 0, 0, 0.6);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -213,33 +213,23 @@
 
   .difficulty-btn {
     height: var(--button-height);
-    border: none;
+    border: 2px solid var(--color-button-line);   /* a fine ink border */
     border-radius: var(--button-radius);
     font-family: var(--font-display);          /* [FONTS] */
     font-size: var(--button-size);             /* [FONTS] */
     font-weight: var(--button-weight);         /* [FONTS] */
     letter-spacing: 0.04em;
-    color: var(--color-button-text);           /* [COLORS] */
     cursor: pointer;
-    box-shadow: 0 4px 0 var(--color-key-edge);
+    box-shadow: inset 0 -4px 0 var(--color-key-edge);
     transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
   }
-  .difficulty-btn:hover  { filter: brightness(1.04); transform: translateY(-2px); box-shadow: 0 6px 0 var(--color-key-edge); }
-  .difficulty-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--color-key-edge); }
+  .difficulty-btn:hover  { filter: brightness(1.05); transform: translateY(-1px); }
+  .difficulty-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--color-key-edge); }
 
   /* [COLORS] Per-difficulty button colors (values live in :root) */
-  .difficulty-btn[data-difficulty="easy"]   { background: var(--color-easy); }
-  .difficulty-btn[data-difficulty="medium"] { background: var(--color-medium); }
-  .difficulty-btn[data-difficulty="hard"]   { background: var(--color-hard); }
-  /* The round dot before each label (like the 🟢 🟡 🟣 in a shared result) */
-  .difficulty-btn { display: flex; align-items: center; justify-content: center; gap: 12px; }
-  .level-dot {
-    width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto;
-    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
-  }
-  .level-dot.easy   { background: var(--dot-easy); }
-  .level-dot.medium { background: var(--dot-medium); }
-  .level-dot.hard   { background: var(--dot-hard); }
+  .difficulty-btn[data-difficulty="easy"]   { background: var(--color-easy);   color: var(--color-easy-text); }
+  .difficulty-btn[data-difficulty="medium"] { background: var(--color-medium); color: var(--color-medium-text); }
+  .difficulty-btn[data-difficulty="hard"]   { background: var(--color-hard);   color: var(--color-hard-text); }
 
   /* ── [POSITIONING] Rules (top-right) and Tutorial (bottom) buttons ──
      Their look (colors, font) comes from .rules-btn in rules.css.
@@ -319,16 +309,16 @@
   .star-easy   { fill: var(--color-easy); }
   .star-medium { fill: var(--color-medium); }
   .star-hard   { fill: var(--color-hard); }
-  .star-easy, .star-medium, .star-hard { stroke: rgba(0, 0, 0, 0.45); stroke-width: 1.2; stroke-linejoin: round; }   /* (light colors need an edge on white) */
+  .star-easy, .star-medium, .star-hard { stroke: rgba(0, 0, 0, 0.3); stroke-width: 1; stroke-linejoin: round; }
   .cal-legend { display: flex; justify-content: center; gap: 16px; margin: 12px 0 4px; font-size: 0.9rem; color: var(--color-text-dim); }
   .cal-legend span { display: inline-flex; align-items: center; gap: 4px; }
   .cal-legend svg { width: 15px; height: 15px; }
   .cal-total { text-align: center; font-size: 0.9rem; color: var(--color-text-dim); margin-bottom: 12px; }
   .cal-close {
-    display: block; width: 100%; height: 46px; border: none; border-radius: 12px; cursor: pointer;
-    box-shadow: 0 3px 0 var(--color-key-edge);
+    display: block; width: 100%; height: 46px; border: 2px solid var(--color-button-line); border-radius: 4px; cursor: pointer;
+    box-shadow: inset 0 -3px 0 var(--color-key-edge);
     font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em;
-    background: var(--color-easy); color: var(--color-button-text);
+    background: var(--color-title); color: var(--color-bg);
   }
 </style>
 </head>
@@ -356,9 +346,9 @@
   <!-- [CONTENT] Difficulty buttons. data-difficulty is what the script
        reads, so leave it alone. Change only the visible label. -->
   <nav class="difficulty" aria-label="Choose difficulty">
-    <button class="difficulty-btn" type="button" data-difficulty="easy"><span class="level-dot easy" aria-hidden="true"></span>Easy</button>
-    <button class="difficulty-btn" type="button" data-difficulty="medium"><span class="level-dot medium" aria-hidden="true"></span>Medium</button>
-    <button class="difficulty-btn" type="button" data-difficulty="hard"><span class="level-dot hard" aria-hidden="true"></span>Hard</button>
+    <button class="difficulty-btn" type="button" data-difficulty="easy">Easy</button>
+    <button class="difficulty-btn" type="button" data-difficulty="medium">Medium</button>
+    <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
   </nav>
 
   <!-- [CONTENT] Tutorial button, at the bottom (opens tutorial.html; its
