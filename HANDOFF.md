@@ -1,6 +1,6 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-10-27, end of session)
+## START HERE (updated 2026-11-02, end of session)
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -105,10 +105,17 @@ wrongly rejected really had 5 blocks in a row/column. Don't change it.
   `play_test.js` was already out of date (it plays the old Medium, which
   had a U piece); not fixed.
 
-**Current state (end of 2026-10-27 session)**
-- **Everything is committed and pushed** (live on Vercel). Still check
-  `git log HEAD..origin/main` first: the user may publish a puzzle from
-  the sandbox in between, which commits to GitHub.
+**Current state (end of 2026-10-29 → 11-02 session)**
+- **Committed, NOT pushed:** 2 local commits from 2026-10-29 (a cut-board
+  rule change and its undo). They cancel out in code; the only lasting
+  change is the HANDOFF note above. Push only when the user says so.
+  Still check `git log HEAD..origin/main` first: the user may publish a
+  puzzle from the sandbox in between, which commits to GitHub.
+- 2026-10-29 session: the user built an 8×8 puzzle with 3 corners cut in
+  the sandbox and thought it was wrongly rejected; it really had 5 blocks
+  in the bottom row and right column. Rule unchanged (see the 2026-10-29
+  note above). The 2026-10-27 "Ask the user" items below are still open.
+- 2026-10-27 session: everything was committed and pushed.
 - 2026-10-27 session: everything in the section just above (empty spaces
   removed, dotted squares, shared dotted lines, 6-slide tutorial with the
   new empty-spaces slide 5, jingle fix for phones).
