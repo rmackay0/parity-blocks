@@ -149,7 +149,11 @@ Test: `tests/browser/next_level_test.js`.
 12. **The start screen doesn't show progress.** A small ✓ on Easy,
     Medium or Hard once it's solved would give players a reason to come
     back.
-13. **The Solved popup is plain.** *(Half done 2026-10-23: the next-level
+13. *(Done 2026-11-02: the popup now has the win animation and a Share
+    button. It shares "Parity Blocks 🟡 Medium", then the day and the time
+    (plus the site link when online): the share sheet on phones, copied
+    on laptops. The circles match the level colors: green, yellow, purple.)*
+    **The Solved popup is plain.** *(Half done 2026-10-23: the next-level
     button and new look are in; the Share button isn't.)* It could offer a "Next: Hard" button,
     plus a Share button that copies something like
     "Parity Blocks · Oct 20 · Hard ✓ 2:31". That's how daily puzzles

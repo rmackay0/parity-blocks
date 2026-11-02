@@ -82,6 +82,9 @@
     <div class="solved-win" id="solved-win"></div>
     <!-- After Easy: "Play Medium"; after Medium: "Play Hard" (set in onSolved) -->
     <a class="next-level-btn" id="solved-next" hidden></a>
+    <!-- Share your result: the day, level (with its colored circle) and
+         time, never the answer. Phones: the share sheet; laptops: copied. -->
+    <button type="button" class="share-btn" id="solved-share">Share</button>
     <div class="popup-buttons">
       <a href="index.html">Menu</a>
       <button type="button" class="secondary" id="solved-close">Close</button>
@@ -231,8 +234,42 @@ function timerTick(){
 setInterval(timerTick, 1000);
 document.addEventListener('visibilitychange', timerTick);
 
+/* ── Share (the Solved popup) ──
+   [CONTENT] What gets shared, e.g.
+       Parity Blocks 🟡 Medium
+       Mon, Nov 2 · 3:41
+       https://parity-blocks.vercel.app
+   The circle matches the level's color on the start screen (user,
+   2026-11-02), so it's easy to see which puzzle someone means. Only the
+   day, level and time: nothing that gives the answer away. */
+const LEVEL_ICON = { easy: '🟢', medium: '🟡', hard: '🟣' };
+let solvedTime = '';
+function shareText(){
+  const day = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const head = level && LEVEL_ICON[level]
+    ? 'Parity Blocks ' + LEVEL_ICON[level] + ' ' + level[0].toUpperCase() + level.slice(1)
+    : 'Parity Blocks: ' + puzzle.title;
+  const link = /^https?:/.test(location.protocol) ? '\n' + location.origin : '';
+  return head + '\n' + day + ' · ' + solvedTime + link;
+}
+const shareBtn = document.getElementById('solved-share');
+shareBtn.onclick = async ()=>{
+  const text = shareText();
+  const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if(touch && navigator.share){
+    try { await navigator.share({ text }); } catch(e){}    // (closing the share sheet is fine)
+    return;
+  }
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch(e){}
+  shareBtn.textContent = copied ? 'Copied!' : 'Couldn’t copy';
+  shareBtn.classList.toggle('done', copied);
+  setTimeout(()=>{ shareBtn.textContent = 'Share'; shareBtn.classList.remove('done'); }, 2000);
+};
+
 enableSolvedSound();         // the jingle plays when a puzzle is solved (celebrate.js)
 gameHooks.onSolved = time=>{
+  solvedTime = time;
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
   // The win animation, in the popup (celebrate.js): the solved board with

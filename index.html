@@ -83,16 +83,21 @@
        Change a value once and it updates everywhere it's used.
        ───────────────────────────────────────────────────────────── */
     /* Light mode (the default): white page, black text. The level buttons
-       are light tints of the pieces' Kelly colors (green, orange, purple),
-       raised like keys. Dark mode: html.dark below. */
+       are green, yellow and purple (light tints of the pieces' Kelly
+       colors), raised like keys, each with a round dot in the full color:
+       the same three colors as the 🟢 🟡 🟣 in a shared result
+       (play.html, Share). Dark mode: html.dark below. */
     --color-bg:          #ffffff;   /* page background */
     --color-title:       #121212;   /* "Parity Blocks" heading */
     --color-text:        #121212;   /* main text */
     --color-text-dim:    #5c5c5c;   /* tagline, secondary text */
 
     --color-easy:        #8fd1ad;   /* Easy button (light Kelly green) */
-    --color-medium:      #f9bf7a;   /* Medium button (light Kelly orange) */
+    --color-medium:      #f6d76b;   /* Medium button (light Kelly yellow) */
     --color-hard:        #c3a3cc;   /* Hard button (light Kelly purple) */
+    --dot-easy:          #008856;   /* the dot on each button: the full Kelly color */
+    --dot-medium:        #f3c300;
+    --dot-hard:          #875692;
     --color-button-text: #121212;   /* label text on all three buttons */
     --color-key-edge:    rgba(0, 0, 0, 0.28);   /* the darker edge under each button */
 
@@ -226,6 +231,15 @@
   .difficulty-btn[data-difficulty="easy"]   { background: var(--color-easy); }
   .difficulty-btn[data-difficulty="medium"] { background: var(--color-medium); }
   .difficulty-btn[data-difficulty="hard"]   { background: var(--color-hard); }
+  /* The round dot before each label (like the 🟢 🟡 🟣 in a shared result) */
+  .difficulty-btn { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .level-dot {
+    width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
+  }
+  .level-dot.easy   { background: var(--dot-easy); }
+  .level-dot.medium { background: var(--dot-medium); }
+  .level-dot.hard   { background: var(--dot-hard); }
 
   /* ── [POSITIONING] Rules (top-right) and Tutorial (bottom) buttons ──
      Their look (colors, font) comes from .rules-btn in rules.css.
@@ -342,9 +356,9 @@
   <!-- [CONTENT] Difficulty buttons. data-difficulty is what the script
        reads, so leave it alone. Change only the visible label. -->
   <nav class="difficulty" aria-label="Choose difficulty">
-    <button class="difficulty-btn" type="button" data-difficulty="easy">Easy</button>
-    <button class="difficulty-btn" type="button" data-difficulty="medium">Medium</button>
-    <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
+    <button class="difficulty-btn" type="button" data-difficulty="easy"><span class="level-dot easy" aria-hidden="true"></span>Easy</button>
+    <button class="difficulty-btn" type="button" data-difficulty="medium"><span class="level-dot medium" aria-hidden="true"></span>Medium</button>
+    <button class="difficulty-btn" type="button" data-difficulty="hard"><span class="level-dot hard" aria-hidden="true"></span>Hard</button>
   </nav>
 
   <!-- [CONTENT] Tutorial button, at the bottom (opens tutorial.html; its
@@ -357,7 +371,7 @@
 </main>
 
 <!-- The Archive calendar: a star on each day this player solved a puzzle
-     (teal = Easy, orange = Medium, purple = Hard). Kept in this browser only
+     (green = Easy, yellow = Medium, purple = Hard). Kept in this browser only
      (progress.js). Drawn by showMonth() below. -->
 <div class="cal-backdrop" id="cal-popup" hidden>
   <div class="cal" role="dialog" aria-modal="true" aria-labelledby="cal-title">

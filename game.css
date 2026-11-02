@@ -42,9 +42,10 @@
   --color-overlay:      rgba(18, 18, 18, 0.45);
   --color-shadow:       rgba(0, 0, 0, 0.18);   /* under a lifted piece */
   /* the three levels (start screen buttons, stars, "Play Medium →"):
-     light tints of Kelly green, orange and purple, the pieces' colors */
+     green, yellow, purple, so a shared result can show 🟢 🟡 🟣 (user,
+     2026-11-02); light tints of the Kelly colors, the pieces' colors */
   --color-easy:         #8fd1ad;
-  --color-medium:       #f9bf7a;
+  --color-medium:       #f6d76b;
   --color-hard:         #c3a3cc;
   --color-level-ink:    #121212;   /* text on them */
   --color-rotate:       #2443d6;   /* (the sandbox's main buttons) */
@@ -404,6 +405,15 @@ body {
   transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
 }
 .next-level-btn[hidden] { display: none; }
+/* Share (the Solved popup): the main dark key */
+.share-btn {
+  display: block; width: 100%; height: 48px; margin-bottom: 12px; border: none; border-radius: 12px;
+  font-family: var(--font-display); font-size: 1.4rem; cursor: pointer;
+  background: var(--color-button); color: var(--color-button-ink); box-shadow: 0 3px 0 var(--color-key-edge);
+  transition: transform 0.08s, box-shadow 0.08s, background 0.2s;
+}
+.share-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-key-edge); }
+.share-btn.done { background: var(--color-valid); color: #fff; }
 /* [COLORS] the same as the start screen's Medium / Hard buttons
    (--color-medium / --color-hard at the top) */
 .next-level-btn.medium { background: var(--color-medium); }

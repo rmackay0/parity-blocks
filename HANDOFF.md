@@ -89,6 +89,16 @@ previous project; don't push there.
   burst out; then "Solved!" and the time (counting up). The tutorial
   still uses the older `solvedBadge`.
 - **Logo** (`assets/logo.svg`) redrawn in the new style.
+- **Level colors = green / yellow / purple** (user: like 🟢🟡🟣 "but not
+  exactly"), so a shared result's circle matches the level. Each start
+  button has a round dot in the full Kelly color (`.level-dot`); Medium
+  changed from orange to yellow (`--color-medium` #f6d76b, in game.css AND
+  index.html).
+- **Share button** in the Solved popup (play.html, `shareText`): "Parity
+  Blocks 🟡 Medium" / "Mon, Nov 2 · 3:41" / the site link (online only).
+  Phones: share sheet (`navigator.share`); laptops: copied, button says
+  "Copied!" for 2 s. Practice puzzles (`?puzzle=`) share the title, no
+  circle. Test: `share_test.js`.
 - Screenshots: `tests/browser/look_screens.js` (laptop + phone, light + dark).
 - Tests updated for the new look: `solved_state_test.js` (popup has the
   win animation), `next_level_test.js` (new level colors),
@@ -215,7 +225,6 @@ wrongly rejected really had 5 blocks in a row/column. Don't change it.
   solved_state_test.js does).
 - **The to-do list is APP_REVIEW.md "Still to do"** (puzzle design, phone
   dragging, screens, site polish).
-- **Share button** (APP_REVIEW.md #13): ask which option the user wants.
 - **Reopening a solved puzzle shows no time anywhere** now that the
   "Solved in" box is gone; ask if they want it shown somewhere quieter.
 - **The timer still counts thinking time with the page open but idle**
