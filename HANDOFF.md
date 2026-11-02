@@ -15,7 +15,8 @@ previous project; don't push there.
 | `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html. `gameSettings` at the top: `explain`, `lockWhenSolved`, `distinctColors`, `showCaption` |
-| `celebrate.js` | The solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker. Sound unlocks on the first real tap (touchend/pointerup/click/keydown) |
+| `theme.js` | Light / dark mode (2026-11-02). Light is the default; `html.dark` = dark. Loaded first in each page's `<head>`. `ParityTheme.makeButton()` = the "Dark mode" button next to Large text (rules popup, tutorial). Saved in `localStorage.pb_theme` |
+| `celebrate.js` | `solvedCelebration()` = the win animation in the Solved popup (2026-11-02). Also the solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker. Sound unlocks on the first real tap (touchend/pointerup/click/keydown) |
 | `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
 | `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (slide 5's in `EMPTY_LINES`) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
@@ -44,6 +45,56 @@ previous project; don't push there.
 - **Specs come as PDFs** ("instructions v1/v2/v3") with notes beside
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
+
+**2026-11-02 (later): new look (user's design notes + Kelly color chart)**
+- **Light mode by default, dark mode optional.** Every color is a CSS
+  variable in `:root` (light) with an `html.dark { … }` block under it, in
+  game.css, rules.css, index.html and tutorial.html. Dark is a neutral
+  near-black (the user's reviewer disliked the brown). The "Dark mode" /
+  "Light mode" button sits next to "Large text" (both in `.view-btns`,
+  rules.css); on phones the tutorial puts them on their own row.
+- **Style:** a clean, light newspaper-games feel. The user showed the LA
+  Times Games page as a reference, then said **don't copy exact grid
+  proportions, button placement, typography, color combinations,
+  achievement language or screen flows from LA Times or NYT**. So: no
+  outlined pill buttons and no rainbow strip. Buttons are solid rounded
+  "keys" with a darker edge underneath (dark = main, light grey =
+  plain). The level colors are light tints of the Kelly green, orange and
+  purple (`--color-easy/medium/hard`: #8fd1ad, #f9bf7a, #c3a3cc). Fonts
+  are unchanged (the user said text and fonts are fine).
+- **Grid = crossword / sudoku style:** square cells, 2px lines
+  (`--board-gap`), 4px border (`--board-pad`), no rounded corners. Dotted
+  lines are **red** (`--color-dotted`). Each one replaces the grid line it
+  runs along (`look.under` in `drawDottedLines`), and none is drawn on the
+  board's own edge (`look.onBoard`), so nothing sticks out past the grid.
+  The pictures (`miniBoard`, tutorial `dontPicture`) match. (The rules'
+  dotted-square picture is now 3 × 3, since a 1 × 1 board would show no line.)
+- **Pieces:** Kelly's colors of maximum contrast (`KELLY` in shapes.js,
+  minus white, black, greenish yellow, yellowish brown; red kept last
+  because red means "wrong"). `PIECE_PALETTE` in game.js, the tutorial's
+  `COLOR`, the rules' examples and the 12-piece picture all use them.
+  Look (`PIECE_LOOK` + `drawPieceParts` in shapes.js, shared by the game
+  and the pictures): flat fill, a lighter square inside each block, a line
+  between blocks and an outline in a darker shade of the piece's color.
+- **Piece animations ("heft")**, game.js `FEEL`: press = squeeze; held =
+  lifted (bigger, soft shadow) and leans the way it moves; drop = slides
+  into its squares with a squash/bounce while the board dips 1.5px;
+  wrong spot = a short shake; rotate = spin, reflect = flip; back to the
+  top = pops in. All skipped with "reduce motion". Test: `feel_test.js`.
+- **Win animation, in the Solved popup** (the user preferred it there, not
+  on the grid): `solvedCelebration` in celebrate.js. A small picture of
+  the solved board; each piece drops in on one of the jingle's notes
+  (0.11–1.25 s); on the big note (1.46 s) the board pops and glows green,
+  a check seal stamps onto its corner, little blocks in the pieces' colors
+  burst out; then "Solved!" and the time (counting up). The tutorial
+  still uses the older `solvedBadge`.
+- **Logo** (`assets/logo.svg`) redrawn in the new style.
+- Screenshots: `tests/browser/look_screens.js` (laptop + phone, light + dark).
+- Tests updated for the new look: `solved_state_test.js` (popup has the
+  win animation), `next_level_test.js` (new level colors),
+  `game_features_test.js` (the "empty" drag starts on the 4px border).
+- **iPhone SE (375 × 667):** the tutorial now scrolls 35–75px on slides
+  1, 2, 4–6 (the extra button row). iPhone 14 still needs no scrolling.
 
 **2026-10-29: cut boards use the blocks rule too (confirmed by the user)**
 Every board, cut or not, needs an even number of BLOCKS in each row and
@@ -152,6 +203,10 @@ wrongly rejected really had 5 blocks in a row/column. Don't change it.
 - Easy still needs remaking (only 1 way to fit); see APP_REVIEW.md #5.
 
 **Open items / ideas for next session**
+- **Ask the user (2026-11-02 redesign):** how the light and dark looks, the
+  key-style buttons and the level colors feel; whether the animations feel
+  heavy enough (or too much: tune `FEEL` in game.js); whether the win
+  animation in the popup works for them (and with the jingle on a phone).
 - **Ask the user (from 2026-10-27):** does the jingle now play on their
   phone? Is the reworded final-slide hint OK? How do the bolder dotted
   lines and slide 5 feel?

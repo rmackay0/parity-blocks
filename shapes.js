@@ -3,6 +3,33 @@
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/* [COLORS] Piece colors: Kenneth Kelly's 22 colors of maximum contrast
+   (the user's chart, 2026-11-02), minus white, black, greenish yellow and
+   yellowish brown. Red and reddish orange are kept for last: red already
+   means "wrong" (the glow on a bad piece) and is the dotted lines' color.
+   The game hands them out in PIECE_PALETTE order (game.js); the rules
+   pictures and the tutorial pick them by name. */
+const KELLY = {
+  blue:          '#0067A5',
+  orange:        '#F38400',
+  green:         '#008856',
+  purple:        '#875692',
+  yellow:        '#F3C300',
+  pink:          '#E68FAC',   // purplish pink
+  lightBlue:     '#A1CAF1',
+  yellowGreen:   '#8DB600',
+  violet:        '#604E97',
+  buff:          '#C2B280',
+  purplishRed:   '#B3446C',
+  yellowishPink: '#F99379',
+  orangeYellow:  '#F6A600',
+  grey:          '#848482',
+  reddishBrown:  '#882D17',
+  oliveGreen:    '#2B3D26',
+  reddishOrange: '#E25822',
+  red:           '#BE0032',
+};
+
 /* ── Geometry ── */
 function normalize(cells){
   const minR = Math.min(...cells.map(c=>c[0]));
@@ -91,8 +118,10 @@ function buildDividers(cells, size, gap){
   const segs = [];
   cells.forEach(([r,c])=>{
     const x = c*(size+gap), y = r*(size+gap);
-    if(hasCellAt(cells, r, c+1)) segs.push(`M${x+size+gap/2},${y} V${y+size}`);
-    if(hasCellAt(cells, r+1, c)) segs.push(`M${x},${y+size+gap/2} H${x+size}`);
+    // (each runs half a gap past the block at both ends, so lines meeting
+    // where four blocks touch join up with no break)
+    if(hasCellAt(cells, r, c+1)) segs.push(`M${x+size+gap/2},${y-gap/2} V${y+size+gap/2}`);
+    if(hasCellAt(cells, r+1, c)) segs.push(`M${x-gap/2},${y+size+gap/2} H${x+size+gap/2}`);
   });
   return segs.join(' ');
 }
@@ -102,6 +131,50 @@ function svgPath(d, attrs){
   Object.entries(attrs).forEach(([k,v])=>p.setAttribute(k, v));
   return p;
 }
+/* A darker shade of a '#rrggbb' color (amount 0–1 toward black), for a
+   piece's own lines. Anything else (e.g. a CSS variable) gets a see-through
+   black instead. */
+function shadeColor(color, amount){
+  const m = /^#([0-9a-f]{6})$/i.exec(color || '');
+  if(!m) return 'rgba(0,0,0,0.45)';
+  const n = parseInt(m[1], 16), k = 1 - amount;
+  const ch = s=>Math.round(((n >> s) & 255) * k);
+  return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+}
+
+/* [COLORS] How a piece looks (user, 2026-11-02: "squares in each block
+   along with a line separating each block", clean lines):
+     • one flat fill in the piece's color;
+     • a slightly lighter square inside each block;
+     • a thin line between neighbouring blocks, and one outline round the
+       whole piece, both a darker shade of the piece's own color.
+   All lines sit on whole pixels so they stay sharp. */
+const PIECE_LOOK = {
+  inset: 0.2,           // inner square's margin, as a fraction of a block
+  insetFill: 'rgba(255,255,255,0.17)',
+  lineShade: 0.38,      // how much darker the lines are than the piece
+  outline: 2,           // outline width (px)
+  divider: 2,           // line between blocks (px; at most the gap between squares)
+};
+// Draw a piece's fill, inner squares and lines into an SVG element
+function drawPieceParts(parent, cells, color, size, gap){
+  const line = shadeColor(color, PIECE_LOOK.lineShade);
+  parent.appendChild(svgPath(buildFillPath(cells, size, gap), { fill: color, class:'piece-fill' }));
+  const ins = Math.max(2, Math.round(size * PIECE_LOOK.inset));
+  if(size - 2*ins >= 4){
+    const sq = cells.map(([r,c])=>{
+      const x = c*(size+gap) + ins, y = r*(size+gap) + ins, s = size - 2*ins;
+      return `M${x},${y} h${s} v${s} h${-s} Z`;
+    }).join(' ');
+    parent.appendChild(svgPath(sq, { fill: PIECE_LOOK.insetFill }));
+  }
+  const dividers = buildDividers(cells, size, gap);
+  if(dividers) parent.appendChild(svgPath(dividers, { fill:'none', stroke: line,
+    'stroke-width': Math.max(1, Math.min(PIECE_LOOK.divider, gap || PIECE_LOOK.divider)) }));
+  parent.appendChild(svgPath(buildOutlinePath(cells, size, gap), { fill:'none', stroke: line,
+    'stroke-width': PIECE_LOOK.outline, 'stroke-linejoin':'miter', class:'piece-outline' }));
+}
+
 function buildPieceShape(cells, color, size, gap){
   const {rows, cols} = bounds(cells);
   const w = cols*size + (cols-1)*gap, h = rows*size + (rows-1)*gap;
@@ -118,10 +191,7 @@ function buildPieceShape(cells, color, size, gap){
   svg.classList.add('piece-svg');
   svg.style.position = 'absolute';
   svg.style.overflow = 'visible';
-  svg.appendChild(svgPath(buildFillPath(cells, size, gap), { fill: color }));
-  const dividers = buildDividers(cells, size, gap);
-  if(dividers) svg.appendChild(svgPath(dividers, { fill:'none', stroke:'rgba(0,0,0,0.25)', 'stroke-width':'1.5' }));
-  svg.appendChild(svgPath(buildOutlinePath(cells, size, gap), { fill:'none', stroke:'rgba(0,0,0,0.45)', 'stroke-width':'2', 'stroke-linejoin':'round' }));
+  drawPieceParts(svg, cells, color, size, gap);
   box.appendChild(svg);
 
   // Invisible per-square hit areas, so a drag knows which square was grabbed
@@ -173,10 +243,7 @@ function svgEl(tag, attrs, parent){
 
 function drawPiece(parent, cells, color, x, y, cell, gap){
   const g = svgEl('g', { transform:`translate(${x},${y})` }, parent);
-  svgEl('path', { d: buildFillPath(cells, cell, gap), fill: color }, g);
-  const div = buildDividers(cells, cell, gap);
-  if(div) svgEl('path', { d: div, class:'rb-divider' }, g);
-  svgEl('path', { d: buildOutlinePath(cells, cell, gap), class:'rb-outline' }, g);
+  drawPieceParts(g, cells, color, cell, gap);   // (same look as the game's pieces)
   return g;
 }
 
@@ -219,19 +286,27 @@ function groupSquares(cells){
    regions  a list of shapes, each a list of squares [[r,c]]
    step     square size + gap (px); gap: the gap between squares (px)
    ox, oy   where square (0,0)'s top-left corner is drawn
-   look     { stroke, width, dash, space } */
+   look     { stroke, width, dash, space, under, onBoard }
+            under    color drawn first along the line, the width of the gap,
+                     so the dotted line REPLACES the grid line there
+                     (user, 2026-11-02: like a crossword's lines)
+            onBoard  (r, c) => is that square part of the board? A line along
+                     the board's own edge isn't drawn: the edge is already a
+                     wall, and a line there stuck out past the grid. */
 function drawDottedLines(parent, regions, step, gap, ox, oy, look){
   // Each edge of a square is a unit edge on the grid lines: 'h,row line,col'
   // (horizontal) or 'v,col line,row' (vertical). A shape's border edges are
-  // those whose neighbour isn't in the same shape.
+  // those whose neighbour isn't in the same shape (and is on the board).
   const edges = new Set();
+  const on = look.onBoard || (()=>true);
   regions.forEach(cells=>{
     const inside = new Set(cells.map(([r,c])=>r+','+c));
+    const edge = (r, c, key)=>{ if(!inside.has(r+','+c) && on(r, c)) edges.add(key); };
     cells.forEach(([r,c])=>{
-      if(!inside.has((r-1)+','+c)) edges.add(`h,${r},${c}`);
-      if(!inside.has((r+1)+','+c)) edges.add(`h,${r+1},${c}`);
-      if(!inside.has(r+','+(c-1))) edges.add(`v,${c},${r}`);
-      if(!inside.has(r+','+(c+1))) edges.add(`v,${c+1},${r}`);
+      edge(r-1, c, `h,${r},${c}`);
+      edge(r+1, c, `h,${r+1},${c}`);
+      edge(r, c-1, `v,${c},${r}`);
+      edge(r, c+1, `v,${c+1},${r}`);
     });
   });
   // Join unit edges that continue in a straight line into one run
@@ -252,6 +327,8 @@ function drawDottedLines(parent, regions, step, gap, ox, oy, look){
   // Grid line k sits in the middle of the gap before square k
   const at = k => k*step - gap/2;
   const w = look.width, dash = look.dash, space = look.space;
+  // (every "hide the grid line" stroke goes below every dash)
+  const underG = svgEl('g', {}, parent), dashG = svgEl('g', {}, parent);
   runs.forEach(run=>{
     const len = (run.to - run.from) * step;
     // Stretch the pattern slightly so the run starts and ends on a dash.
@@ -261,13 +338,16 @@ function drawDottedLines(parent, regions, step, gap, ox, oy, look){
     const d = run.dir === 'h'
       ? `M${ox + at(run.from)},${oy + at(run.line)} H${ox + at(run.to)}`
       : `M${ox + at(run.line)},${oy + at(run.from)} V${oy + at(run.to)}`;
+    // Hide the grid line under it, so only the dashes show there
+    if(look.under && gap > 0) svgEl('path', { d, fill:'none', stroke: look.under, 'stroke-width': gap,
+      'stroke-linecap':'butt', class:'dotted-under' }, underG);
     svgEl('path', { d, fill:'none', stroke: look.stroke, 'stroke-width': w, 'stroke-linecap':'square',
-      'stroke-dasharray': `${Math.max(1, dash*k - w)} ${space*k + w}`, class:'dotted-line' }, parent);
+      'stroke-dasharray': `${Math.max(1, dash*k - w)} ${space*k + w}`, class:'dotted-line' }, dashG);
   });
 }
 
 // [COLORS] How dotted lines look in the small pictures (rules popup, tutorial slide 3, sandbox)
-const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #d99a4e)', width: 3, dash: 6, space: 4 };
+const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #d62828)', under: 'var(--rules-cell, #fff)', width: 3, dash: 6, space: 4 };
 
 /* A picture of a board, as an <svg>.
    opts:
@@ -287,7 +367,9 @@ const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #d99a4e)', width: 3, dash:
 function miniBoard(opts){
   const { rows, cols, cell, pieces = [], gaps = [], show = null, dotted = null } = opts;
   const removed = new Set((opts.removed || []).map(([r,c])=>r+','+c));
-  const gap = 3, pad = 6, label = 26;   // label = space for the row/column counts
+  // gap = the grid lines between squares, pad = the border round the board
+  // (a crossword-style grid, like the game's); label = room for the counts
+  const gap = 2, pad = 3, label = 26;
   const step = cell + gap;
   const boardW = cols*cell + (cols-1)*gap + 2*pad;
   const boardH = rows*cell + (rows-1)*gap + 2*pad;
@@ -307,18 +389,21 @@ function miniBoard(opts){
     const present = [];
     for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) if(!removed.has(r+','+c)) present.push([r,c]);
     if(present.length) svgEl('path', { d: buildFillPath(present, cell, gap), class:'rb-frame', stroke:'currentColor',
-      'stroke-width': 2*pad, 'stroke-linejoin':'round', transform:`translate(${pad},${pad})`, style:'color:var(--rules-board)' }, svg);
+      'stroke-width': 2*pad, 'stroke-linejoin':'miter', transform:`translate(${pad},${pad})`, style:'color:var(--rules-board)' }, svg);
   } else {
-    svgEl('rect', { x:0, y:0, width:boardW, height:boardH, rx:8, class:'rb-frame' }, svg);
+    svgEl('rect', { x:0, y:0, width:boardW, height:boardH, class:'rb-frame' }, svg);
   }
   const isGap = (r,c)=>gaps.some(([gr,gc])=>gr===r && gc===c);
   for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
     const x = pad + c*step, y = pad + r*step;
     if(removed.has(r+','+c)) continue;
-    svgEl('rect', { x, y, width:cell, height:cell, rx:3, class:'rb-cell' }, svg);
+    svgEl('rect', { x, y, width:cell, height:cell, class:'rb-cell' }, svg);
   }
 
-  pieces.forEach(p=>drawPiece(svg, p.cells, p.color, pad + p.col*step, pad + p.row*step, cell, gap));
+  // (Each piece in its own group, class mb-piece, so the Solved popup can
+  // drop them in one by one: animating the group itself would undo the
+  // translate that puts the piece in place)
+  pieces.forEach(p=>drawPiece(svgEl('g', { class:'mb-piece' }, svg), p.cells, p.color, pad + p.col*step, pad + p.row*step, cell, gap));
 
   if(opts.markEmpty){
     const covered = new Set();
@@ -331,7 +416,8 @@ function miniBoard(opts){
 
   // The dotted area and the dotted squares (squares that share a side are one shape)
   const dottedShapes = (dotted && dotted.length ? [dotted] : []).concat(groupSquares(gaps));
-  if(dottedShapes.length) drawDottedLines(svg, dottedShapes, step, gap, pad, pad, PICTURE_DOTTED);
+  const onBoard = (r,c)=>r>=0 && c>=0 && r<rows && c<cols && !removed.has(r+','+c);
+  if(dottedShapes.length) drawDottedLines(svg, dottedShapes, step, gap, pad, pad, Object.assign({ onBoard }, PICTURE_DOTTED));
 
   // Count filled blocks per row/column and mark each green (even) or red (odd)
   if(show){

@@ -13,34 +13,49 @@
   --font-text:    'Nunito', 'Segoe UI', sans-serif;
   --button-size:  1.5rem;
 
-  /* [COLORS] (same palette as the splash screen) */
-  --color-bg:           #241f1c;   /* page background */
-  --color-text:         #e8ddd0;
-  --color-text-dim:     #a3937f;
-  --color-accent:       #d99a4e;   /* hint outline, headings */
-  --color-board-bg:     #1c1714;   /* frame around the grid */
-  --color-cell:         #443830;   /* an open grid square */
-  --color-cell-border:  #4d3f36;
-  --color-valid:        #6fae5a;   /* drop preview: fits */
-  --color-valid-bg:     #3c5638;
-  --color-invalid:      #c25a5a;   /* drop preview: doesn't fit; odd row/column */
-  --color-invalid-bg:   #5a3838;
-  --color-select:       #f2c48a;   /* ring around a selected piece at the top */
+  /* [COLORS] Light mode (the default), 2026-11-02: a clean newspaper-games
+     feel (white page, black text, crossword-style grid) in our own style,
+     not a copy of any publication's: solid rounded "key" buttons, level
+     colors that are light tints of the pieces' Kelly colors. Dark mode is
+     the html.dark block just below. (Same palette as the splash screen.) */
+  --color-bg:           #ffffff;   /* page background */
+  --color-text:         #121212;
+  --color-text-dim:     #5c5c5c;
+  --color-accent:       #2443d6;   /* headings, notes, hint glow */
+  --color-board-bg:     #121212;   /* the grid's lines and its border */
+  --color-cell:         #ffffff;   /* an open grid square */
+  --color-cell-border:  #d6d6d6;   /* soft lines: popup edges, plain buttons */
+  --color-dotted:       #d62828;   /* dotted lines on the board */
+  --color-valid:        #1f8a4c;   /* drop preview: fits; "Solved!" */
+  --color-valid-bg:     #d4f0dc;
+  --color-invalid:      #d62828;   /* drop preview: doesn't fit; odd row/column */
+  --color-invalid-bg:   #fbd9d9;
+  --color-select:       #2443d6;   /* ring on an empty square (sandbox) */
   --color-highlight:    #e0484f;   /* highlighter over an uneven row/column */
-  --color-status:       #ef8a8a;   /* "Uneven rows" message above the board */
-  --color-reflect:      #7d5a78;   /* Reflect button */
-  --color-rotate:       #4f8a8b;   /* Rotate button */
-  --color-button-text:  #ffffff;
-  --color-panel:        #332a25;   /* "Solved!" popup */
-  --color-overlay:      rgba(0, 0, 0, 0.6);
+  --color-status:       #c62828;   /* "Uneven rows" message above the board */
+  --color-button:       #121212;   /* main buttons: fill */
+  --color-button-ink:   #ffffff;   /*   and text */
+  --color-soft:         #ececec;   /* plain buttons (Menu, Close, back): fill */
+  --color-soft-ink:     #121212;   /*   and text */
+  --color-key-edge:     rgba(0, 0, 0, 0.28);   /* the darker edge under a button */
+  --color-panel:        #ffffff;   /* popups */
+  --color-overlay:      rgba(18, 18, 18, 0.45);
+  --color-shadow:       rgba(0, 0, 0, 0.18);   /* under a lifted piece */
+  /* the three levels (start screen buttons, stars, "Play Medium →"):
+     light tints of Kelly green, orange and purple, the pieces' colors */
+  --color-easy:         #8fd1ad;
+  --color-medium:       #f9bf7a;
+  --color-hard:         #c3a3cc;
+  --color-level-ink:    #121212;   /* text on them */
+  --color-rotate:       #2443d6;   /* (the sandbox's main buttons) */
 
   /* [POSITIONING] Sizes and spacing */
   --page-gap:        14px;   /* space between pieces, board and buttons */
   --tray-cell:       20px;   /* square size of the pieces at the top */
   --tray-gap:        10px;   /* space between pieces at the top */
   --board-max-cell:  84px;   /* largest a board square gets on big screens */
-  --board-gap:       4px;    /* gap between board squares */
-  --board-pad:       12px;   /* frame thickness around the board */
+  --board-gap:       2px;    /* the grid lines between squares */
+  --board-pad:       4px;    /* the border round the grid (thicker, like a crossword's) */
   --button-width:    170px;  /* each of Reflect / Rotate */
   --button-height:   56px;
   --button-radius:   14px;
@@ -50,6 +65,35 @@
   --highlight-thickness: 0.7;   /* stroke width, as a fraction of one square */
   --highlight-overhang:  18px;  /* how far it runs past the grid's edge */
 }
+/* [COLORS] Dark mode (theme.js; the "Dark mode" button next to "Large
+   text"). A neutral near-black, not brown (user, 2026-11-02). The level
+   colors stay the same. */
+html.dark {
+  --color-bg:           #121212;
+  --color-text:         #f2f2f2;
+  --color-text-dim:     #a6a6a6;
+  --color-accent:       #8fa3ff;
+  --color-board-bg:     #8c8c8c;
+  --color-cell:         #1f1f1f;
+  --color-cell-border:  #3a3a3a;
+  --color-dotted:       #ff5c5c;
+  --color-valid:        #5cc982;
+  --color-valid-bg:     #1d3b28;
+  --color-invalid:      #ff5c5c;
+  --color-invalid-bg:   #4a1f1f;
+  --color-select:       #8fa3ff;
+  --color-status:       #ff8a8a;
+  --color-button:       #f2f2f2;
+  --color-button-ink:   #121212;
+  --color-soft:         #2e2e2e;
+  --color-soft-ink:     #f2f2f2;
+  --color-key-edge:     rgba(0, 0, 0, 0.6);
+  --color-panel:        #1c1c1c;
+  --color-overlay:      rgba(0, 0, 0, 0.65);
+  --color-shadow:       rgba(0, 0, 0, 0.55);
+  --color-rotate:       #5b74f0;
+}
+
 @media (max-width: 480px) {
   :root { --tray-cell: 13px; --tray-gap: 6px; --button-width: 140px; }
   .status { font-size: 1rem; }
@@ -92,9 +136,9 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid var(--color-cell-border);
-  background: var(--color-panel);
-  color: var(--color-text);
+  border: none;
+  background: var(--color-soft);
+  color: var(--color-soft-ink);
   font-family: var(--font-display);
   font-size: 1.6rem;
   line-height: 1;
@@ -124,7 +168,7 @@ body {
   touch-action: none;
   transition: background 0.15s;
 }
-.tray-slot:hover { background: rgba(255, 255, 255, 0.05); }
+.tray-slot:hover { background: rgba(128, 128, 128, 0.08); }
 /* Puzzle page: the pieces' space */
 .tray-area { flex: 0 0 auto; position: relative; width: 100%; display: flex; justify-content: center; }
 .tray-area > .tray { flex: 0 1 auto; min-width: 0; }   /* (may shrink, so the pieces still wrap on phones) */
@@ -173,6 +217,32 @@ body {
 @keyframes winTextUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .win-badge.animate, .win-badge.animate * { animation: none !important; } }
 
+/* ── The win animation (celebrate.js solvedCelebration; the Solved popup) ──
+   A small picture of the solved board, a check seal on its corner, little
+   blocks bursting out, then "Solved!" and the time. */
+.win-show { display: flex; flex-direction: column; align-items: center; }
+.win-stage { position: relative; margin: 6px 0 16px; }
+.win-board { display: block; overflow: visible; transform-origin: center; }
+.win-board.glow { animation: boardGlow 1.4s var(--glow-delay, 0s) ease-out both; }
+@keyframes boardGlow {
+  0%   { filter: drop-shadow(0 0 0 rgba(31, 138, 76, 0)); }
+  25%  { filter: drop-shadow(0 0 14px rgba(31, 138, 76, 0.75)); }
+  100% { filter: drop-shadow(0 0 6px rgba(31, 138, 76, 0.35)); }
+}
+.win-seal { position: absolute; top: -16px; right: -16px; width: 46px; height: 46px; overflow: visible;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)); }
+.win-seal circle { fill: var(--color-valid); stroke: var(--color-panel); stroke-width: 3; }
+.win-seal path { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 34; }
+.win-confetti { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.win-confetti i { position: absolute; left: 0; top: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25); }
+.win-title { font-family: var(--font-display); font-weight: 400; font-size: 2.2rem; line-height: 1.1; color: var(--color-valid); letter-spacing: 0.03em; }
+.win-time { margin: 4px 0 0 !important; font-size: 1.1rem; color: var(--color-text); }
+.win-time b { font-variant-numeric: tabular-nums; }
+/* the popup itself comes up with a little spring (play.html) */
+@keyframes popupIn { from { opacity: 0; transform: translateY(16px) scale(0.95); } to { opacity: 1; transform: none; } }
+#solved-popup:not([hidden]) .popup { animation: popupIn 0.32s cubic-bezier(.2,.9,.3,1.15) both; }
+@media (prefers-reduced-motion: reduce) { #solved-popup .popup, .win-board.glow { animation: none; } }
+
 .tray-slot.used { visibility: hidden; }  /* keeps its space so nothing shifts */
 
 /* ── Board ── */
@@ -184,25 +254,25 @@ body {
   align-items: center;
   justify-content: center;
 }
+/* The grid looks like a crossword's or a sudoku's (user, 2026-11-02): square
+   cells, thin lines between them (the board's color showing through the
+   2px gaps), a thicker border, no rounded corners. */
 #board-outer {
   position: relative;
   background: var(--color-board-bg);
-  border-radius: 14px;
   padding: var(--board-pad);
-  box-shadow: 0 0 28px rgba(0, 0, 0, 0.5);
   touch-action: none;
   transition: box-shadow 0.3s;
 }
 /* [COLORS] A finished board whose rows/columns aren't all even glows red */
-#board-outer.uneven { box-shadow: 0 0 0 3px rgba(220, 70, 70, 0.85), 0 0 26px rgba(220, 70, 70, 0.55); }
+#board-outer.uneven { box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.85), 0 0 22px rgba(214, 40, 40, 0.45); }
 #board { display: grid; }
 .board-cell {
   background: var(--color-cell);
-  border: 1px solid var(--color-cell-border);
-  border-radius: 4px;
+  transition: background 0.12s;
 }
-.board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid); }
-.board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid); }
+.board-cell.hl-valid   { background: var(--color-valid-bg); }
+.board-cell.hl-invalid { background: var(--color-invalid-bg); }
 #pieces-layer, #hint-overlay, #mark-overlay {
   position: absolute;
   inset: var(--board-pad);
@@ -240,11 +310,28 @@ body {
 
 .placed-piece { position: absolute; }
 .placed-piece .blk { pointer-events: auto; cursor: grab; touch-action: none; }
-.piece-svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)); }
+.piece-svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
 .placed-piece.invalid .piece-svg {
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)) drop-shadow(0 0 4px rgba(220,70,70,0.95)) drop-shadow(0 0 4px rgba(220,70,70,0.95));
+  filter: drop-shadow(0 0 3px rgba(214,40,40,0.95)) drop-shadow(0 0 5px rgba(214,40,40,0.9));
 }
-.ghost { position: absolute; pointer-events: none; opacity: 0.75; z-index: 50; }
+/* ── Feel (game.js, FEEL) ── */
+/* pressed: squeezes a little under the finger / mouse */
+.piece-box { transition: transform 0.09s ease-out; }
+.piece-box.pressed { transform: scale(0.95); }
+/* the piece being dragged: lifted (bigger, a soft shadow below it), a little
+   see-through so the green / red squares under it still show */
+.ghost { position: absolute; pointer-events: none; opacity: 0.88; z-index: 50; }
+.piece-box.lifted { transform: scale(1.06); }
+.piece-box.lifted .piece-svg { filter: drop-shadow(0 10px 9px var(--color-shadow)); }
+.piece-box.lift-in { animation: liftIn 0.14s ease-out both; }
+@keyframes liftIn { from { transform: scale(1); } to { transform: scale(1.06); } }
+/* its place at the top while it's held */
+.tray-slot.lifting .piece-box { opacity: 0.25; }
+.tray-slot:hover .piece-box:not(.pressed) { transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) {
+  .piece-box, .piece-box.lift-in { transition: none; animation: none; }
+  .tray-slot:hover .piece-box:not(.pressed) { transform: none; }
+}
 
 /* [CONTENT] Puzzle hint caption (only some puzzles have one) */
 .hint-caption {
@@ -272,47 +359,57 @@ body {
   width: 100%;
   max-width: 340px;
   background: var(--color-panel);
+  color: var(--color-text);
   border: 1px solid var(--color-cell-border);
   border-radius: 16px;
   padding: 26px 24px 22px;
   text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
 }
-.popup h2 { font-family: var(--font-display); color: var(--color-accent); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
+.popup h2 { font-family: var(--font-display); color: var(--color-text); font-size: 2rem; font-weight: 400; margin-bottom: 8px; }
 .popup p  { font-size: 1.05rem; line-height: 1.45; margin-bottom: 18px; }
 .popup-buttons { display: flex; gap: 10px; }
+/* [COLORS] Buttons: solid rounded "keys" with a darker edge underneath
+   that press down when tapped. The main one (e.g. Reset) is dark; plain
+   ones (.secondary) are light grey. */
 .popup-buttons a, .popup-buttons button {
   flex: 1;
   height: 46px;
   border: none;
   border-radius: 12px;
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  color: var(--color-button-text);
-  background: var(--color-rotate);
+  font-size: 1.3rem;
+  color: var(--color-button-ink);
+  background: var(--color-button);
+  box-shadow: 0 3px 0 var(--color-key-edge);
   cursor: pointer;
   text-decoration: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
 }
-.popup-buttons .secondary { background: var(--color-cell-border); }
-/* The Solved popup (play.html): room between the badge and the buttons.
-   Menu and Close always look the same, plain; the only colorful button is
-   "Play Medium →" / "Play Hard →" (after Easy / Medium), above them in that
-   level's color */
-.solved-win { margin-bottom: 26px; }
-#solved-popup .popup-buttons a { background: var(--color-cell-border); }
+.popup-buttons a:active, .popup-buttons button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-key-edge); }
+.popup-buttons .secondary { background: var(--color-soft); color: var(--color-soft-ink); }
+/* The Solved popup (play.html): room between the celebration and the
+   buttons. Menu and Close always look the same, plain; the only colorful
+   button is "Play Medium →" / "Play Hard →" (after Easy / Medium), above
+   them in that level's color */
+.solved-win { margin-bottom: 22px; }
+#solved-popup .popup-buttons a, #solved-popup .popup-buttons button { background: var(--color-soft); color: var(--color-soft-ink); }
 .next-level-btn {
-  display: flex; align-items: center; justify-content: center; height: 50px; margin-bottom: 10px;
-  border-radius: 12px; text-decoration: none; font-family: var(--font-display); font-size: 1.4rem;
-  background: var(--color-valid); color: #fff; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  display: flex; align-items: center; justify-content: center; height: 50px; margin-bottom: 12px;
+  border-radius: 12px; text-decoration: none; font-family: var(--font-display); font-size: 1.45rem;
+  color: var(--color-level-ink); background: var(--color-easy); box-shadow: 0 3px 0 var(--color-key-edge);
+  transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
 }
 .next-level-btn[hidden] { display: none; }
 /* [COLORS] the same as the start screen's Medium / Hard buttons
-   (--color-medium / --color-hard in index.html) */
-.next-level-btn.medium { background: #d99a4e; color: var(--color-button-text); }
-.next-level-btn.hard   { background: #7d5a78; color: var(--color-button-text); }
-.next-level-btn:hover { filter: brightness(1.08); }
+   (--color-medium / --color-hard at the top) */
+.next-level-btn.medium { background: var(--color-medium); }
+.next-level-btn.hard   { background: var(--color-hard); }
+.next-level-btn:hover { filter: brightness(1.05); }
+.next-level-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-key-edge); }
 /* ── Sandbox modes (only the puzzle builder uses these) ── */
 /* Edit mode: pieces fade and ignore clicks, so clicks reach the squares */
 body.editing .placed-piece { opacity: 0.45; }
@@ -341,14 +438,14 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
   height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid var(--color-cell-border);
+  border: 1px solid var(--color-text-dim);
   background: transparent;
   color: var(--color-text-dim);
   font-family: var(--font-display);
   font-size: 1rem;
   cursor: pointer;
 }
-.reset-btn:hover { color: var(--color-text); border-color: var(--color-text-dim); }
+.reset-btn:hover { color: var(--color-text); border-color: var(--color-text); }
 
 /* ── Irregular boards (puzzle.removed) ── */
 /* A removed square keeps its place in the grid but isn't drawn */
@@ -361,7 +458,6 @@ body.viewing .placed-piece .blk { pointer-events: none; cursor: default; }
   top: var(--board-pad);
   overflow: visible;
   pointer-events: none;
-  filter: drop-shadow(0 0 14px rgba(0, 0, 0, 0.5));
 }
 #board-outer.irregular #board { position: relative; }
 .frame-shape { fill: var(--color-board-bg); stroke: var(--color-board-bg); }
@@ -379,7 +475,7 @@ body.shaping .board-cell.removed {
 /* ── Tutorial popup (play.html) ── */
 .tutorial-overlay {
   position: fixed; inset: 0; z-index: 2000;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--color-overlay);
   display: flex; align-items: center; justify-content: center;
   padding: 12px;
 }

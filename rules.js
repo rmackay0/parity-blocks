@@ -44,17 +44,17 @@ const RULES_TEXT = {
 const SEEN_KEY = 'pb_rulesSeen';
 
 /* ── Example boards (6x6). Each piece: color, cells, top-left row/col ── */
-const EX_P = { color:'#b8923f', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
-const EX_U = { color:'#a85c4a', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
-const EX_T = { color:'#5a7d8c', cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
-const EX_V = { color:'#8a9c5a', cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
+const EX_P = { color:KELLY.orange, cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
+const EX_U = { color:KELLY.blue,   cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
+const EX_T = { color:KELLY.green,  cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
+const EX_V = { color:KELLY.purple, cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
 const EXAMPLE = {
   // Every row and column has an even number of filled blocks
   solved: [ {...EX_P, row:0, col:4}, {...EX_U, row:4, col:0}, {...EX_T, row:3, col:2}, {...EX_V, row:2, col:1} ],
   // Same pieces, V moved up-left one square: rows 2 & 5 and columns 1 & 4 go odd
   wrong:  [ {...EX_P, row:0, col:4}, {...EX_U, row:4, col:0}, {...EX_T, row:3, col:2}, {...EX_V, row:1, col:0} ],
 };
-const F_PIECE = { color:'#7d6aa8', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] };
+const F_PIECE = { color:KELLY.pink, cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] };
 
 /* Drawing helpers (svgEl, drawPiece, drawNoMark, miniBoard) are in shapes.js */
 
@@ -133,12 +133,17 @@ function build(){
   close.addEventListener('click', closeRules);
   popup.appendChild(close);
 
-  // Top-left: switch between large and standard text (shared with the tutorial)
+  // Top-left: switch between large and standard text, and light / dark
+  // mode (theme.js); both shared with the tutorial
+  const viewBtns = document.createElement('div');
+  viewBtns.className = 'view-btns';
   const sizeBtn = document.createElement('button');
   sizeBtn.type = 'button';
   sizeBtn.className = 'text-size-btn';
   sizeBtn.addEventListener('click', ()=>setLargeText(!isLargeText()));
-  popup.appendChild(sizeBtn);
+  viewBtns.appendChild(sizeBtn);
+  if(window.ParityTheme) viewBtns.appendChild(ParityTheme.makeButton());
+  popup.appendChild(viewBtns);
 
   const h2 = document.createElement('h2');
   h2.id = 'rules-title';
@@ -173,10 +178,12 @@ function build(){
     figure(pieceOnly(rotateCells(F_PIECE.cells), F_PIECE.color, 22)),
   ]);
   item(popup, [[T.gap]], [
-    figure(miniBoard({ rows:1, cols:1, cell:44, gaps:[[0,0]] })),
+    // (a dotted square in the middle of a small board: dotted lines aren't
+    // drawn along the board's own edge, so a 1 × 1 board would show none)
+    figure(miniBoard({ rows:3, cols:3, cell:30, gaps:[[1,1]] })),
   ]);
   // Half inside the dotted square, half outside
-  const crossing = { color:'#5f9e8f', cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
+  const crossing = { color:KELLY.blue, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
   item(popup, [[T.dotted]], [
     figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],
       dotted:[[1,1],[1,2],[2,1],[2,2]], noMarkOn: crossing })),
@@ -225,6 +232,7 @@ function showLargeText(){
 function openRules(){
   if(!backdrop) build();
   showLargeText();          // pick up a change made in the tutorial
+  if(window.ParityTheme) ParityTheme.apply();   // (labels the Dark mode button)
   lastFocus = document.activeElement;
   backdrop.hidden = false;
   const popup = backdrop.querySelector('.rules-popup');

@@ -25,6 +25,9 @@
 <!-- [IMAGES] Browser-tab icon. Point href at any .svg / .png / .ico in assets/. -->
 <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 
+<!-- Light / dark mode: first, so the page never flashes the wrong colors -->
+<script src="theme.js"></script>
+
 <!-- [FONTS] Step 1 of 2: load the fonts from Google Fonts.
      To change fonts: pick new ones at https://fonts.google.com, copy their
      "family=" part into this URL, then update --font-display / --font-body
@@ -79,21 +82,24 @@
        [COLORS] Every color on the page is set here.
        Change a value once and it updates everywhere it's used.
        ───────────────────────────────────────────────────────────── */
-    --color-bg:          #241f1c;   /* page background */
-    --color-bg-glow:     #3a2e27;   /* soft radial glow behind the logo */
-    --color-title:       #d99a4e;   /* "Parity Blocks" heading */
-    --color-text:        #e8ddd0;   /* main text */
-    --color-text-dim:    #a3937f;   /* tagline, secondary text */
+    /* Light mode (the default): white page, black text. The level buttons
+       are light tints of the pieces' Kelly colors (green, orange, purple),
+       raised like keys. Dark mode: html.dark below. */
+    --color-bg:          #ffffff;   /* page background */
+    --color-title:       #121212;   /* "Parity Blocks" heading */
+    --color-text:        #121212;   /* main text */
+    --color-text-dim:    #5c5c5c;   /* tagline, secondary text */
 
-    --color-easy:        #4f8a8b;   /* Easy button */
-    --color-medium:      #d99a4e;   /* Medium button */
-    --color-hard:        #7d5a78;   /* Hard button */
-    --color-button-text: #ffffff;   /* label text on all three buttons */
+    --color-easy:        #8fd1ad;   /* Easy button (light Kelly green) */
+    --color-medium:      #f9bf7a;   /* Medium button (light Kelly orange) */
+    --color-hard:        #c3a3cc;   /* Hard button (light Kelly purple) */
+    --color-button-text: #121212;   /* label text on all three buttons */
+    --color-key-edge:    rgba(0, 0, 0, 0.28);   /* the darker edge under each button */
 
-
-    --color-panel:       #332a25;   /* "coming soon" notice background */
-    --color-panel-border:#4d3f36;   /* "coming soon" notice outline */
-    --color-focus:       #f2c48a;   /* keyboard-focus ring on buttons */
+    --color-panel:       #ffffff;   /* "coming soon" notice, Archive background */
+    --color-panel-border:#d6d6d6;   /* their outline */
+    --color-focus:       #2443d6;   /* keyboard-focus ring on buttons */
+    --color-overlay:     rgba(18, 18, 18, 0.45);
 
     /* ─────────────────────────────────────────────────────────────
        [POSITIONING] Sizes and spacing.
@@ -113,6 +119,19 @@
        e.g. url('assets/background.jpg'). Leave as none for a plain color. */
     --bg-image: none;
   }
+  /* [COLORS] Dark mode (theme.js; the button is in the Rules popup, next
+     to Large text). The level buttons keep their colors. */
+  html.dark {
+    --color-bg:          #121212;
+    --color-title:       #f2f2f2;
+    --color-text:        #f2f2f2;
+    --color-text-dim:    #a6a6a6;
+    --color-key-edge:    rgba(0, 0, 0, 0.7);
+    --color-panel:       #1c1c1c;
+    --color-panel-border:#3a3a3a;
+    --color-focus:       #8fa3ff;
+    --color-overlay:     rgba(0, 0, 0, 0.65);
+  }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
@@ -121,12 +140,10 @@
     font-family: var(--font-body);
     color: var(--color-text);
     background-color: var(--color-bg);
-    /* [IMAGES] Background image sits on top of the glow. Change
-       background-size to `contain` or a fixed size if needed. */
-    background-image:
-      var(--bg-image),
-      radial-gradient(circle at 50% 38%, var(--color-bg-glow) 0%, transparent 60%);
-    background-size: cover, auto;
+    /* [IMAGES] Optional background image. Change background-size to
+       `contain` or a fixed size if needed. */
+    background-image: var(--bg-image);
+    background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
   }
@@ -156,7 +173,6 @@
     height: var(--logo-size);
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
   }
 
   /* [FONTS] Title text */
@@ -200,11 +216,11 @@
     letter-spacing: 0.04em;
     color: var(--color-button-text);           /* [COLORS] */
     cursor: pointer;
-    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+    box-shadow: 0 4px 0 var(--color-key-edge);
     transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
   }
-  .difficulty-btn:hover  { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
-  .difficulty-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+  .difficulty-btn:hover  { filter: brightness(1.04); transform: translateY(-2px); box-shadow: 0 6px 0 var(--color-key-edge); }
+  .difficulty-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--color-key-edge); }
 
   /* [COLORS] Per-difficulty button colors (values live in :root) */
   .difficulty-btn[data-difficulty="easy"]   { background: var(--color-easy); }
@@ -226,7 +242,6 @@
     max-width: var(--button-width);
     height: 48px;
     margin-top: -8px;              /* sits a little closer to the buttons above */
-    background: transparent;
     display: flex;                 /* it's a link, so center its text like a button */
     align-items: center;
     justify-content: center;
@@ -261,7 +276,7 @@
   .cal-backdrop {
     position: fixed; inset: 0; z-index: 50;
     display: flex; align-items: center; justify-content: center; padding: 16px;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--color-overlay);
   }
   .cal-backdrop[hidden] { display: none; }
   .cal {
@@ -280,7 +295,7 @@
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .cal-grid .wd { font-size: 0.8rem; color: var(--color-text-dim); text-align: center; padding-bottom: 2px; }
   .cal-day {
-    aspect-ratio: 1; border-radius: 8px; background: rgba(255, 255, 255, 0.04);
+    aspect-ratio: 1; border-radius: 8px; background: rgba(128, 128, 128, 0.08);
     display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding-top: 4px; font-size: 0.85rem; color: var(--color-text-dim);
   }
@@ -290,12 +305,14 @@
   .star-easy   { fill: var(--color-easy); }
   .star-medium { fill: var(--color-medium); }
   .star-hard   { fill: var(--color-hard); }
+  .star-easy, .star-medium, .star-hard { stroke: rgba(0, 0, 0, 0.45); stroke-width: 1.2; stroke-linejoin: round; }   /* (light colors need an edge on white) */
   .cal-legend { display: flex; justify-content: center; gap: 16px; margin: 12px 0 4px; font-size: 0.9rem; color: var(--color-text-dim); }
   .cal-legend span { display: inline-flex; align-items: center; gap: 4px; }
   .cal-legend svg { width: 15px; height: 15px; }
   .cal-total { text-align: center; font-size: 0.9rem; color: var(--color-text-dim); margin-bottom: 12px; }
   .cal-close {
     display: block; width: 100%; height: 46px; border: none; border-radius: 12px; cursor: pointer;
+    box-shadow: 0 3px 0 var(--color-key-edge);
     font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em;
     background: var(--color-easy); color: var(--color-button-text);
   }

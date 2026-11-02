@@ -84,7 +84,8 @@ function check(label, got, want){
     check('solved: popup time', (await page.textContent('#solved-win')).includes('Your time: 0:00'), true);
     await page.click('#solved-close'); await page.waitForTimeout(200);
     check('solved: no "Solved in" above the board', await page.locator('.tray-area .win-badge').count(), 0);
-    check('solved: popup has the animated badge', await page.locator('#solved-win .win-badge.animate').count(), 1);
+    // (the win animation since 2026-11-02: the solved board with every piece on it)
+    check('solved: popup has the win animation', await page.locator('#solved-win .win-show .mb-piece').count(), 6);
     const before = await page.evaluate(()=>JSON.stringify(placedPieces.map(p=>[p.row, p.col, p.cells])));
     const piece = page.locator('.placed-piece .blk').first();      // (a piece's squares take the clicks)
     const box = await piece.boundingBox(), cx = box.x + box.width/2, cy = box.y + box.height/2;

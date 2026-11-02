@@ -15,48 +15,69 @@
   --rules-count-font:    'Nunito', system-ui, sans-serif;  /* row/column counts */
   --rules-count-size:    19px;
 
-  /* [COLORS] */
-  --rules-panel:         #332a25;    /* popup background */
-  --rules-panel-border:  #4d3f36;
-  --rules-overlay:       rgba(0, 0, 0, 0.65);
-  --rules-title:         #d99a4e;    /* headings */
-  --rules-text:          #e8ddd0;
-  --rules-text-dim:      #a3937f;    /* hint line, picture captions */
-  --rules-even:          #6fae5a;    /* green highlighter: even row/column */
-  --rules-odd:           #e0484f;    /* red highlighter: odd row/column, "not allowed" mark */
-  --rules-highlight-opacity: 0.55;   /* red highlighter strength (matches the game) */
-  --rules-highlight-even-opacity: 0.55;  /* green highlighter strength */
-  --rules-board:         #1c1714;    /* frame behind picture boards */
-  --rules-cell:          #443830;    /* an empty square in pictures */
-  --rules-dotted:        #d99a4e;    /* dotted perimeter line */
-  --rules-arrow:         #e8ddd0;    /* reflect / rotate arrows */
-  --rules-empty:         #f2c48a;    /* ring marking an empty open square (analyzer) */
-  --rules-button:        #4f8a8b;    /* "Got it" button */
+  /* [COLORS] Light mode (default); dark mode is the html.dark block below */
+  --rules-panel:         #ffffff;    /* popup background */
+  --rules-panel-border:  #d6d6d6;
+  --rules-overlay:       rgba(18, 18, 18, 0.45);
+  --rules-title:         #121212;    /* headings */
+  --rules-text:          #121212;
+  --rules-text-dim:      #5c5c5c;    /* hint line, picture captions */
+  --rules-even:          #1f8a4c;    /* green highlighter: even row/column */
+  --rules-odd:           #d62828;    /* red highlighter: odd row/column, "not allowed" mark */
+  --rules-highlight-opacity: 0.45;   /* red highlighter strength */
+  --rules-highlight-even-opacity: 0.4;   /* green highlighter strength */
+  --rules-board:         #121212;    /* picture boards' grid lines and border */
+  --rules-cell:          #ffffff;    /* an empty square in pictures */
+  --rules-dotted:        #d62828;    /* dotted lines (red, as on the board) */
+  --rules-arrow:         #121212;    /* reflect / rotate arrows */
+  --rules-empty:         #2443d6;    /* ring marking an empty open square (analyzer) */
+  --rules-button:        #121212;    /* "Got it" button (filled) */
   --rules-button-text:   #ffffff;
-  --rules-btn-bg:        #332a25;    /* the small "Rules" button */
-  --rules-btn-border:    #4d3f36;
+  --rules-btn-bg:        #ececec;    /* the small plain buttons: Rules, Large text, Dark mode */
+  --rules-btn-hover:     #dedede;
 
   /* [POSITIONING] */
   --rules-width:         600px;      /* popup max width */
   --rules-item-gap:      22px;       /* space between each goal/rule */
+}
+/* [COLORS] Dark mode (theme.js) */
+html.dark {
+  --rules-panel:         #1c1c1c;
+  --rules-panel-border:  #3a3a3a;
+  --rules-overlay:       rgba(0, 0, 0, 0.65);
+  --rules-title:         #f2f2f2;
+  --rules-text:          #f2f2f2;
+  --rules-text-dim:      #a6a6a6;
+  --rules-even:          #5cc982;
+  --rules-odd:           #ff5c5c;
+  --rules-board:         #8c8c8c;
+  --rules-cell:          #1f1f1f;
+  --rules-dotted:        #ff5c5c;
+  --rules-arrow:         #f2f2f2;
+  --rules-empty:         #8fa3ff;
+  --rules-button:        #f2f2f2;
+  --rules-button-text:   #121212;
+  --rules-btn-bg:        #2e2e2e;
+  --rules-btn-hover:     #3a3a3a;
 }
 
 /* ── The "Rules" button (top-right of each page) ── */
 .rules-btn {
   height: 40px;
   padding: 0 16px;
-  border-radius: 999px;
-  border: 2px solid var(--rules-btn-border);
+  border-radius: 10px;
+  border: none;
   background: var(--rules-btn-bg);
   color: var(--rules-text);
   font-family: var(--rules-font);
   font-size: 1.2rem;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: filter 0.15s, transform 0.1s;
+  transition: background 0.15s, transform 0.1s;
 }
-.rules-btn:hover { filter: brightness(1.2); }
-.rules-btn:focus-visible { outline: 3px solid #f2c48a; outline-offset: 3px; }
+.rules-btn:hover { background: var(--rules-btn-hover); }
+.rules-btn:active { transform: translateY(1px); }
+.rules-btn:focus-visible { outline: 3px solid #2443d6; outline-offset: 3px; }
 
 /* ── Popup ── */
 .rules-backdrop {
@@ -118,23 +139,27 @@
   line-height: 1;
   cursor: pointer;
 }
-.rules-close:hover { color: var(--rules-text); background: rgba(255, 255, 255, 0.06); }
+.rules-close:hover { color: var(--rules-text); background: rgba(128, 128, 128, 0.12); }
 
-/* ── "Large text" / "Standard text" button ──
-   Top-left of the rules popup and the tutorial. Turning it on puts the
-   class "large-text" on the page (<html>) and remembers it in
-   localStorage ('pb_largeText'), so the rules and tutorial share it. */
-.text-size-btn {
+/* ── "Large text" / "Standard text" and "Dark mode" / "Light mode" ──
+   Side by side at the top-left of the rules popup and the tutorial
+   (.view-btns). Large text puts the class "large-text" on the page
+   (<html>) and remembers it in localStorage ('pb_largeText'); Dark mode
+   is theme.js ('pb_theme'). The rules and tutorial share both. */
+.view-btns {
   position: absolute; top: 12px; left: 14px; z-index: 5;
-  height: 38px; padding: 0 16px; border-radius: 999px;
-  border: 2px solid var(--rules-btn-border);
+  display: flex; gap: 8px;
+}
+.text-size-btn {
+  height: 38px; padding: 0 16px; border-radius: 10px;
+  border: none;
   background: var(--rules-btn-bg); color: var(--rules-text);
   font-family: var(--rules-text-font); font-size: 1rem; font-weight: 400;
-  cursor: pointer;
+  cursor: pointer; white-space: nowrap;
 }
-.text-size-btn:hover { filter: brightness(1.2); }
+.text-size-btn:hover { background: var(--rules-btn-hover); }
 .text-size-btn.is-large-label { font-weight: 800; font-size: 1.05rem; }   /* "Large text" in bold */
-.text-size-btn:focus-visible { outline: 3px solid #f2c48a; outline-offset: 2px; }
+.text-size-btn:focus-visible { outline: 3px solid #2443d6; outline-offset: 2px; }
 
 /* Large text in the rules popup */
 html.large-text .rules-popup { --rules-text-size: 1.8rem; --rules-caption-size: 1.45rem; max-width: 820px; }
@@ -194,18 +219,18 @@ html.large-text .rules-popup .rules-ok { font-size: 1.8rem; height: 60px; }
   font-family: var(--rules-font);
   font-size: 1.35rem;
   cursor: pointer;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
 }
-.rules-ok:hover { filter: brightness(1.1); }
-/* "Play the tutorial" button (puzzle page only) */
-.rules-tutorial { background: var(--rules-panel-border); margin-bottom: 8px; }
-.rules-ok:focus-visible, .rules-close:focus-visible { outline: 3px solid #f2c48a; outline-offset: 2px; }
+.rules-ok:hover { filter: brightness(1.15); }
+.rules-ok:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28); }
+/* "Play the tutorial" button (puzzle page only): plain grey */
+.rules-tutorial { background: var(--rules-btn-bg); color: var(--rules-text); margin-bottom: 8px; }
+.rules-ok:focus-visible, .rules-close:focus-visible { outline: 3px solid #2443d6; outline-offset: 2px; }
 
 /* ── Picture parts (SVG classes used by rules.js) ── */
 .rb-frame    { fill: var(--rules-board); }
 .rb-cell     { fill: var(--rules-cell); }
-.rb-divider  { fill: none; stroke: rgba(0, 0, 0, 0.25); stroke-width: 1.5; }
-.rb-outline  { fill: none; stroke: rgba(0, 0, 0, 0.45); stroke-width: 2; stroke-linejoin: round; }
 .rb-hl       { opacity: var(--rules-highlight-opacity); }   /* highlighter strokes */
 .rb-hl.rb-even { opacity: var(--rules-highlight-even-opacity); }
 .rb-even     { fill: var(--rules-even); }

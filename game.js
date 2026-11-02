@@ -49,21 +49,12 @@ const gameHooks = {
 const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true, showCaption: true };
 
 /* [COLORS] Piece colors, given out in the order the puzzle lists its
-   pieces, so no two pieces in a puzzle look alike. The first six are six
-   different color families (a puzzle usually has six pieces). */
+   pieces, so no two pieces in a puzzle look alike. They're Kelly's colors
+   of maximum contrast (KELLY in shapes.js); the first six are the six most
+   different from each other (a puzzle usually has six pieces). */
 const PIECE_PALETTE = [
-  '#4f9a8e',   // teal
-  '#c49a3c',   // gold
-  '#7e68b0',   // purple
-  '#b45a46',   // brick red
-  '#789e4e',   // green
-  '#b0577f',   // rose
-  '#5f7fb5',   // blue
-  '#c9a877',   // tan
-  '#8c6a4a',   // brown
-  '#6b8a9c',   // slate
-  '#9d8fc4',   // lavender
-  '#a8714a',   // copper
+  KELLY.blue, KELLY.orange, KELLY.green, KELLY.purple, KELLY.yellow, KELLY.pink,
+  KELLY.lightBlue, KELLY.yellowGreen, KELLY.violet, KELLY.buff, KELLY.purplishRed, KELLY.grey,
 ];
 // Each piece's color in puzzle p, as { name: color }
 function pieceColors(p){
@@ -254,7 +245,7 @@ function setupBoard(){
 
 /* Irregular boards: instead of a rectangle, the dark frame is drawn as the
    outline of the squares that exist, widened by the frame thickness
-   (a thick stroke with rounded joins), so it hugs the board's shape. */
+   (a thick stroke with square corners), so it hugs the board's shape. */
 function renderFrame(){
   const outer = document.getElementById('board-outer');
   let frame = document.getElementById('board-frame');
@@ -274,7 +265,7 @@ function renderFrame(){
   frame.setAttribute('height', puzzle.rows*CELL + (puzzle.rows-1)*GAP);
   frame.innerHTML = '';
   if(cells.length) frame.appendChild(svgPath(buildFillPath(cells, CELL, GAP), {
-    class: 'frame-shape', 'stroke-width': 2*pad, 'stroke-linejoin': 'round',
+    class: 'frame-shape', 'stroke-width': 2*pad, 'stroke-linejoin': 'miter',
   }));
 }
 
@@ -285,8 +276,12 @@ boardEl.addEventListener('pointerdown', e=>{
   if(cell){ e.preventDefault(); gameHooks.onCellClick(+cell.dataset.r, +cell.dataset.c); }
 });
 
-// [COLORS] How the board's dotted lines look (px)
-const BOARD_DOTTED = { stroke: 'var(--color-accent)', width: 4, dash: 9, space: 6 };
+// [COLORS] How the board's dotted lines look (px). Red, so it reads as "keep
+// out" (user, 2026-11-02). Each one replaces the grid line it runs along
+// (under = the square color hides the line), and none is drawn on the
+// board's own edge (onBoard), so nothing sticks out past the grid.
+const BOARD_DOTTED = { stroke: 'var(--color-dotted)', under: 'var(--color-cell)', width: 4, dash: 9, space: 6,
+  onBoard: (r, c)=>inBounds(r, c) };
 
 // The dotted lines: around the puzzle's dotted area (hintOutline), if it
 // has one, and around the dotted squares (puzzle.blocked; squares that
@@ -363,6 +358,7 @@ function renderAll(){
   renderBoardPieces();
   if(gameMode === 'play') checkSolved();
   else { markOverlayEl.innerHTML = ''; cancelExplain(); statusEl.textContent = ''; boardOuterEl.classList.remove('uneven'); }
+  playPendingFeel();       // (the landing / turning animation, on the freshly drawn piece)
   if(gameHooks.onChange) gameHooks.onChange();
 }
 
@@ -394,6 +390,79 @@ function renderView(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   FEEL: small animations that give the pieces some weight
+   (user, 2026-11-02: "microanimations to convey heft", so placing a piece
+   is satisfying)
+     press    a piece squeezes a little under your finger / the mouse
+     lift     picked up, it grows a little and casts a bigger shadow, and
+              leans the way you move it, like something with weight
+     land     dropped, it settles into its squares: a quick slide, a small
+              squash and bounce, and the board gives a tiny thud
+     shake    landed where it can't go: a short shake as it turns red
+     turn     rotating spins it a quarter turn; reflecting flips it over
+     return   sent back to the top, it pops back into its place
+   Nothing moves for players who ask their device for less motion.
+   [BEHAVIOR] the numbers below set how strong each one is.
+═══════════════════════════════════════════════════════════════════ */
+const FEEL = {
+  lift: 1.06,          // how much bigger a held piece looks
+  maxTilt: 6,          // most a held piece leans while moving (degrees)
+  tiltPerSpeed: 5,     // lean per (px per ms) of movement
+  landMs: 240,         // the drop: slide + squash + settle
+  thudPx: 1.5,         // how far the board dips when a piece lands
+  turnMs: 200,         // rotate / reflect
+};
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function animate(el, frames, opts){
+  if(!el || REDUCED_MOTION || !el.animate) return null;
+  return el.animate(frames, opts);
+}
+// An animation to play on the piece once renderAll() has redrawn it:
+//   {type:'land', id, dx, dy, tilt, origin}   {type:'turn', how, source}
+//   {type:'return', name}
+let pendingFeel = null;
+function boardPieceEl(id){ return piecesLayerEl.querySelector(`.placed-piece[data-id="${id}"]`); }
+function trayPieceEl(name){ return trayEl.querySelector(`.tray-slot[data-name="${name}"] .piece-box`); }
+function playPendingFeel(){
+  const f = pendingFeel;
+  pendingFeel = null;
+  if(!f || gameMode !== 'play') return;
+  if(f.type === 'land'){
+    const el = boardPieceEl(f.id);
+    if(!el) return;
+    el.style.transformOrigin = f.origin;
+    animate(el, [
+      { transform:`translate(${f.dx}px, ${f.dy}px) rotate(${f.tilt}deg) scale(${FEEL.lift})`, filter:'drop-shadow(0 10px 10px var(--color-shadow))' },
+      { transform:'translate(0, 0) rotate(0deg) scale(0.965)', filter:'drop-shadow(0 0 0 transparent)', offset:0.55 },
+      { transform:'scale(1.012)', offset:0.8 },
+      { transform:'none' },
+    ], { duration: FEEL.landMs, easing:'cubic-bezier(.25,.8,.35,1)' });
+    animate(boardOuterEl, [ { transform:'none' }, { transform:`translateY(${FEEL.thudPx}px)` }, { transform:'none' } ],
+      { duration: 170, delay: FEEL.landMs * 0.45, easing:'ease-out' });
+    if(el.classList.contains('invalid'))
+      animate(el, [ { transform:'none' }, { transform:'translateX(-4px)' }, { transform:'translateX(4px)' },
+                    { transform:'translateX(-3px)' }, { transform:'translateX(2px)' }, { transform:'none' } ],
+        { duration: 300, delay: FEEL.landMs, easing:'ease-in-out' });
+  } else if(f.type === 'turn'){
+    const box = f.source.kind === 'tray' ? trayPieceEl(f.source.name) : (boardPieceEl(f.source.id) || {}).firstChild;
+    spinPiece(box, f.how);
+  } else if(f.type === 'return'){
+    animate(trayPieceEl(f.name), [ { transform:'scale(0.5)', opacity:0 }, { transform:'scale(1.08)', opacity:1, offset:0.7 }, { transform:'none' } ],
+      { duration: 260, easing:'ease-out' });
+  }
+}
+// The turn itself: the new shape starts turned back to where the old one
+// was, then swings into place (its svg turns, so a lift on the box stays)
+function spinPiece(box, how){
+  const svg = box && box.querySelector('.piece-svg');
+  if(!svg) return;
+  const frames = how === 'reflect'
+    ? [ { transform:'scaleX(-1)' }, { transform:'scaleX(1.06)', offset:0.75 }, { transform:'none' } ]
+    : [ { transform:'rotate(-90deg)' }, { transform:'rotate(7deg)', offset:0.72 }, { transform:'none' } ];
+  animate(svg, frames, { duration: FEEL.turnMs, easing:'ease-out' });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    ROTATE / REFLECT
    There's no "selected piece": you act on a piece by clicking it,
    dragging it, or pointing at it and pressing a key.
@@ -420,6 +489,7 @@ const sameSource = (a, b) => a && b && a.kind === b.kind &&
   (a.kind === 'tray' ? a.name === b.name : a.id === b.id);
 
 function transformSource(source, fn){
+  pendingFeel = { type:'turn', how: fn === reflectCells ? 'reflect' : 'rotate', source };
   if(source.kind === 'tray'){
     if(trayCells[source.name]) trayCells[source.name] = fn(trayCells[source.name]);
   } else {
@@ -504,7 +574,8 @@ function keyTransform(fn){
       press.cells = fn(press.cells);
       clampGrab(press);
       press.ghost.innerHTML = '';
-      press.ghost.appendChild(buildPieceShape(press.cells, press.color, CELL, GAP));
+      press.ghost.appendChild(liftedShape(press));
+      spinPiece(press.ghost.firstChild, fn === reflectCells ? 'reflect' : 'rotate');
       if(press.lastX !== undefined) onPointerMove({ clientX: press.lastX, clientY: press.lastY });
       if(gameHooks.onTransform) gameHooks.onTransform(fn === reflectCells ? 'reflect' : 'rotate');
     } else {
@@ -559,6 +630,9 @@ function onPiecePointerDown(e, source){
     grabDC = blk ? +blk.dataset.dc : 0;
   }
   press = { source, startX:e.clientX, startY:e.clientY, grabDR, grabDC, cells, color, name, dragging:false, ghost:null };
+  // Feel: the piece squeezes a little under the finger / mouse
+  press.pressedEl = source.kind === 'tray' ? trayPieceEl(source.name) : (boardPieceEl(source.id) || {}).firstChild;
+  if(press.pressedEl) press.pressedEl.classList.add('pressed');
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointercancel', onPointerUp);
@@ -579,12 +653,41 @@ function beginDrag(){
   if(gameHooks.onDragStart) gameHooks.onDragStart(press.source);
   press.ghost = document.createElement('div');
   press.ghost.className = 'ghost';
-  press.ghost.appendChild(buildPieceShape(press.cells, press.color, CELL, GAP));
+  press.ghost.appendChild(liftedShape(press, true));
   piecesLayerEl.appendChild(press.ghost);
+  if(press.pressedEl) press.pressedEl.classList.remove('pressed');
   if(press.source.kind === 'board'){
-    const el = piecesLayerEl.querySelector(`.placed-piece[data-id="${press.source.id}"]`);
+    const el = boardPieceEl(press.source.id);
     if(el) el.style.visibility = 'hidden';
+  } else {
+    // (its spot at the top stays, faded, until the piece lands somewhere)
+    const slot = trayEl.querySelector(`.tray-slot[data-name="${press.name}"]`);
+    if(slot) slot.classList.add('lifting');
   }
+  press.tilt = 0; press.tiltTarget = 0;
+  if(!REDUCED_MOTION) requestAnimationFrame(leanLoop);
+}
+
+// The held piece, drawn at board size and lifted (bigger, with a shadow:
+// see .lifted in game.css). It grows from the square you're holding.
+function liftedShape(pr, growIn){
+  const box = buildPieceShape(pr.cells, pr.color, CELL, GAP);
+  box.classList.add('lifted');
+  if(growIn) box.classList.add('lift-in');
+  box.style.transformOrigin = grabOrigin(pr);
+  return box;
+}
+function grabOrigin(pr){ return `${pr.grabDC*(CELL+GAP) + CELL/2}px ${pr.grabDR*(CELL+GAP) + CELL/2}px`; }
+
+// Feel: while held, the piece leans the way it's moving and swings back
+// upright when it stops, as if it had some weight
+function leanLoop(){
+  if(!press || !press.dragging || !press.ghost) return;
+  press.tiltTarget *= 0.85;                                 // eases off when you stop moving
+  press.tilt += (press.tiltTarget - press.tilt) * 0.3;
+  press.ghost.style.transformOrigin = grabOrigin(press);
+  press.ghost.style.transform = `rotate(${press.tilt.toFixed(2)}deg)`;
+  requestAnimationFrame(leanLoop);
 }
 
 // Where the piece would land for this pointer position (snapped to the grid)
@@ -606,6 +709,13 @@ function overTray(clientX, clientY){
 
 function onPointerMove(e){
   if(!press) return;
+  // Sideways speed (px per ms), for the lean while dragging
+  const now = performance.now();
+  if(press.lastX !== undefined && press.lastT && now > press.lastT && press.tiltTarget !== undefined){
+    const v = (e.clientX - press.lastX) / (now - press.lastT);
+    press.tiltTarget = Math.max(-FEEL.maxTilt, Math.min(FEEL.maxTilt, v * FEEL.tiltPerSpeed));
+  }
+  press.lastT = now;
   press.lastX = e.clientX; press.lastY = e.clientY;   // so R/E mid-drag can redraw in place
   if(!press.dragging){
     if(Math.hypot(e.clientX-press.startX, e.clientY-press.startY) < DRAG_THRESHOLD) return;
@@ -636,6 +746,7 @@ function onPointerUp(e){
   const p = press;
   press = null;
   clearHighlights();
+  if(p.pressedEl) p.pressedEl.classList.remove('pressed');
 
   if(!p.dragging){
     // A click: rotate, or reflect if it's the second click of a double-click.
@@ -643,17 +754,24 @@ function onPointerUp(e){
     if(e.type !== 'pointercancel' && !p.keyUsed) onPieceClick(p.source);
     return;
   }
+  // Where the held piece was when let go, so the landing can start there
+  const ghostX = parseFloat(p.ghost.style.left) || 0, ghostY = parseFloat(p.ghost.style.top) || 0;
   p.ghost.remove();
 
   const {row, col} = landingSpot(e.clientX, e.clientY, p);
   const offBoard = e.type==='pointercancel' || overTray(e.clientX, e.clientY) || completelyOffBoard(p.cells, row, col);
+  const land = id=>{ pendingFeel = { type:'land', id, dx: ghostX - pxPos(col), dy: ghostY - pxPos(row), tilt: p.tilt || 0, origin: grabOrigin(p) }; };
 
   if(p.source.kind === 'tray'){
     if(!offBoard){
       const id = 'p' + (placedIdCounter++);
       placedPieces.push({ id, name:p.name, color:p.color, cells:p.cells.map(c=>c.slice()), row, col });
+      land(id);
       if(gameHooks.onPlace) gameHooks.onPlace();
-    } else if(p.keyUsed) trayCells[p.name] = p.cells;   // keep a turn made mid-drag
+    } else {
+      if(p.keyUsed) trayCells[p.name] = p.cells;        // keep a turn made mid-drag
+      pendingFeel = { type:'return', name:p.name };
+    }
   } else {
     const piece = placedPieces.find(pp=>pp.id===p.source.id);
     piece.cells = p.cells;                              // (R/E may have turned it mid-drag)
@@ -661,10 +779,12 @@ function onPointerUp(e){
       // Dragged off the board: it goes back to the top, in its current turn
       placedPieces = placedPieces.filter(pp=>pp.id!==piece.id);
       trayCells[piece.name] = piece.cells;
+      pendingFeel = { type:'return', name:piece.name };
     } else {
       piece.row = row;
       piece.col = col;
       bringToEnd(piece);
+      land(piece.id);
     }
   }
   renderAll();

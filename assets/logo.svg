@@ -1,27 +1,37 @@
 <!--
-  Parity Blocks logo mark.
-  A 3x3 board: a teal P pentomino plus four monominoes (single squares),
-  filling the remaining cells (two orange, two purple).
-  Layout: squares are 28 wide with 6 between; columns and rows both start
-  at 12, 46, 80. To recolor a square, change its fill.
+  Parity Blocks logo mark (redrawn 2026-11-02 in the new look).
+  A 3x3 crossword-style grid (black lines and border) with a blue P
+  pentomino and four single squares: two orange, two purple. Pieces are
+  drawn like the game's: flat color, a lighter square inside each block,
+  a darker line between blocks and round the outside. Colors are Kelly's
+  (see KELLY in shapes.js).
+  Layout: border 6, squares 34 wide, lines 3; columns and rows start at
+  6, 43, 80.
   To swap in your own logo, replace this file (keep the name logo.svg), or
   drop a new file in assets/ and change the <img src> in index.html.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <rect width="120" height="120" rx="14" fill="#1c1714"/>
+  <rect width="120" height="120" fill="#121212"/>
 
-  <!-- P pentomino squares (matches the title's P) -->
-  <g fill="#4f8a8b">
-    <rect x="12" y="12" width="28" height="28" rx="3"/>
-    <rect x="46" y="12" width="28" height="28" rx="3"/>
-    <rect x="12" y="46" width="28" height="28" rx="3"/>
-    <rect x="46" y="46" width="28" height="28" rx="3"/>
-    <rect x="12" y="80" width="28" height="28" rx="3"/>
+  <!-- P pentomino: top-left 2x2 plus the square below -->
+  <path d="M6,6 H77 V77 H40 V114 H6 Z" fill="#0067A5"/>
+  <g fill="#ffffff" fill-opacity="0.22">
+    <rect x="12" y="12" width="22" height="22"/><rect x="49" y="12" width="22" height="22"/>
+    <rect x="12" y="49" width="22" height="22"/><rect x="49" y="49" width="22" height="22"/>
+    <rect x="12" y="86" width="22" height="22"/>
   </g>
+  <path d="M41.5,6 V77 M6,41.5 H77 M6,78.5 H40" stroke="#00405f" stroke-width="3" fill="none"/>
+  <path d="M7,7 H76 V76 H39 V113 H7 Z" stroke="#00405f" stroke-width="2" fill="none"/>
 
-  <!-- monominoes: top two on the right orange, bottom two on the right purple -->
-  <rect x="80" y="12" width="28" height="28" rx="3" fill="#d99a4e"/>  <!-- orange (same as title) -->
-  <rect x="80" y="46" width="28" height="28" rx="3" fill="#d99a4e"/>  <!-- orange (same as title) -->
-  <rect x="46" y="80" width="28" height="28" rx="3" fill="#7d5a78"/>  <!-- purple -->
-  <rect x="80" y="80" width="28" height="28" rx="3" fill="#7d5a78"/>  <!-- purple -->
+  <!-- single squares: orange on the right of the top two rows, purple along the bottom -->
+  <g stroke-width="2">
+    <rect x="81" y="7"  width="32" height="32" fill="#F38400" stroke="#975200"/>
+    <rect x="81" y="44" width="32" height="32" fill="#F38400" stroke="#975200"/>
+    <rect x="44" y="81" width="32" height="32" fill="#875692" stroke="#54355a"/>
+    <rect x="81" y="81" width="32" height="32" fill="#875692" stroke="#54355a"/>
+  </g>
+  <g fill="#ffffff" fill-opacity="0.22">
+    <rect x="86" y="12" width="22" height="22"/><rect x="86" y="49" width="22" height="22"/>
+    <rect x="49" y="86" width="22" height="22"/><rect x="86" y="86" width="22" height="22"/>
+  </g>
 </svg>

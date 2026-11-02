@@ -28,6 +28,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parity Blocks</title>
 <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<!-- Light / dark mode: first, so the page never flashes the wrong colors -->
+<script src="theme.js"></script>
 
 <!-- [FONTS] Same font as the splash screen's buttons -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -76,7 +78,7 @@
 <!-- [CONTENT] Shown when the puzzle is solved -->
 <div class="popup-backdrop" id="solved-popup" hidden>
   <div class="popup" role="dialog" aria-modal="true" aria-label="Solved">
-    <!-- The solved badge: checkmark animation + jingle (celebrate.js) -->
+    <!-- The win animation + jingle (celebrate.js, solvedCelebration) -->
     <div class="solved-win" id="solved-win"></div>
     <!-- After Easy: "Play Medium"; after Medium: "Play Hard" (set in onSolved) -->
     <a class="next-level-btn" id="solved-next" hidden></a>
@@ -233,7 +235,12 @@ enableSolvedSound();         // the jingle plays when a puzzle is solved (celebr
 gameHooks.onSolved = time=>{
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
-  document.getElementById('solved-win').replaceChildren(solvedBadge('Solved!', 'Your time: ' + time, { animate: true, sound: true, stack: true }));
+  // The win animation, in the popup (celebrate.js): the solved board with
+  // the pieces dropping in on the jingle's notes, then "Solved!" and the time
+  document.getElementById('solved-win').replaceChildren(solvedCelebration({
+    puzzle, time, sound: true,
+    pieces: placedPieces.map(q=>({ cells:q.cells, color:q.color, row:q.row, col:q.col })),
+  }));
   // The next level up, if it's published: a "Play Medium" / "Play Hard" button
   const next = { easy: 'medium', medium: 'hard' }[level];
   const nextBtn = document.getElementById('solved-next');
