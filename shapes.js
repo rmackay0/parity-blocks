@@ -118,10 +118,19 @@ function buildDividers(cells, size, gap){
   const segs = [];
   cells.forEach(([r,c])=>{
     const x = c*(size+gap), y = r*(size+gap);
-    // (each runs half a gap past the block at both ends, so lines meeting
-    // where four blocks touch join up with no break)
-    if(hasCellAt(cells, r, c+1)) segs.push(`M${x+size+gap/2},${y-gap/2} V${y+size+gap/2}`);
-    if(hasCellAt(cells, r+1, c)) segs.push(`M${x-gap/2},${y+size+gap/2} H${x+size+gap/2}`);
+    // (a line runs half a gap past the block only where four blocks meet,
+    // so lines there join up with no break; never into an empty inside
+    // corner, e.g. round the middle of an X, where it showed as a blob)
+    if(hasCellAt(cells, r, c+1)){
+      const up = hasCellAt(cells, r-1, c) && hasCellAt(cells, r-1, c+1);
+      const dn = hasCellAt(cells, r+1, c) && hasCellAt(cells, r+1, c+1);
+      segs.push(`M${x+size+gap/2},${up ? y - gap/2 : y} V${dn ? y + size + gap/2 : y + size}`);
+    }
+    if(hasCellAt(cells, r+1, c)){
+      const lf = hasCellAt(cells, r, c-1) && hasCellAt(cells, r+1, c-1);
+      const rt = hasCellAt(cells, r, c+1) && hasCellAt(cells, r+1, c+1);
+      segs.push(`M${lf ? x - gap/2 : x},${y+size+gap/2} H${rt ? x + size + gap/2 : x + size}`);
+    }
   });
   return segs.join(' ');
 }
