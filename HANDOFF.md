@@ -46,13 +46,17 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
-**2026-11-02 (latest): the ORIGINAL grid is back, in black and white**
+**2026-11-02 (latest): the ORIGINAL grid is back, in greys**
 - The crossword grid (thin lines, square cells) was tried and dropped: the
-  user found it "much harder to read". The board is the original one
-  again: separate rounded squares (4px corners) with 4px gaps, on a frame
-  12px thick with rounded corners. Light: white squares on a black frame;
-  dark: #2e2e2e squares on black.
-- **Dotted lines: white dashes down the black gaps**, as wide as the gap
+  user found it "much harder to read". Black-and-white was tried next, then
+  the user asked for "multiple colors… monochromatic". The board is the
+  original one again: separate rounded squares (4px corners, 1px edge)
+  with 4px gaps, on a 12px frame with rounded corners and a soft shadow.
+  The original browns are now greys, the SAME in light and dark mode:
+  frame #1c1c1c, squares #424242 (edge #4e4e4e), dotted lines #cfcfcf,
+  drop previews dark green / dark red as before (game.css top; rules.css
+  `--rules-board/cell/dotted` for the pictures).
+- **Dotted lines: light grey dashes down the gaps**, as wide as the gap
   (`--color-dotted`, `--rules-dotted`). Drawn one edge at a time by
   `drawDottedLines`, flat ends; each edge runs on over the gap crossing at
   each end so meeting points are filled, but never past the board's edge

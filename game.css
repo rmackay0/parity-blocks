@@ -22,14 +22,18 @@
   --color-text:         #121212;
   --color-text-dim:     #5c5c5c;
   --color-accent:       #2443d6;   /* headings, notes, hint glow */
-  --color-board-bg:     #121212;   /* the frame round the squares (and the gaps between them) */
-  --color-cell:         #ffffff;   /* an open grid square */
+  /* The board: the original look (dark frame, lighter squares, light
+     dotted lines) in shades of grey instead of brown (user, 2026-11-02:
+     "monochromatic"). The same in light and dark mode. */
+  --color-board-bg:     #1c1c1c;   /* the frame round the squares (and the gaps between them) */
+  --color-cell:         #424242;   /* an open grid square */
+  --color-cell-line:    #4e4e4e;   /* its thin edge */
+  --color-dotted:       #cfcfcf;   /* dotted lines */
+  --color-valid-bg:     #3c5638;   /* drop preview on the board: fits */
+  --color-invalid-bg:   #5a3838;   /*   doesn't fit */
   --color-cell-border:  #d6d6d6;   /* soft lines: popup edges, plain buttons */
-  --color-dotted:       #ffffff;   /* dotted lines (white dashes in the black gaps) */
-  --color-valid:        #1f8a4c;   /* drop preview: fits; "Solved!" */
-  --color-valid-bg:     #d4f0dc;
-  --color-invalid:      #d62828;   /* drop preview: doesn't fit; odd row/column */
-  --color-invalid-bg:   #fbd9d9;
+  --color-valid:        #1f8a4c;   /* "Solved!"; drop preview's edge */
+  --color-invalid:      #d62828;   /* odd row/column; drop preview's edge */
   --color-select:       #2443d6;   /* ring on an empty square (sandbox) */
   --color-highlight:    #e0484f;   /* highlighter over an uneven row/column */
   --color-status:       #c62828;   /* "Uneven rows" message above the board */
@@ -74,14 +78,9 @@ html.dark {
   --color-text:         #f2f2f2;
   --color-text-dim:     #a6a6a6;
   --color-accent:       #8fa3ff;
-  --color-board-bg:     #000000;
-  --color-cell:         #2e2e2e;
   --color-cell-border:  #3a3a3a;
-  --color-dotted:       #f2f2f2;
   --color-valid:        #5cc982;
-  --color-valid-bg:     #1d3b28;
   --color-invalid:      #ff5c5c;
-  --color-invalid-bg:   #4a1f1f;
   --color-select:       #8fa3ff;
   --color-status:       #ff8a8a;
   --color-button:       #f2f2f2;
@@ -255,13 +254,14 @@ body {
   align-items: center;
   justify-content: center;
 }
-/* The board: separate rounded white squares on a black frame (the original
-   look, in black and white; user, 2026-11-02, after trying a crossword grid). */
+/* The board: separate rounded squares on a frame, the original look in
+   greys (user, 2026-11-02, after trying a crossword grid). */
 #board-outer {
   position: relative;
   background: var(--color-board-bg);
   border-radius: 14px;
   padding: var(--board-pad);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.35);
   touch-action: none;
   transition: box-shadow 0.3s;
 }
@@ -270,11 +270,12 @@ body {
 #board { display: grid; }
 .board-cell {
   background: var(--color-cell);
+  border: 1px solid var(--color-cell-line);
   border-radius: 4px;
   transition: background 0.12s;
 }
-.board-cell.hl-valid   { background: var(--color-valid-bg); }
-.board-cell.hl-invalid { background: var(--color-invalid-bg); }
+.board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: #6fae5a; }
+.board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: #c25a5a; }
 #pieces-layer, #hint-overlay, #mark-overlay {
   position: absolute;
   inset: var(--board-pad);
