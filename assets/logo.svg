@@ -1,30 +1,28 @@
 <!--
   Parity Blocks logo mark (2026-11-02).
-  A 3x3 crossword-style grid (black lines and border) with a P pentomino
-  and four single squares, in the start screen's level colors (user:
-  "the same colors as easy medium and hard"): the P is Easy green, the two
-  on the right Medium yellow, the two along the bottom Hard purple
-  (color-easy, color-medium, color-hard in game.css; never write two
-  dashes in a row inside this comment, it breaks the file). Drawn like the game's
-  pieces: flat color, a darker line between blocks and round the outside.
-  Layout: border 6, squares 34 wide, lines 3; columns and rows start at
-  6, 43, 80.
+  Just three pieces fitted into a 3x3 square, no background (user: "just
+  the three pieces works"), in the start screen's level colors: a green
+  P pentomino (Easy), a yellow domino on the right (Medium) and a purple
+  domino along the bottom (Hard). Drawn like the game's pieces: flat
+  color, a darker line between blocks and round the outside.
+  Layout: squares 34 wide, 3 apart; columns and rows start at 6, 43, 80.
+  (Never write two dashes in a row inside this comment: it breaks the file.)
   To swap in your own logo, replace this file (keep the name logo.svg), or
-  drop a new file in assets/ and change the <img src> in index.html.
+  drop a new file in assets/ and change the img src in index.html.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <rect width="120" height="120" fill="#121212"/>
-
   <!-- P pentomino (Easy green): top-left 2x2 plus the square below -->
   <path d="M6,6 H77 V77 H40 V114 H6 Z" fill="#8fd1ad"/>
   <path d="M41.5,6 V77 M6,41.5 H77 M6,78.5 H40" stroke="#59826b" stroke-width="3" fill="none"/>
   <path d="M7,7 H76 V76 H39 V113 H7 Z" stroke="#59826b" stroke-width="2" fill="none"/>
 
-  <!-- single squares: Medium yellow on the right of the top two rows, Hard purple along the bottom -->
-  <g stroke-width="2">
-    <rect x="81" y="7"  width="32" height="32" fill="#f6d76b" stroke="#998542"/>
-    <rect x="81" y="44" width="32" height="32" fill="#f6d76b" stroke="#998542"/>
-    <rect x="44" y="81" width="32" height="32" fill="#c3a3cc" stroke="#79657e"/>
-    <rect x="81" y="81" width="32" height="32" fill="#c3a3cc" stroke="#79657e"/>
-  </g>
+  <!-- domino (Medium yellow): right-hand column, top two squares -->
+  <rect x="80" y="6" width="34" height="71" fill="#f6d76b"/>
+  <path d="M80,41.5 H114" stroke="#998542" stroke-width="3"/>
+  <rect x="81" y="7" width="32" height="69" fill="none" stroke="#998542" stroke-width="2"/>
+
+  <!-- domino (Hard purple): bottom row, right two squares -->
+  <rect x="43" y="80" width="71" height="34" fill="#c3a3cc"/>
+  <path d="M78.5,80 V114" stroke="#79657e" stroke-width="3"/>
+  <rect x="44" y="81" width="69" height="32" fill="none" stroke="#79657e" stroke-width="2"/>
 </svg>

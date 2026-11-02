@@ -61,7 +61,8 @@ previous project; don't push there.
 - **Pieces:** flat color + a darker line between blocks and round the
   outside; the lighter inner squares are off (`PIECE_LOOK.innerSquares`),
   user: "simplify the look a lot".
-- **Logo** in the level colors: green P, yellow and purple singles.
+- **Logo** = just three pieces, no background (user): a green P, a yellow
+  domino, a purple domino (the level colors), fitted into a 3 × 3 square.
   (SVG comments can't contain two dashes in a row: that broke the logo once.)
 - In the two sections below, the grid / dotted-line / inner-square
   details are out of date; the rest (themes, colors, animations, win
