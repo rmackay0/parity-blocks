@@ -67,7 +67,7 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   // 5. Box select is gone: dragging across the board's empty frame moves nothing
   const board = await page.locator('#board-outer').boundingBox();
   const b0 = { L: await piece('L'), U: await piece('U') };
-  // (on the board's border, which is 4px thick since 2026-11-02)
+  // (on the board's frame, just inside its edge)
   await page.mouse.move(board.x + 1, board.y + 1); await page.mouse.down();
   await page.mouse.move(board.x + board.width - 1, board.y + board.height - 1, { steps: 6 });
   await page.mouse.up();

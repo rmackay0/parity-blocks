@@ -281,20 +281,16 @@ function groupSquares(cells){
 }
 
 /* Dotted lines (the dotted area and the dotted squares), drawn so that:
-   • each one takes the place of the grid line, same color, same width;
+   • each runs down the middle of the gap between squares, as wide as it;
    • where two dotted shapes touch they share ONE line, never two side by
      side (every edge is drawn once, whichever shapes it belongs to);
-   • every grid crossing stays solid, and each edge's dashes start and end
-     right at a crossing, so nothing looks rounded or broken.
+   • where dotted lines meet, the point is filled; flat ends, no rounding.
    regions  a list of shapes, each a list of squares [[r,c]]
    step     square size + gap (px); gap: the gap between squares (px)
    ox, oy   where square (0,0)'s top-left corner is drawn
-   look     { stroke, width (default: the gap), dash, space, under, onBoard }
-            under    color drawn first along the line, the width of the gap,
-                     so the dotted line REPLACES the grid line there
-                     (user, 2026-11-02: like a crossword's lines)
+   look     { stroke, width (default: the gap), dash, space, onBoard }
             onBoard  (r, c) => is that square part of the board? A line along
-                     the board's own edge isn't drawn: the edge is already a
+                     the board's own edge isn't drawn: the frame is already a
                      wall, and a line there stuck out past the grid. */
 function drawDottedLines(parent, regions, step, gap, ox, oy, look){
   // Each edge of a square is a unit edge on the grid lines: 'h,row line,col'
@@ -312,34 +308,41 @@ function drawDottedLines(parent, regions, step, gap, ox, oy, look){
       edge(r, c+1, `v,${c+1},${r}`);
     });
   });
-  // Each edge is drawn on its own, from one grid crossing to the next
-  // (user, 2026-11-02: seamless, no rounded corners, the points where a
-  // dotted line meets a solid one filled in):
-  //   • the solid grid line along that edge is hidden, but ONLY between
-  //     the two crossings, so every crossing point stays solid;
-  //   • dashes, the same color and thickness as the grid lines, with flat
-  //     ends; the first starts and the last ends exactly at a crossing.
+  // Each edge is drawn on its own, down the middle of the gap between two
+  // squares, with flat (not rounded) ends:
+  //   • it runs on over the little gap squares where gaps cross, so where
+  //     two dotted lines meet (a corner, or two edges in a row) that point
+  //     is filled in;
+  //   • but not past the board's edge: there it stops level with the
+  //     squares, so nothing juts out into the frame;
+  //   • the same dash pattern on every edge, stretched to start and end on
+  //     a dash.
   const cell = step - gap;
   const w = look.width || gap, dash = look.dash, space = look.space;
-  // (the same number of dashes on every edge, stretched to fit exactly)
-  const n = Math.max(1, Math.round((cell + space) / (dash + space)));
-  const k = (cell + space) / (n * (dash + space));
-  const underG = svgEl('g', {}, parent), dashG = svgEl('g', {}, parent);
+  const at = k => k*step - gap/2;            // the middle of the gap before square k
+  const dashG = svgEl('g', {}, parent);
   [...edges].sort().forEach(e=>{
-    const [dir, line, along] = e.split(',');
-    const mid = line*step - gap/2;           // the middle of the grid line
-    const from = along*step, to = from + cell;
-    const d = dir === 'h' ? `M${ox + from},${oy + mid} H${ox + to}` : `M${ox + mid},${oy + from} V${oy + to}`;
-    if(look.under && gap > 0) svgEl('path', { d, fill:'none', stroke: look.under, 'stroke-width': gap + 0.5,
-      'stroke-linecap':'butt', class:'dotted-under' }, underG);
+    const [dir, lineS, alongS] = e.split(',');
+    const line = +lineS, along = +alongS;
+    // Is there board on the far side of each end's crossing? (the squares
+    // either side of this grid line, one step further along)
+    const beyond = dir === 'h'
+      ? [ on(line-1, along-1) || on(line, along-1), on(line-1, along+1) || on(line, along+1) ]
+      : [ on(along-1, line-1) || on(along-1, line), on(along+1, line-1) || on(along+1, line) ];
+    const from = along*step - (beyond[0] ? gap : 0);
+    const to = along*step + cell + (beyond[1] ? gap : 0);
+    const len = to - from;
+    const n = Math.max(1, Math.round((len + space) / (dash + space)));
+    const k = (len + space) / (n * (dash + space));
+    const d = dir === 'h' ? `M${ox + from},${oy + at(line)} H${ox + to}` : `M${ox + at(line)},${oy + from} V${oy + to}`;
     svgEl('path', { d, fill:'none', stroke: look.stroke, 'stroke-width': w, 'stroke-linecap':'butt',
       'stroke-dasharray': `${dash*k} ${space*k}`, class:'dotted-line' }, dashG);
   });
 }
 
 // [COLORS] How dotted lines look in the small pictures (rules popup, tutorial slide 3, sandbox)
-// (same color and width as the pictures' grid lines)
-const PICTURE_DOTTED = { stroke: 'var(--rules-board, #121212)', under: 'var(--rules-cell, #fff)', dash: 3, space: 3 };
+// (white dashes in the black gaps, like the board's)
+const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #fff)', dash: 5, space: 3 };
 
 /* A picture of a board, as an <svg>.
    opts:
@@ -359,9 +362,9 @@ const PICTURE_DOTTED = { stroke: 'var(--rules-board, #121212)', under: 'var(--ru
 function miniBoard(opts){
   const { rows, cols, cell, pieces = [], gaps = [], show = null, dotted = null } = opts;
   const removed = new Set((opts.removed || []).map(([r,c])=>r+','+c));
-  // gap = the grid lines between squares, pad = the border round the board
-  // (a crossword-style grid, like the game's); label = room for the counts
-  const gap = 2, pad = 3, label = 26;
+  // gap = between squares, pad = the frame round the board (separate
+  // rounded squares, like the game's); label = room for the counts
+  const gap = 3, pad = 6, label = 26;
   const step = cell + gap;
   const boardW = cols*cell + (cols-1)*gap + 2*pad;
   const boardH = rows*cell + (rows-1)*gap + 2*pad;
@@ -381,15 +384,15 @@ function miniBoard(opts){
     const present = [];
     for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) if(!removed.has(r+','+c)) present.push([r,c]);
     if(present.length) svgEl('path', { d: buildFillPath(present, cell, gap), class:'rb-frame', stroke:'currentColor',
-      'stroke-width': 2*pad, 'stroke-linejoin':'miter', transform:`translate(${pad},${pad})`, style:'color:var(--rules-board)' }, svg);
+      'stroke-width': 2*pad, 'stroke-linejoin':'round', transform:`translate(${pad},${pad})`, style:'color:var(--rules-board)' }, svg);
   } else {
-    svgEl('rect', { x:0, y:0, width:boardW, height:boardH, class:'rb-frame' }, svg);
+    svgEl('rect', { x:0, y:0, width:boardW, height:boardH, rx:8, class:'rb-frame' }, svg);
   }
   const isGap = (r,c)=>gaps.some(([gr,gc])=>gr===r && gc===c);
   for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
     const x = pad + c*step, y = pad + r*step;
     if(removed.has(r+','+c)) continue;
-    svgEl('rect', { x, y, width:cell, height:cell, class:'rb-cell' }, svg);
+    svgEl('rect', { x, y, width:cell, height:cell, rx:3, class:'rb-cell' }, svg);
   }
 
   // (Each piece in its own group, class mb-piece, so the Solved popup can

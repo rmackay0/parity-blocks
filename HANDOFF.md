@@ -46,20 +46,26 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
-**2026-11-02 (latest): simpler grid and pieces (user: "much harder to read",
-"simplify the look a lot")**
-- **Dotted lines = the grid lines drawn dashed:** same black (`--color-board-bg`),
-  same 2px width; no more red. Drawn one edge at a time by `drawDottedLines`:
-  the solid line is hidden only between two crossings, every crossing stays
-  solid, and each edge's dashes start and end exactly at a crossing (flat
-  ends), so nothing looks rounded or broken. Board: dash 7 / space 5;
-  pictures: 3 / 3 (`BOARD_DOTTED`, `PICTURE_DOTTED`).
-- **Pieces:** the lighter inner squares are off (`PIECE_LOOK.innerSquares`);
-  now just flat color + a darker line between blocks and round the outside.
+**2026-11-02 (latest): the ORIGINAL grid is back, in black and white**
+- The crossword grid (thin lines, square cells) was tried and dropped: the
+  user found it "much harder to read". The board is the original one
+  again: separate rounded squares (4px corners) with 4px gaps, on a frame
+  12px thick with rounded corners. Light: white squares on a black frame;
+  dark: #2e2e2e squares on black.
+- **Dotted lines: white dashes down the black gaps**, as wide as the gap
+  (`--color-dotted`, `--rules-dotted`). Drawn one edge at a time by
+  `drawDottedLines`, flat ends; each edge runs on over the gap crossing at
+  each end so meeting points are filled, but never past the board's edge
+  (none drawn along the edge: no jutting into the frame). Board dash 9 /
+  space 6; pictures 5 / 3.
+- **Pieces:** flat color + a darker line between blocks and round the
+  outside; the lighter inner squares are off (`PIECE_LOOK.innerSquares`),
+  user: "simplify the look a lot".
 - **Logo** in the level colors: green P, yellow and purple singles.
   (SVG comments can't contain two dashes in a row: that broke the logo once.)
-- The bullet points below about red dotted lines and inner squares are
-  out of date.
+- In the two sections below, the grid / dotted-line / inner-square
+  details are out of date; the rest (themes, colors, animations, win
+  popup, Share) still stands.
 
 **2026-11-02 (later): new look (user's design notes + Kelly color chart)**
 - **Light mode by default, dark mode optional.** Every color is a CSS

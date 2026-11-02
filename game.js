@@ -245,7 +245,7 @@ function setupBoard(){
 
 /* Irregular boards: instead of a rectangle, the dark frame is drawn as the
    outline of the squares that exist, widened by the frame thickness
-   (a thick stroke with square corners), so it hugs the board's shape. */
+   (a thick stroke with rounded joins), so it hugs the board's shape. */
 function renderFrame(){
   const outer = document.getElementById('board-outer');
   let frame = document.getElementById('board-frame');
@@ -265,7 +265,7 @@ function renderFrame(){
   frame.setAttribute('height', puzzle.rows*CELL + (puzzle.rows-1)*GAP);
   frame.innerHTML = '';
   if(cells.length) frame.appendChild(svgPath(buildFillPath(cells, CELL, GAP), {
-    class: 'frame-shape', 'stroke-width': 2*pad, 'stroke-linejoin': 'miter',
+    class: 'frame-shape', 'stroke-width': 2*pad, 'stroke-linejoin': 'round',
   }));
 }
 
@@ -276,12 +276,11 @@ boardEl.addEventListener('pointerdown', e=>{
   if(cell){ e.preventDefault(); gameHooks.onCellClick(+cell.dataset.r, +cell.dataset.c); }
 });
 
-// [COLORS] How the board's dotted lines look (px). The same color and
-// thickness as the grid lines (user, 2026-11-02, after trying red): a
-// dotted line is simply a grid line drawn dashed. under = the square
-// color, hiding the solid line there. None is drawn on the board's own
-// edge (onBoard): that edge is the solid border.
-const BOARD_DOTTED = { stroke: 'var(--color-board-bg)', under: 'var(--color-cell)', dash: 7, space: 5,
+// [COLORS] How the board's dotted lines look (px): white dashes down the
+// black gaps between squares, as wide as the gap (black and white, user
+// 2026-11-02). None is drawn on the board's own edge (onBoard): the frame
+// is already a wall there, and a line in it stuck out past the grid.
+const BOARD_DOTTED = { stroke: 'var(--color-dotted)', dash: 9, space: 6,
   onBoard: (r, c)=>inBounds(r, c) };
 
 // The dotted lines: around the puzzle's dotted area (hintOutline), if it

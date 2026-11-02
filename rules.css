@@ -26,9 +26,9 @@
   --rules-odd:           #d62828;    /* red highlighter: odd row/column, "not allowed" mark */
   --rules-highlight-opacity: 0.45;   /* red highlighter strength */
   --rules-highlight-even-opacity: 0.4;   /* green highlighter strength */
-  --rules-board:         #121212;    /* picture boards' grid lines and border */
+  --rules-board:         #121212;    /* frame behind picture boards */
   --rules-cell:          #ffffff;    /* an empty square in pictures */
-  --rules-dotted:        #d62828;    /* dotted lines (red, as on the board) */
+  --rules-dotted:        #ffffff;    /* dotted lines (white in the black gaps, as on the board) */
   --rules-arrow:         #121212;    /* reflect / rotate arrows */
   --rules-empty:         #2443d6;    /* ring marking an empty open square (analyzer) */
   --rules-button:        #121212;    /* "Got it" button (filled) */
@@ -50,9 +50,9 @@ html.dark {
   --rules-text-dim:      #a6a6a6;
   --rules-even:          #5cc982;
   --rules-odd:           #ff5c5c;
-  --rules-board:         #8c8c8c;
-  --rules-cell:          #1f1f1f;
-  --rules-dotted:        #ff5c5c;
+  --rules-board:         #000000;
+  --rules-cell:          #2e2e2e;
+  --rules-dotted:        #f2f2f2;
   --rules-arrow:         #f2f2f2;
   --rules-empty:         #8fa3ff;
   --rules-button:        #f2f2f2;

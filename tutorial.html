@@ -509,13 +509,13 @@ function pieceSvg(cells, color, cell){
 // piece starts off to one side (invisible) and the sign starts hidden;
 // playDont() then slides the piece in and pops the sign up.
 function dontPicture(kind, animated){
-  const cell = 26, gap = 2, pad = 3, rows = 3, cols = 4, step = cell + gap, m = 24;   // (pad: the grid's border)
+  const cell = 26, gap = 3, pad = 6, rows = 3, cols = 4, step = cell + gap, m = 24;
   const W = cols*cell + (cols-1)*gap + 2*pad, H = rows*cell + (rows-1)*gap + 2*pad;
   const svg = svgEl('svg', { width: W + 2*m, height: H + 2*m, viewBox:`${-m} ${-m} ${W + 2*m} ${H + 2*m}`, 'aria-hidden':'true' });
-  svgEl('rect', { x:0, y:0, width:W, height:H, class:'rb-frame' }, svg);
+  svgEl('rect', { x:0, y:0, width:W, height:H, rx:6, class:'rb-frame' }, svg);
   const xAt = c => pad + c*step, yAt = r => pad + r*step;
   for(let r=0; r<rows; r++) for(let c=0; c<cols; c++)
-    svgEl('rect', { x:xAt(c), y:yAt(r), width:cell, height:cell, class:'rb-cell' }, svg);
+    svgEl('rect', { x:xAt(c), y:yAt(r), width:cell, height:cell, rx:2, class:'rb-cell' }, svg);
   // The piece that moves into the wrong spot lives in a "mover" group, so
   // it can start shifted by (dx, dy) and slide into place
   const mover = svgEl('g', { class:'mover' });
