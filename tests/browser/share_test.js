@@ -1,6 +1,6 @@
 // The Share button in the Solved popup (2026-11-02): solves each level on a
 // laptop, presses Share and reads what was copied: the level's colored
-// circle (🟢 🟡 🟣), the level, the day and the time, and nothing else.
+// square (🟦 🟨 🟥), the level, the day and the time, and nothing else.
 // Run with:  node share_test.js
 const { chromium } = require('playwright');
 const S = require('/Users/robertmackay/Projects/Parity Blocks/solver.js');
@@ -38,7 +38,7 @@ function check(label, got, want){
   page.on('pageerror', e=>errors.push(e.message));
   const today = await page.evaluate(()=>new Date().toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' }));
 
-  for(const [level, icon, name] of [['easy', '🟢', 'Easy'], ['medium', '🟡', 'Medium'], ['hard', '🟣', 'Hard']]){
+  for(const [level, icon, name] of [['easy', '🟦', 'Easy'], ['medium', '🟨', 'Medium'], ['hard', '🟥', 'Hard']]){
     await page.goto(BASE + 'play.html?level=' + level); await page.waitForTimeout(300);
     await page.evaluate(ps=>{
       placedPieces = ps.map((p, i)=>({ id:'t' + i, color: puzzle.pieces.find(d=>d.name === p.name).color, ...p }));

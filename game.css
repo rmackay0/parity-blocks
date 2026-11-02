@@ -51,11 +51,11 @@
   --color-overlay:      rgba(31, 35, 48, 0.45);
   --color-shadow:       rgba(31, 35, 48, 0.2);   /* under a lifted piece */
   /* the three levels (start screen buttons, stars, "Play Medium →"):
-     moss green, gold, wisteria purple, so a shared result can show
-     🟢 🟡 🟣 (user, 2026-11-02) */
-  --color-easy:         #7BA05B;
+     asagi teal, gold, vermilion ("Warm and friendly", user's pick,
+     2026-11-02), so a shared result shows 🟦 🟨 🟥 */
+  --color-easy:         #3E8E9E;
   --color-medium:       #E8B33B;
-  --color-hard:         #8E6FB0;
+  --color-hard:         #E2483D;
   --color-easy-ink:     #FFFFFF;   /* text on them */
   --color-medium-ink:   #1F2330;
   --color-hard-ink:     #FFFFFF;
@@ -420,8 +420,8 @@ body {
 #solved-popup .popup-buttons a, #solved-popup .popup-buttons button { background: var(--color-soft); color: var(--color-soft-ink); }
 .next-level-btn {
   display: flex; align-items: center; justify-content: center; height: 50px; margin-bottom: 12px;
-  border: 2px solid var(--color-btn-line); border-radius: 4px; text-decoration: none; font-family: var(--font-display); font-size: 1.45rem;
-  color: var(--color-easy-ink); background: var(--color-easy); box-shadow: inset 0 -3px 0 var(--color-key-edge);
+  border: none; border-radius: 999px; text-decoration: none; font-family: var(--font-display); font-size: 1.45rem;
+  color: var(--color-easy-ink); background: var(--color-easy); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16);   /* (rounded, like the start screen's level buttons) */
   transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
 }
 .next-level-btn[hidden] { display: none; }
@@ -439,7 +439,7 @@ body {
 .next-level-btn.medium { background: var(--color-medium); color: var(--color-medium-ink); }
 .next-level-btn.hard   { background: var(--color-hard); color: var(--color-hard-ink); }
 .next-level-btn:hover { filter: brightness(1.05); }
-.next-level-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--color-key-edge); }
+.next-level-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.16); }
 /* ── Sandbox modes (only the puzzle builder uses these) ── */
 /* Edit mode: pieces fade and ignore clicks, so clicks reach the squares */
 body.editing .placed-piece { opacity: 0.45; }

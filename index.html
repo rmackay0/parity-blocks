@@ -35,7 +35,7 @@
      only want system fonts. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geo&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geo&family=Lilita+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
 <!-- Rules popup + Rules button styles (shared with play.html) -->
 <link rel="stylesheet" href="rules.css">
@@ -58,17 +58,19 @@
        The first name must match a family loaded in the <link> above;
        the names after it are fallbacks if that font fails to load.
        ───────────────────────────────────────────────────────────── */
-    --font-logo:    'Geo', 'Segoe UI', sans-serif;       /* "Parity Blocks" title. To go back to the
-                                                            pixel font: 'Pixelify Sans', monospace */
-    --font-display: 'Geo', 'Segoe UI', sans-serif;       /* buttons */
+    --font-logo:    'Lilita One', 'Segoe UI', sans-serif; /* "Parity Blocks" title (user's pick, 2026-11-02:
+                                                            "Warm and friendly"). Before: 'Geo' (then set
+                                                            --title-boldness to 0.045em and the title's
+                                                            letter-spacing to 0.05em) */
+    --font-display: 'Geo', 'Segoe UI', sans-serif;       /* buttons (kept Geo, user's choice) */
     --font-body:    'Nunito', 'Segoe UI', sans-serif;    /* notices (rules popup fonts: rules.css) */
     --font-tagline: 'Nunito', 'Segoe UI', sans-serif;    /* subheader under the title */
 
     /* [FONTS] Sizes. clamp(min, preferred, max) scales with screen width. */
     --title-size:   clamp(2.16rem, 10.08vw, 5.4rem);
-    /* Extra thickness for the title. Geo has no bold, so the letters get an
-       outline in their own color instead. 0 = normal; 0.05em ≈ heavy bold. */
-    --title-boldness: 0.045em;
+    /* Extra thickness for the title: an outline in the letters' own color.
+       0 = normal (Lilita One is bold already); Geo needed 0.045em. */
+    --title-boldness: 0;
     --tagline-size: clamp(0.95rem, 2.6vw, 1.15rem);
     --button-size:  1.5rem;    /* Geo runs small, so these are larger than usual */
 
@@ -82,18 +84,19 @@
        [COLORS] Every color on the page is set here.
        Change a value once and it updates everywhere it's used.
        ───────────────────────────────────────────────────────────── */
-    /* "Woodblock" (user's pick, 2026-11-02): paper page, ink text, level
-       buttons in moss, gold and wisteria with a fine ink border: the same
-       three colors as the 🟢 🟡 🟣 in a shared result (play.html, Share).
+    /* "Woodblock" (user's pick, 2026-11-02): paper page, ink text. Level
+       buttons ("Warm and friendly", also the user's pick): rounded, in
+       asagi teal, gold and vermilion, the same three colors as the
+       🟦 🟨 🟥 in a shared result (play.html, Share).
        Same palette as game.css. Dark mode: html.dark below. */
     --color-bg:          #F5F5F2;   /* page background (paper) */
     --color-title:       #1F2330;   /* "Parity Blocks" heading (ink) */
     --color-text:        #1F2330;   /* main text */
     --color-text-dim:    #5E6270;   /* tagline, secondary text */
 
-    --color-easy:        #7BA05B;   /* Easy button (moss) */
+    --color-easy:        #3E8E9E;   /* Easy button (asagi teal) */
     --color-medium:      #E8B33B;   /* Medium button (gold) */
-    --color-hard:        #8E6FB0;   /* Hard button (wisteria) */
+    --color-hard:        #E2483D;   /* Hard button (vermilion) */
     --color-easy-text:   #FFFFFF;   /* the label on each */
     --color-medium-text: #1F2330;
     --color-hard-text:   #FFFFFF;
@@ -113,7 +116,7 @@
     --button-width:    260px;   /* width of each difficulty button */
     --button-height:   56px;    /* height of each difficulty button */
     --button-gap:      14px;    /* space between the three buttons */
-    --button-radius:   4px;     /* corner roundness (0 = square, 999px = pill) */
+    --button-radius:   999px;   /* corner roundness (0 = square, 999px = pill) */
 
     --rules-top:       18px;    /* Rules button distance from top edge */
     --rules-right:     18px;    /* Rules button distance from right edge */
@@ -188,7 +191,7 @@
     color: var(--color-title);
     -webkit-text-stroke: var(--title-boldness) currentColor;
     paint-order: stroke fill;
-    letter-spacing: 0.05em;      /* a bit wider so the thicker letters don't touch */
+    letter-spacing: 0.01em;      /* (Geo needed 0.05em so its thickened letters didn't touch) */
     line-height: 1.05;
   }
 
@@ -213,18 +216,18 @@
 
   .difficulty-btn {
     height: var(--button-height);
-    border: 2px solid var(--color-button-line);   /* a fine ink border */
+    border: none;
     border-radius: var(--button-radius);
     font-family: var(--font-display);          /* [FONTS] */
     font-size: var(--button-size);             /* [FONTS] */
     font-weight: var(--button-weight);         /* [FONTS] */
     letter-spacing: 0.04em;
     cursor: pointer;
-    box-shadow: inset 0 -4px 0 var(--color-key-edge);
+    box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16);   /* a soft darker band along the bottom */
     transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
   }
   .difficulty-btn:hover  { filter: brightness(1.05); transform: translateY(-1px); }
-  .difficulty-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--color-key-edge); }
+  .difficulty-btn:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.16); }
 
   /* [COLORS] Per-difficulty button colors (values live in :root) */
   .difficulty-btn[data-difficulty="easy"]   { background: var(--color-easy);   color: var(--color-easy-text); }
@@ -370,7 +373,7 @@
 </main>
 
 <!-- The Archive calendar: a star on each day this player solved a puzzle
-     (green = Easy, yellow = Medium, purple = Hard). Kept in this browser only
+     (teal = Easy, gold = Medium, vermilion = Hard). Kept in this browser only
      (progress.js). Drawn by showMonth() below. -->
 <div class="cal-backdrop" id="cal-popup" hidden>
   <div class="cal" role="dialog" aria-modal="true" aria-labelledby="cal-title">

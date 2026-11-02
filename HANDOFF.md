@@ -46,6 +46,22 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
+**2026-11-02 (end): front page = "Warm and friendly" (user's pick)**
+- Picked from the artifact "Parity Blocks Front Page" (13 pentomino logos,
+  13 title fonts, 4 combined front pages W/X/Y/Z): combo Z.
+- **Logo** (`assets/logo.svg`): a vermilion V pentomino + a teal 2 × 2
+  square, filling a 3 × 3 exactly.
+- **Title font: Lilita One** (index.html `--font-logo`; `--title-boldness`
+  0, letter-spacing 0.01em). **Buttons keep Geo** (user: "keep the font
+  used in the buttons the same"). Only the start screen's title changed.
+- **Levels: Easy asagi teal #3E8E9E, Medium gold #E8B33B, Hard vermilion
+  #E2483D**, rounded (pill) buttons with no border and a soft darker band
+  along the bottom (start screen + "Play Medium/Hard →"). Shared results
+  use squares now: 🟦 🟨 🟥 (play.html `LEVEL_ICON`).
+- Not chosen but on the page if the user wants to revisit: Hanko seal
+  logos, P-for-Parity, Dela Gothic One, Shippori Mincho, difficulty pips.
+  Avoid a red plus on white or a white plus on red (Red Cross / Swiss flag).
+
 **2026-11-02 (very latest): "Woodblock" look applied (user's pick)**
 - Chosen from 3 rounds of palette mock-ups (artifact "Parity Blocks
   Palettes": round 3 had 11 directions; user liked Riso most, then picked

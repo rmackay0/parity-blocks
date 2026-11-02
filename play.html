@@ -240,13 +240,13 @@ document.addEventListener('visibilitychange', timerTick);
 
 /* ── Share (the Solved popup) ──
    [CONTENT] What gets shared, e.g.
-       Parity Blocks 🟡 Medium
+       Parity Blocks 🟨 Medium
        Mon, Nov 2 · 3:41
        https://parity-blocks.vercel.app
-   The circle matches the level's color on the start screen (user,
-   2026-11-02), so it's easy to see which puzzle someone means. Only the
-   day, level and time: nothing that gives the answer away. */
-const LEVEL_ICON = { easy: '🟢', medium: '🟡', hard: '🟣' };
+   The square matches the level's color on the start screen (teal, gold,
+   vermilion; user, 2026-11-02), so it's easy to see which puzzle someone
+   means. Only the day, level and time: nothing that gives the answer away. */
+const LEVEL_ICON = { easy: '🟦', medium: '🟨', hard: '🟥' };
 let solvedTime = '';
 function shareText(){
   const day = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
