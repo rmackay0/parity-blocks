@@ -49,8 +49,11 @@ previous project; don't push there.
 **2026-11-02 (end): front page = "Warm and friendly" (user's pick)**
 - Picked from the artifact "Parity Blocks Front Page" (13 pentomino logos,
   13 title fonts, 4 combined front pages W/X/Y/Z): combo Z.
-- **Logo** (`assets/logo.svg`): a vermilion V pentomino + a teal 2 × 2
-  square, filling a 3 × 3 exactly.
+- **Logo** (`assets/logo.svg`, the user's own design, replacing combo Z's
+  V + square): a 4 × 4 of two P pentominoes, a vermilion "P" (top left)
+  and a teal one upside down that reads as a "b" (bottom right), i.e. "Pb"
+  for Parity Blocks, plus two gold L trominoes filling the other corners.
+  The layout looks the same turned upside down.
 - **Title font: Lilita One** (index.html `--font-logo`; `--title-boldness`
   0, letter-spacing 0.01em). **Buttons keep Geo** (user: "keep the font
   used in the buttons the same"). Only the start screen's title changed.
