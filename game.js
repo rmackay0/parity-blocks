@@ -276,11 +276,12 @@ boardEl.addEventListener('pointerdown', e=>{
   if(cell){ e.preventDefault(); gameHooks.onCellClick(+cell.dataset.r, +cell.dataset.c); }
 });
 
-// [COLORS] How the board's dotted lines look (px). Red, so it reads as "keep
-// out" (user, 2026-11-02). Each one replaces the grid line it runs along
-// (under = the square color hides the line), and none is drawn on the
-// board's own edge (onBoard), so nothing sticks out past the grid.
-const BOARD_DOTTED = { stroke: 'var(--color-dotted)', under: 'var(--color-cell)', width: 4, dash: 9, space: 6,
+// [COLORS] How the board's dotted lines look (px). The same color and
+// thickness as the grid lines (user, 2026-11-02, after trying red): a
+// dotted line is simply a grid line drawn dashed. under = the square
+// color, hiding the solid line there. None is drawn on the board's own
+// edge (onBoard): that edge is the solid border.
+const BOARD_DOTTED = { stroke: 'var(--color-board-bg)', under: 'var(--color-cell)', dash: 7, space: 5,
   onBoard: (r, c)=>inBounds(r, c) };
 
 // The dotted lines: around the puzzle's dotted area (hintOutline), if it

@@ -142,14 +142,16 @@ function shadeColor(color, amount){
   return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
 }
 
-/* [COLORS] How a piece looks (user, 2026-11-02: "squares in each block
-   along with a line separating each block", clean lines):
+/* [COLORS] How a piece looks (user, 2026-11-02: a line separating each
+   block, clean lines; then "simplify the look a lot"):
      • one flat fill in the piece's color;
-     • a slightly lighter square inside each block;
      • a thin line between neighbouring blocks, and one outline round the
-       whole piece, both a darker shade of the piece's own color.
+       whole piece, both a darker shade of the piece's own color;
+     • (innerSquares: true adds a lighter square inside each block; tried
+       and turned off for a simpler look.)
    All lines sit on whole pixels so they stay sharp. */
 const PIECE_LOOK = {
+  innerSquares: false,
   inset: 0.2,           // inner square's margin, as a fraction of a block
   insetFill: 'rgba(255,255,255,0.17)',
   lineShade: 0.38,      // how much darker the lines are than the piece
@@ -161,7 +163,7 @@ function drawPieceParts(parent, cells, color, size, gap){
   const line = shadeColor(color, PIECE_LOOK.lineShade);
   parent.appendChild(svgPath(buildFillPath(cells, size, gap), { fill: color, class:'piece-fill' }));
   const ins = Math.max(2, Math.round(size * PIECE_LOOK.inset));
-  if(size - 2*ins >= 4){
+  if(PIECE_LOOK.innerSquares && size - 2*ins >= 4){
     const sq = cells.map(([r,c])=>{
       const x = c*(size+gap) + ins, y = r*(size+gap) + ins, s = size - 2*ins;
       return `M${x},${y} h${s} v${s} h${-s} Z`;
@@ -279,14 +281,15 @@ function groupSquares(cells){
 }
 
 /* Dotted lines (the dotted area and the dotted squares), drawn so that:
-   • each line runs down the middle of the gap between squares;
+   • each one takes the place of the grid line, same color, same width;
    • where two dotted shapes touch they share ONE line, never two side by
      side (every edge is drawn once, whichever shapes it belongs to);
-   • every straight run starts and ends with a dash, so corners look neat.
+   • every grid crossing stays solid, and each edge's dashes start and end
+     right at a crossing, so nothing looks rounded or broken.
    regions  a list of shapes, each a list of squares [[r,c]]
    step     square size + gap (px); gap: the gap between squares (px)
    ox, oy   where square (0,0)'s top-left corner is drawn
-   look     { stroke, width, dash, space, under, onBoard }
+   look     { stroke, width (default: the gap), dash, space, under, onBoard }
             under    color drawn first along the line, the width of the gap,
                      so the dotted line REPLACES the grid line there
                      (user, 2026-11-02: like a crossword's lines)
@@ -309,45 +312,34 @@ function drawDottedLines(parent, regions, step, gap, ox, oy, look){
       edge(r, c+1, `v,${c+1},${r}`);
     });
   });
-  // Join unit edges that continue in a straight line into one run
-  const runs = [];
-  ['h', 'v'].forEach(dir=>{
-    const byLine = {};
-    edges.forEach(e=>{ const [d, line, at] = e.split(','); if(d === dir) (byLine[line] = byLine[line] || []).push(+at); });
-    Object.entries(byLine).forEach(([line, ats])=>{
-      ats.sort((a,b)=>a-b);
-      let start = ats[0], prev = ats[0];
-      ats.slice(1).concat([null]).forEach(a=>{
-        if(a === prev + 1){ prev = a; return; }
-        runs.push({ dir, line: +line, from: start, to: prev + 1 });
-        start = prev = a;
-      });
-    });
-  });
-  // Grid line k sits in the middle of the gap before square k
-  const at = k => k*step - gap/2;
-  const w = look.width, dash = look.dash, space = look.space;
-  // (every "hide the grid line" stroke goes below every dash)
+  // Each edge is drawn on its own, from one grid crossing to the next
+  // (user, 2026-11-02: seamless, no rounded corners, the points where a
+  // dotted line meets a solid one filled in):
+  //   • the solid grid line along that edge is hidden, but ONLY between
+  //     the two crossings, so every crossing point stays solid;
+  //   • dashes, the same color and thickness as the grid lines, with flat
+  //     ends; the first starts and the last ends exactly at a crossing.
+  const cell = step - gap;
+  const w = look.width || gap, dash = look.dash, space = look.space;
+  // (the same number of dashes on every edge, stretched to fit exactly)
+  const n = Math.max(1, Math.round((cell + space) / (dash + space)));
+  const k = (cell + space) / (n * (dash + space));
   const underG = svgEl('g', {}, parent), dashG = svgEl('g', {}, parent);
-  runs.forEach(run=>{
-    const len = (run.to - run.from) * step;
-    // Stretch the pattern slightly so the run starts and ends on a dash.
-    // (Square line ends make each dash w longer, so the pattern allows for it.)
-    const n = Math.max(1, Math.round((len + space) / (dash + space)));
-    const k = (len + space) / (n * (dash + space));
-    const d = run.dir === 'h'
-      ? `M${ox + at(run.from)},${oy + at(run.line)} H${ox + at(run.to)}`
-      : `M${ox + at(run.line)},${oy + at(run.from)} V${oy + at(run.to)}`;
-    // Hide the grid line under it, so only the dashes show there
-    if(look.under && gap > 0) svgEl('path', { d, fill:'none', stroke: look.under, 'stroke-width': gap,
+  [...edges].sort().forEach(e=>{
+    const [dir, line, along] = e.split(',');
+    const mid = line*step - gap/2;           // the middle of the grid line
+    const from = along*step, to = from + cell;
+    const d = dir === 'h' ? `M${ox + from},${oy + mid} H${ox + to}` : `M${ox + mid},${oy + from} V${oy + to}`;
+    if(look.under && gap > 0) svgEl('path', { d, fill:'none', stroke: look.under, 'stroke-width': gap + 0.5,
       'stroke-linecap':'butt', class:'dotted-under' }, underG);
-    svgEl('path', { d, fill:'none', stroke: look.stroke, 'stroke-width': w, 'stroke-linecap':'square',
-      'stroke-dasharray': `${Math.max(1, dash*k - w)} ${space*k + w}`, class:'dotted-line' }, dashG);
+    svgEl('path', { d, fill:'none', stroke: look.stroke, 'stroke-width': w, 'stroke-linecap':'butt',
+      'stroke-dasharray': `${dash*k} ${space*k}`, class:'dotted-line' }, dashG);
   });
 }
 
 // [COLORS] How dotted lines look in the small pictures (rules popup, tutorial slide 3, sandbox)
-const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #d62828)', under: 'var(--rules-cell, #fff)', width: 3, dash: 6, space: 4 };
+// (same color and width as the pictures' grid lines)
+const PICTURE_DOTTED = { stroke: 'var(--rules-board, #121212)', under: 'var(--rules-cell, #fff)', dash: 3, space: 3 };
 
 /* A picture of a board, as an <svg>.
    opts:

@@ -46,6 +46,21 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
+**2026-11-02 (latest): simpler grid and pieces (user: "much harder to read",
+"simplify the look a lot")**
+- **Dotted lines = the grid lines drawn dashed:** same black (`--color-board-bg`),
+  same 2px width; no more red. Drawn one edge at a time by `drawDottedLines`:
+  the solid line is hidden only between two crossings, every crossing stays
+  solid, and each edge's dashes start and end exactly at a crossing (flat
+  ends), so nothing looks rounded or broken. Board: dash 7 / space 5;
+  pictures: 3 / 3 (`BOARD_DOTTED`, `PICTURE_DOTTED`).
+- **Pieces:** the lighter inner squares are off (`PIECE_LOOK.innerSquares`);
+  now just flat color + a darker line between blocks and round the outside.
+- **Logo** in the level colors: green P, yellow and purple singles.
+  (SVG comments can't contain two dashes in a row: that broke the logo once.)
+- The bullet points below about red dotted lines and inner squares are
+  out of date.
+
 **2026-11-02 (later): new look (user's design notes + Kelly color chart)**
 - **Light mode by default, dark mode optional.** Every color is a CSS
   variable in `:root` (light) with an `html.dark { … }` block under it, in

@@ -1,10 +1,12 @@
 <!--
-  Parity Blocks logo mark (redrawn 2026-11-02 in the new look).
-  A 3x3 crossword-style grid (black lines and border) with a blue P
-  pentomino and four single squares: two orange, two purple. Pieces are
-  drawn like the game's: flat color, a lighter square inside each block,
-  a darker line between blocks and round the outside. Colors are Kelly's
-  (see KELLY in shapes.js).
+  Parity Blocks logo mark (2026-11-02).
+  A 3x3 crossword-style grid (black lines and border) with a P pentomino
+  and four single squares, in the start screen's level colors (user:
+  "the same colors as easy medium and hard"): the P is Easy green, the two
+  on the right Medium yellow, the two along the bottom Hard purple
+  (color-easy, color-medium, color-hard in game.css; never write two
+  dashes in a row inside this comment, it breaks the file). Drawn like the game's
+  pieces: flat color, a darker line between blocks and round the outside.
   Layout: border 6, squares 34 wide, lines 3; columns and rows start at
   6, 43, 80.
   To swap in your own logo, replace this file (keep the name logo.svg), or
@@ -13,25 +15,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <rect width="120" height="120" fill="#121212"/>
 
-  <!-- P pentomino: top-left 2x2 plus the square below -->
-  <path d="M6,6 H77 V77 H40 V114 H6 Z" fill="#0067A5"/>
-  <g fill="#ffffff" fill-opacity="0.22">
-    <rect x="12" y="12" width="22" height="22"/><rect x="49" y="12" width="22" height="22"/>
-    <rect x="12" y="49" width="22" height="22"/><rect x="49" y="49" width="22" height="22"/>
-    <rect x="12" y="86" width="22" height="22"/>
-  </g>
-  <path d="M41.5,6 V77 M6,41.5 H77 M6,78.5 H40" stroke="#00405f" stroke-width="3" fill="none"/>
-  <path d="M7,7 H76 V76 H39 V113 H7 Z" stroke="#00405f" stroke-width="2" fill="none"/>
+  <!-- P pentomino (Easy green): top-left 2x2 plus the square below -->
+  <path d="M6,6 H77 V77 H40 V114 H6 Z" fill="#8fd1ad"/>
+  <path d="M41.5,6 V77 M6,41.5 H77 M6,78.5 H40" stroke="#59826b" stroke-width="3" fill="none"/>
+  <path d="M7,7 H76 V76 H39 V113 H7 Z" stroke="#59826b" stroke-width="2" fill="none"/>
 
-  <!-- single squares: orange on the right of the top two rows, purple along the bottom -->
+  <!-- single squares: Medium yellow on the right of the top two rows, Hard purple along the bottom -->
   <g stroke-width="2">
-    <rect x="81" y="7"  width="32" height="32" fill="#F38400" stroke="#975200"/>
-    <rect x="81" y="44" width="32" height="32" fill="#F38400" stroke="#975200"/>
-    <rect x="44" y="81" width="32" height="32" fill="#875692" stroke="#54355a"/>
-    <rect x="81" y="81" width="32" height="32" fill="#875692" stroke="#54355a"/>
-  </g>
-  <g fill="#ffffff" fill-opacity="0.22">
-    <rect x="86" y="12" width="22" height="22"/><rect x="86" y="49" width="22" height="22"/>
-    <rect x="49" y="86" width="22" height="22"/><rect x="86" y="86" width="22" height="22"/>
+    <rect x="81" y="7"  width="32" height="32" fill="#f6d76b" stroke="#998542"/>
+    <rect x="81" y="44" width="32" height="32" fill="#f6d76b" stroke="#998542"/>
+    <rect x="44" y="81" width="32" height="32" fill="#c3a3cc" stroke="#79657e"/>
+    <rect x="81" y="81" width="32" height="32" fill="#c3a3cc" stroke="#79657e"/>
   </g>
 </svg>
