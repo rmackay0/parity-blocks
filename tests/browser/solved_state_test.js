@@ -86,6 +86,12 @@ function check(label, got, want){
     check('solved: no "Solved in" above the board', await page.locator('.tray-area .win-badge').count(), 0);
     // (the win animation since 2026-11-02: the solved board with every piece on it)
     check('solved: popup has the win animation', await page.locator('#solved-win .win-show .mb-piece').count(), 6);
+    // (since 2026-11-03: rows + columns counted, then a green cover + check hide the solution)
+    check('solved: popup counts every row and column', await page.locator('#solved-win .rb-hl').count(), 12);
+    check('solved: popup board ends green with a check', await page.evaluate(()=>{
+      const c = document.querySelector('#solved-win .win-cover'), k = document.querySelector('#solved-win .win-check-big');
+      return !!c && !!k && c === c.parentNode.lastElementChild.previousElementSibling;     // (on top of everything but the check)
+    }), true);
     const before = await page.evaluate(()=>JSON.stringify(placedPieces.map(p=>[p.row, p.col, p.cells])));
     const piece = page.locator('.placed-piece .blk').first();      // (a piece's squares take the clicks)
     const box = await piece.boundingBox(), cx = box.x + box.width/2, cy = box.y + box.height/2;

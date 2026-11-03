@@ -276,8 +276,9 @@ gameHooks.onSolved = time=>{
   solvedTime = time;
   saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
-  // The win animation, in the popup (celebrate.js): the solved board with
-  // the pieces dropping in on the jingle's notes, then "Solved!" and the time
+  // The win animation, in the popup (celebrate.js): the solved board, its
+  // rows and columns counted on the jingle's notes, then it turns green
+  // with a check mark; then "Solved!" and the time
   document.getElementById('solved-win').replaceChildren(solvedCelebration({
     puzzle, time, sound: true,
     pieces: placedPieces.map(q=>({ cells:q.cells, color:q.color, row:q.row, col:q.col })),

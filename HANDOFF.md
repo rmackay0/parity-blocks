@@ -24,7 +24,8 @@ sections below have the history and the reasons)**
 - Buttons elsewhere: fine ink border, 4px corners.
 - Piece animations (press, lift + lean, landing thud, shake, spin/flip):
   `FEEL` in game.js. Win animation in the Solved popup (`solvedCelebration`,
-  celebrate.js). Share button: "Parity Blocks 🟨 Medium / day · time".
+  celebrate.js): rows + columns counted in green, then the board turns
+  green with a check (hides the solution); background blurred. Share button: "Parity Blocks 🟨 Medium / day · time".
 - Design mock-up pages (claude.ai artifacts, private to the user):
   "Parity Blocks Palettes" (3 rounds of color/style directions) and
   "Parity Blocks Front Page" (13 logos, 13 fonts, 4 combined screens).
@@ -72,6 +73,21 @@ previous project; don't push there.
 - **Specs come as PDFs** ("instructions v1/v2/v3") with notes beside
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
+
+**2026-11-03 (later): new win animation, solution hidden (user request)**
+- User: no confetti; a screenshot of the Solved popup (to share a time)
+  mustn't show the whole solution. `solvedCelebration` (celebrate.js) now:
+  the popup's board picture shows the pieces in place from the start; on
+  the jingle's notes (0.11–1.25 s) a green highlighter sweeps along each
+  row, then each column, each count popping in beside it (miniBoard's new
+  `show:'count'`, strokes/counts tagged `data-row` / `data-col`); on the
+  big note (1.46 s) a green cover (`.win-cover`, a copy of the frame so cut
+  boards keep their shape) fills the board and a white check draws across
+  it. The counts stay beside the green board. Seal + confetti are gone.
+- The Solved popup's backdrop blurs the real board (`#solved-popup`
+  backdrop-filter 36px, game.css): Claude's addition, since on laptops the
+  board behind the popup showed most of the solution. Easy to undo.
+- `solved_state_test.js` checks the 12 strokes and the cover + check.
 
 **2026-11-03: start screen tidied**
 - **Archive button hidden** (user: "for now"). The calendar popup and its

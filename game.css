@@ -236,8 +236,9 @@ body {
 @media (prefers-reduced-motion: reduce) { .win-badge.animate, .win-badge.animate * { animation: none !important; } }
 
 /* ── The win animation (celebrate.js solvedCelebration; the Solved popup) ──
-   A small picture of the solved board, a check seal on its corner, little
-   blocks bursting out, then "Solved!" and the time. */
+   A small picture of the solved board; its rows and columns are counted
+   with a green highlighter, then it turns green with a white check mark
+   (hiding the solution), then "Solved!" and the time. */
 .win-show { display: flex; flex-direction: column; align-items: center; }
 .win-stage { position: relative; margin: 6px 0 16px; }
 .win-board { display: block; overflow: visible; transform-origin: center; }
@@ -247,17 +248,16 @@ body {
   25%  { filter: drop-shadow(0 0 14px rgba(123, 160, 91, 0.85)); }
   100% { filter: drop-shadow(0 0 6px rgba(123, 160, 91, 0.4)); }
 }
-.win-seal { position: absolute; top: -16px; right: -16px; width: 46px; height: 46px; overflow: visible;
-            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)); }
-.win-seal circle { fill: var(--color-valid); stroke: var(--color-panel); stroke-width: 3; }
-.win-seal path { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 34; }
-.win-confetti { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
-.win-confetti i { position: absolute; left: 0; top: 0; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25); }
+.win-cover { fill: var(--color-valid); color: var(--color-valid); }      /* (color: the frame of a board with cut squares is a stroke) */
+.win-check-big { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; }
 .win-title { font-family: var(--font-display); font-weight: 400; font-size: 2.2rem; line-height: 1.1; color: var(--color-valid); letter-spacing: 0.03em; }
 .win-time { margin: 4px 0 0 !important; font-size: 1.1rem; color: var(--color-text); }
 .win-time b { font-variant-numeric: tabular-nums; }
 /* the popup itself comes up with a little spring (play.html) */
 @keyframes popupIn { from { opacity: 0; transform: translateY(16px) scale(0.95); } to { opacity: 1; transform: none; } }
+/* the real board behind it is blurred, so a screenshot of the popup
+   doesn't show the solution (user, 2026-11-03) */
+#solved-popup { -webkit-backdrop-filter: blur(36px); backdrop-filter: blur(36px); }
 #solved-popup:not([hidden]) .popup { animation: popupIn 0.32s cubic-bezier(.2,.9,.3,1.15) both; }
 @media (prefers-reduced-motion: reduce) { #solved-popup .popup, .win-board.glow { animation: none; } }
 

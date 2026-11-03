@@ -359,6 +359,9 @@ const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #fff)', dash: 5, space: 3 
                         column, with counts.  'solved': counts only.
                         'odd': red highlighter on odd rows AND columns only,
                         counts on both sides (used by the analyzer).
+                        'count': highlighter on every row AND column, counts
+                        on both sides, all marked with data-row / data-col
+                        (the Solved popup animates them one by one).
      markEmpty          true: draw a ring in every open square no piece covers
      dotted             [[r,c]] region to trace with a dotted line
      noMarkOn           a piece that breaks a rule: draws the red "not allowed"
@@ -372,8 +375,8 @@ function miniBoard(opts){
   const step = cell + gap;
   const boardW = cols*cell + (cols-1)*gap + 2*pad;
   const boardH = rows*cell + (rows-1)*gap + 2*pad;
-  const rightLabels  = show === 'rows' || show === 'solved' || show === 'odd';
-  const bottomLabels = show === 'cols' || show === 'solved' || show === 'odd';
+  const rightLabels  = show === 'rows' || show === 'solved' || show === 'odd' || show === 'count';
+  const bottomLabels = show === 'cols' || show === 'solved' || show === 'odd' || show === 'count';
   // Room for counts on both sides whenever any are shown, so pictures
   // side by side are the same size and their captions line up
   // m = margin around the board so highlighter strokes can run past its edge
@@ -382,6 +385,7 @@ function miniBoard(opts){
   const h = boardH + (show ? label : 0) + 2*m;
   const outer = svgEl('svg', { width: w, height: h, viewBox:`0 0 ${w} ${h}`, 'aria-hidden':'true' });
   const svg = svgEl('g', { transform:`translate(${m},${m})` }, outer);
+  outer.boardSize = { w: boardW, h: boardH };     // (the Solved popup centres its check mark on the board)
 
   if(removed.size){
     // irregular board: a frame that hugs the existing squares
@@ -430,11 +434,11 @@ function miniBoard(opts){
     // shapes.js), running a little past the board's edge
     const thick = cell * 0.65, over = m;
     const rowMark = r=>{ const y = pad + r*step + cell/2;
-      svgEl('path', { d: buildHighlighterPath(-over, y, boardW+over, y, thick, r+1), class:'rb-hl '+cls(rowCount(r)) }, svg); };
+      svgEl('path', { d: buildHighlighterPath(-over, y, boardW+over, y, thick, r+1), class:'rb-hl '+cls(rowCount(r)), 'data-row': r }, svg); };
     const colMark = c=>{ const x = pad + c*step + cell/2;
-      svgEl('path', { d: buildHighlighterPath(x, -over, x, boardH+over, thick, c+11), class:'rb-hl '+cls(colCount(c)) }, svg); };
-    if(show === 'rows')   for(let r=0; r<rows; r++) rowMark(r);
-    if(show === 'cols')   for(let c=0; c<cols; c++) colMark(c);
+      svgEl('path', { d: buildHighlighterPath(x, -over, x, boardH+over, thick, c+11), class:'rb-hl '+cls(colCount(c)), 'data-col': c }, svg); };
+    if(show === 'rows' || show === 'count') for(let r=0; r<rows; r++) rowMark(r);
+    if(show === 'cols' || show === 'count') for(let c=0; c<cols; c++) colMark(c);
     if(show === 'odd'){
       for(let r=0; r<rows; r++) if(rowCount(r) % 2) rowMark(r);
       for(let c=0; c<cols; c++) if(colCount(c) % 2) colMark(c);
@@ -442,11 +446,11 @@ function miniBoard(opts){
     // 'solved' draws no strokes, just the all-green counts
 
     if(rightLabels) for(let r=0; r<rows; r++){
-      const t = svgEl('text', { x: boardW + m + label/2, y: pad + r*step + cell/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(rowCount(r)) }, svg);
+      const t = svgEl('text', { x: boardW + m + label/2, y: pad + r*step + cell/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(rowCount(r)), 'data-row': r }, svg);
       t.textContent = rowCount(r);
     }
     if(bottomLabels) for(let c=0; c<cols; c++){
-      const t = svgEl('text', { x: pad + c*step + cell/2, y: boardH + m + label/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(colCount(c)) }, svg);
+      const t = svgEl('text', { x: pad + c*step + cell/2, y: boardH + m + label/2, 'text-anchor':'middle', 'dominant-baseline':'central', class:'rb-count '+cls(colCount(c)), 'data-col': c }, svg);
       t.textContent = colCount(c);
     }
   }

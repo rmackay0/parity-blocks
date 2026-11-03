@@ -65,25 +65,26 @@ function playSolvedSound(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   THE WIN ANIMATION (the puzzle page's Solved popup, 2026-11-02)
+   THE WIN ANIMATION (the puzzle page's Solved popup; redone 2026-11-03)
    The user wanted the winning moment in the popup, not on the board. It
    plays along with the jingle, whose notes fall at 0.11, 0.51, 0.70,
    0.88, 1.08, 1.25 s and the big last note at 1.46 s:
-     • a small picture of the board you just solved, empty at first;
-     • your pieces drop onto it one by one, one per note (a puzzle
-       usually has six pieces: one for each note before the big one);
-     • on the big note the board pops and glows green, a check seal stamps
-       onto its corner, and little blocks in your pieces' colors burst
-       out of it;
+     • a small picture of the board you just solved, pieces in place;
+     • from the first note to the last small one, a green highlighter
+       sweeps along each row in turn, top to bottom, and its (even) count
+       appears beside it; then the same for each column, left to right;
+     • on the big note the whole board turns green, hiding the pieces,
+       and a white check mark draws itself across it. (User: a screenshot
+       of the popup, e.g. to share a time, mustn't give away the solution.)
      • "Solved!" and your time come in, the time counting up.
    Without sound it runs a little quicker. With "reduce motion" set on the
-   device, everything simply shows, finished.
+   device, everything simply shows, finished (green board + check).
    [BEHAVIOR] WIN_NOTES / WIN_BIG are the jingle's notes (seconds);
-   WIN_CONFETTI how many little blocks burst out.
+   WIN_SWEEP how long one row's or column's highlighter takes.
 ═══════════════════════════════════════════════════════════════════ */
 const WIN_NOTES = [0.11, 0.51, 0.70, 0.88, 1.08, 1.25];
 const WIN_BIG = 1.46;
-const WIN_CONFETTI = 28;
+const WIN_SWEEP = 0.2;
 const WIN_QUICK = 0.75;      // timings × this without sound
 
 /* opts: { puzzle (rows, cols, blocked, hintOutline, removed), pieces
@@ -100,24 +101,31 @@ function solvedCelebration(opts){
   el.setAttribute('role', 'status');
   el.setAttribute('aria-label', 'Solved! Your time: ' + opts.time);
 
-  // The board picture, about 200px across
+  // The board picture, about 200px across, with a highlighter on every
+  // row and column and the counts beside it (miniBoard 'count')
   const most = Math.max(p.rows, p.cols);
   const cell = Math.max(12, Math.floor((200 - 6 - (most - 1)*2) / most));
   const stage = document.createElement('div');
   stage.className = 'win-stage';
   const board = miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], dotted:p.hintOutline || null,
-                            removed:p.removed || [], pieces });
+                            removed:p.removed || [], pieces, show:'count' });
   board.classList.add('win-board');
   stage.appendChild(board);
-  // The check seal on the board's top-right corner
-  stage.insertAdjacentHTML('beforeend', `
-    <svg class="win-seal" viewBox="0 0 52 52" aria-hidden="true">
-      <circle cx="26" cy="26" r="24"/><path d="M15 27 L22.5 34.5 L37.5 18.5"/>
-    </svg>`);
-  const confetti = document.createElement('div');
-  confetti.className = 'win-confetti';
-  stage.appendChild(confetti);
   el.appendChild(stage);
+
+  // The green cover: a copy of the board's frame (so it has the board's
+  // shape, cut corners and all), on top of everything
+  const inner = board.firstChild;
+  const cover = inner.querySelector('.rb-frame').cloneNode();
+  cover.removeAttribute('style');
+  cover.setAttribute('class', 'win-cover');
+  inner.appendChild(cover);
+  // The check mark across its middle
+  const { w, h } = board.boardSize;
+  const f = Math.min(w, h) / 46;
+  const pt = (x, y)=>(w/2 + x*f) + ' ' + (h/2 + y*f);
+  const check = svgEl('path', { d:`M${pt(-11, 1)} L${pt(-3.5, 8.5)} L${pt(11.5, -7.5)}`, pathLength: 1,
+                                class:'win-check-big', 'stroke-width': 4*f }, inner);
 
   const title = document.createElement('strong');
   title.className = 'win-title';
@@ -129,39 +137,43 @@ function solvedCelebration(opts){
   el.appendChild(title);
   el.appendChild(time);
   if(opts.sound) playSolvedSound();
-  if(reduced) return el;
+  const strokes = [...inner.querySelectorAll('.rb-hl')];
+  if(reduced){ strokes.forEach(s=>s.remove()); return el; }
 
-  // 1. The pieces drop in, one per note
-  const groups = [...board.querySelectorAll('.mb-piece')];
-  const n = groups.length;
-  const at = i => n <= WIN_NOTES.length
-    ? WIN_NOTES[n === 1 ? WIN_NOTES.length - 1 : Math.round(i * (WIN_NOTES.length - 1) / (n - 1))]
-    : WIN_NOTES[0] + i * (WIN_NOTES[WIN_NOTES.length - 1] - WIN_NOTES[0]) / (n - 1);
-  groups.forEach((g, i)=>{
-    g.style.transformBox = 'fill-box';
-    g.style.transformOrigin = 'center';
-    anim(g, [
-      { transform:`translateY(${-cell*1.6}px) scale(1.1)`, opacity: 0 },
-      { transform:'translateY(0) scale(0.94, 1.04)', opacity: 1, offset: 0.6 },
-      { transform:'scale(1.03, 0.97)', offset: 0.8 },
-      { transform:'none', opacity: 1 },
-    ], { duration: 260 * Math.max(k, 0.85), delay: at(i) * k * 1000, easing:'cubic-bezier(.3,.7,.4,1)' });
+  // 1. The count: rows top to bottom, then columns left to right, spread
+  // evenly from the first note to the last small one
+  const marks = strokes.map(s=>{
+    const isRow = s.hasAttribute('data-row');
+    const key = isRow ? '[data-row="' + s.dataset.row + '"]' : '[data-col="' + s.dataset.col + '"]';
+    return { stroke: s, isRow, count: inner.querySelector('.rb-count' + key) };
+  });
+  const first = WIN_NOTES[0], last = WIN_NOTES[WIN_NOTES.length - 1];
+  const sweep = WIN_SWEEP * k * 1000;
+  marks.forEach((mk, i)=>{
+    const start = (first + i * (last - first) / Math.max(1, marks.length - 1)) * k * 1000;
+    mk.stroke.style.transformBox = 'fill-box';
+    mk.stroke.style.transformOrigin = mk.isRow ? 'left center' : 'center top';
+    anim(mk.stroke, [ { transform: mk.isRow ? 'scaleX(0)' : 'scaleY(0)' }, { transform:'none' } ],
+      { duration: sweep, delay: start, easing:'ease-out' });
+    if(mk.count){
+      mk.count.style.transformBox = 'fill-box';
+      mk.count.style.transformOrigin = 'center';
+      anim(mk.count, [ { opacity: 0, transform:'scale(0.4)' }, { opacity: 1, transform:'scale(1.3)', offset: 0.6 }, { opacity: 1, transform:'none' } ],
+        { duration: 240, delay: start + sweep * 0.7, easing:'ease-out' });
+    }
   });
 
-  // 2. The big note: the board pops and glows, the seal stamps on, blocks burst out
+  // 2. The big note: the board pops and turns green (the highlighter
+  // fades: its ends stick out past the board), and the check draws itself
   const big = WIN_BIG * k * 1000;
-  anim(board, [ { transform:'scale(1)' }, { transform:'scale(1.07)', offset: 0.35 }, { transform:'scale(1)' } ],
+  anim(board, [ { transform:'scale(1)' }, { transform:'scale(1.06)', offset: 0.35 }, { transform:'scale(1)' } ],
     { duration: 420, delay: big, easing:'ease-out', fill:'none' });
   board.style.setProperty('--glow-delay', big + 'ms');
   board.classList.add('glow');
-  anim(stage.querySelector('.win-seal'), [
-    { transform:'scale(0) rotate(-30deg)', opacity: 0 },
-    { transform:'scale(1.25) rotate(6deg)', opacity: 1, offset: 0.6 },
-    { transform:'none', opacity: 1 },
-  ], { duration: 380, delay: big, easing:'cubic-bezier(.3,1.4,.5,1)' });
-  anim(stage.querySelector('.win-seal path'), [ { strokeDashoffset: 34 }, { strokeDashoffset: 0 } ],
-    { duration: 300, delay: big + 150, easing:'ease-out', fill:'both' });
-  burst(confetti, pieces.map(q=>q.color), big);
+  anim(cover, [ { opacity: 0 }, { opacity: 1 } ], { duration: 220, delay: big, easing:'ease-out' });
+  strokes.forEach(s=>anim(s, [ { opacity: 0 } ], { duration: 220, delay: big, easing:'ease-out', fill:'forwards' }));
+  anim(check, [ { strokeDashoffset: 1 }, { strokeDashoffset: 0 } ],
+    { duration: 360, delay: big + 120, easing:'ease-out', fill:'both' });
 
   // 3. "Solved!" and the time; the time counts up
   anim(title, [ { opacity: 0, transform:'translateY(8px) scale(0.9)' }, { opacity: 1, transform:'none' } ],
@@ -170,26 +182,6 @@ function solvedCelebration(opts){
     { duration: 380, delay: big + 200, easing:'ease-out' });
   countUp(time.querySelector('b'), opts.time, big + 200, 650);
   return el;
-}
-
-// Little blocks bursting out of the board's middle, then falling
-function burst(layer, colors, delay){
-  for(let i = 0; i < WIN_CONFETTI; i++){
-    const b = document.createElement('i');
-    const size = 6 + Math.random() * 6;
-    b.style.width = b.style.height = size + 'px';
-    b.style.background = colors[i % colors.length];
-    layer.appendChild(b);
-    const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 1.3;     // mostly upward
-    const dist = 80 + Math.random() * 90;
-    const dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist;
-    const spin = (Math.random() - 0.5) * 540;
-    b.animate([
-      { transform:'translate(-50%, -50%) scale(0.4) rotate(0deg)', opacity: 1 },
-      { transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1) rotate(${spin/2}deg)`, opacity: 1, offset: 0.45 },
-      { transform:`translate(calc(-50% + ${dx*1.25}px), calc(-50% + ${dy + 150}px)) scale(0.8) rotate(${spin}deg)`, opacity: 0 },
-    ], { duration: 1100 + Math.random() * 500, delay: delay + Math.random() * 60, easing:'cubic-bezier(.15,.7,.4,1)', fill:'both' });
-  }
 }
 
 // Count "0:00" up to the final time
