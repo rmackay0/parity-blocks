@@ -5,7 +5,8 @@ page, the rules popup, the tutorial and the Archive. Every screen was
 tried on a laptop (1280 × 800) and a phone (390 × 844). The game code
 was read, and the solver was run on the three published puzzles.
 
-Items 1–4 are **done** (see "Done" below), and half of #13 (2026-10-23).
+Items 1–4 and #13 are **done** (see "Done" below; the 2026-11-02/03
+redesign is listed there too).
 Everything else under "Still to do" is open.
 
 **What already works well:** the board never moves, wrong boards glow
@@ -82,6 +83,22 @@ Test: `tests/browser/next_level_test.js`.
   the empty spaces of slide 4's solved board.
 - **Jingle on phones:** the sound now unlocks on a real tap (it used a
   finger-down event phones don't count). Needs checking on a real phone.
+
+## Done (2026-11-02/03): the redesign
+
+- **Whole new look:** light mode by default with a dark mode (moon / sun
+  button at the top left), celadon page, "Woodblock" piece colors, a
+  softer board with vermilion dotted lines, finer piece lines.
+- **New start screen:** dotted-P logo, Lilita One title, teal / gold /
+  vermilion level buttons, calmer spacing. The Archive button is hidden
+  for now (code kept).
+- **Pieces feel heavier:** they squeeze, lift, lean, land with a thud,
+  shake on a wrong spot, and spin or flip when turned.
+- **#13 done:** the Solved popup has a win animation and a Share button
+  ("Parity Blocks 🟨 Medium", the day and the time; never the answer).
+- **Tutorial slide 5:** new wording for its third line.
+- Fixed: the lines between blocks no longer poke into a piece's empty
+  inside corners (a dark blob in the middle of X pieces).
 
 ---
 
@@ -170,7 +187,8 @@ Test: `tests/browser/next_level_test.js`.
 
 ### Site polish
 
-15. **There's no link preview or home-screen icon.** The pages have no
+15. *(Still open after the redesign; the new logo would make a good icon.)*
+    **There's no link preview or home-screen icon.** The pages have no
     description, preview image, Apple touch icon or web manifest. Texting
     the link shows a bare web address, and "Add to Home Screen" on an
     iPhone uses a screenshot instead of the logo. Both are quick to add.

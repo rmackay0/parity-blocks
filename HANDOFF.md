@@ -1,6 +1,33 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-02, end of session)
+## START HERE (updated 2026-11-03, end of session)
+
+**Status: everything is committed AND pushed** (pushed 2026-11-03 with
+the user's OK; origin/main = local main at commit 1979db0 + this notes
+commit). Live on Vercel.
+
+**The look right now, at a glance (2026-11-02/03 redesign; the dated
+sections below have the history and the reasons)**
+- Pages: celadon background #E3EFED; dark mode #0E1C1F (moon / sun button
+  top left of the start screen and the puzzle page; theme.js).
+- Pieces: "Woodblock" colors, `INKS` in shapes.js (indigo, gold,
+  vermilion, moss, sakura, asagi + extras); flat color with fine darker
+  lines between blocks and round the outside (`PIECE_LOOK`).
+- Board: the original layout (rounded squares, 4px gaps, 10px frame) made
+  soft: light frame #DCDFE6 + off-white squares in light mode, dark in
+  dark mode; vermilion dotted lines in the gaps, never along the board's
+  edge, meeting points filled.
+- Start screen: logo = black-and-white 3 × 3 grid with a dotted P
+  pentomino (glows softly in dark mode); title in Lilita One; buttons in
+  Geo; levels Easy teal #3E8E9E / Medium gold #E8B33B / Hard vermilion
+  #E2483D, rounded pills; Tutorial a smaller plain button; Archive hidden.
+- Buttons elsewhere: fine ink border, 4px corners.
+- Piece animations (press, lift + lean, landing thud, shake, spin/flip):
+  `FEEL` in game.js. Win animation in the Solved popup (`solvedCelebration`,
+  celebrate.js). Share button: "Parity Blocks 🟨 Medium / day · time".
+- Design mock-up pages (claude.ai artifacts, private to the user):
+  "Parity Blocks Palettes" (3 rounds of color/style directions) and
+  "Parity Blocks Front Page" (13 logos, 13 fonts, 4 combined screens).
 
 **What this is:** a static site (no build, no server). Repo
 `rmackay0/parity-blocks` on GitHub → Vercel auto-deploys every push to
@@ -11,16 +38,16 @@ previous project; don't push there.
 **File map**
 | File | What it is |
 |---|---|
-| `index.html` | Splash: logo, title, Easy/Medium/Hard (→ `play.html?level=…`), Tutorial button (→ tutorial.html), **Archive** button (calendar of solved days), Rules (top-right) |
-| `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; Reset button (asks first); saves the board as you play |
+| `index.html` | Splash: dark-mode button (top-left), logo, title, Easy/Medium/Hard (→ `play.html?level=…`), Tutorial button (→ tutorial.html), Rules (top-right). The Archive button (calendar of solved days) is hidden in a comment; its popup code is still there |
+| `play.html` | The puzzle page. Loads `published.js` + `progress.js` + `game.js`; first visit opens the tutorial in an iframe overlay; back + dark-mode buttons top left; Reset button (asks first); saves the board as you play; Solved popup with win animation, Share (`shareText`, `LEVEL_ICON`), next level |
 | `progress.js` | A player's progress in localStorage only: unfinished boards (`pb_progress`) and solves (`pb_completed`) for the Archive calendar |
 | `game.js` / `game.css` | The game itself, shared by play.html, sandbox.html and tutorial.html. `gameSettings` at the top: `explain`, `lockWhenSolved`, `distinctColors`, `showCaption` |
-| `theme.js` | Light / dark mode (2026-11-02). Light is the default; `html.dark` = dark. Loaded first in each page's `<head>`. `ParityTheme.makeButton()` = the "Dark mode" button next to Large text (rules popup, tutorial). Saved in `localStorage.pb_theme` |
+| `theme.js` | Light / dark mode (2026-11-02). Light is the default; `html.dark` = dark. Loaded first in each page's `<head>`. Any `[data-theme-toggle]` button (the moon / sun) switches it; `ParityTheme.makeButton()` = the "Dark mode" text button next to Large text (rules popup, tutorial). Saved in `localStorage.pb_theme` |
 | `celebrate.js` | `solvedCelebration()` = the win animation in the Solved popup (2026-11-02). Also the solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker. Sound unlocks on the first real tap (touchend/pointerup/click/keydown) |
 | `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
 | `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (slide 5's in `EMPTY_LINES`) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
-| `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 6 slides, `next_level_test.js` the Solved popup, `dotted_squares_screens.js` screenshots of the dotted lines |
+| `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 6 slides, `next_level_test.js` the Solved popup, `look_screens.js` screenshots of every page (laptop/phone × light/dark; `ONLY=phone-dark` for one), `feel_test.js` the piece animations, `share_test.js`, `theme_toggle_test.js` |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |
 | `puzzles.js` | `PUZZLES` registry (test puzzles; analyzer/sandbox read it) |
 | `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter, `drawDottedLines` + `groupSquares` for every dotted line) |
@@ -253,12 +280,9 @@ wrongly rejected really had 5 blocks in a row/column. Don't change it.
   `play_test.js` was already out of date (it plays the old Medium, which
   had a U piece); not fixed.
 
-**Current state (end of 2026-10-29 → 11-02 session)**
-- **Committed, NOT pushed:** 2 local commits from 2026-10-29 (a cut-board
-  rule change and its undo). They cancel out in code; the only lasting
-  change is the HANDOFF note above. Push only when the user says so.
-  Still check `git log HEAD..origin/main` first: the user may publish a
-  puzzle from the sandbox in between, which commits to GitHub.
+**Earlier sessions (history)**
+- 2026-11-02/03 session: the whole redesign summarised at the top of
+  START HERE; everything pushed.
 - 2026-10-29 session: the user built an 8×8 puzzle with 3 corners cut in
   the sandbox and thought it was wrongly rejected; it really had 5 blocks
   in the bottom row and right column. Rule unchanged (see the 2026-10-29
@@ -300,10 +324,18 @@ wrongly rejected really had 5 blocks in a row/column. Don't change it.
 - Easy still needs remaking (only 1 way to fit); see APP_REVIEW.md #5.
 
 **Open items / ideas for next session**
-- **Ask the user (2026-11-02 redesign):** how the light and dark looks, the
-  key-style buttons and the level colors feel; whether the animations feel
-  heavy enough (or too much: tune `FEEL` in game.js); whether the win
-  animation in the popup works for them (and with the jingle on a phone).
+- **Ask the user (2026-11-03):** now that it's live, do the jingle, the win
+  animation, Share and dark mode work on their phone? Do the piece
+  animations feel heavy enough (or too much: tune `FEEL` in game.js)?
+- **Small follow-ups offered, not done:** in dark mode the plain buttons
+  (Rules, Tutorial) and board squares are a slightly bluer dark (#1F2533)
+  than the teal-black page; could tint them to match. The favicon is the
+  same logo file and may be hard to read at tab size. The vermilion piece
+  shares its red with the dotted lines and the "wrong" glow.
+- `tests/browser/progress_test.js` expects the Archive button, so its
+  calendar checks fail while Archive is hidden.
+- The tutorial and the rules popup still use Geo for headings (only the
+  start screen's title is Lilita One); ask if they want them to match.
 - **Ask the user (from 2026-10-27):** does the jingle now play on their
   phone? Is the reworded final-slide hint OK? How do the bolder dotted
   lines and slide 5 feel?
