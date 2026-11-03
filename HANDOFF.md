@@ -46,6 +46,19 @@ previous project; don't push there.
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
 
+**2026-11-03: start screen tidied**
+- **Archive button hidden** (user: "for now"). The calendar popup and its
+  code are still in index.html; the button line is in a comment next to
+  Tutorial. `progress_test.js`'s calendar checks will fail until it's back.
+- Page background celadon #E3EFED (dark #0E1C1F), on every page; the
+  logo has no teal square behind it any more. Dark mode: a soft light glow
+  round the logo (`html.dark .logo`).
+- Layout: two groups, `.brand` (logo, title, tagline; close together) and
+  `.actions` (levels + Tutorial), with 44px between them; the stack sits a
+  little above the middle (more padding at the bottom). Logo
+  clamp(110px, 30vw, 140px), title clamp(2.6rem, 11vw, 4.4rem), level
+  buttons 280 × 54, Tutorial a narrower 180 × 44.
+
 **2026-11-02 (end): front page = "Warm and friendly" (user's pick)**
 - Picked from the artifact "Parity Blocks Front Page" (13 pentomino logos,
   13 title fonts, 4 combined front pages W/X/Y/Z): combo Z.

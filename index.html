@@ -67,7 +67,7 @@
     --font-tagline: 'Nunito', 'Segoe UI', sans-serif;    /* subheader under the title */
 
     /* [FONTS] Sizes. clamp(min, preferred, max) scales with screen width. */
-    --title-size:   clamp(2.16rem, 10.08vw, 5.4rem);
+    --title-size:   clamp(2.6rem, 11vw, 4.4rem);
     /* Extra thickness for the title: an outline in the letters' own color.
        0 = normal (Lilita One is bold already); Geo needed 0.045em. */
     --title-boldness: 0;
@@ -111,11 +111,12 @@
     /* ─────────────────────────────────────────────────────────────
        [POSITIONING] Sizes and spacing.
        ───────────────────────────────────────────────────────────── */
-    --logo-size:       clamp(110px, 26vw, 170px);  /* logo width & height */
-    --stack-gap:       28px;    /* space between logo, title block, buttons */
-    --button-width:    260px;   /* width of each difficulty button */
-    --button-height:   56px;    /* height of each difficulty button */
-    --button-gap:      14px;    /* space between the three buttons */
+    --logo-size:       clamp(110px, 30vw, 140px);  /* logo width & height (the file has a margin round the grid) */
+    --brand-gap:       12px;    /* space between the logo and the title */
+    --stack-gap:       44px;    /* space between the title block and the buttons */
+    --button-width:    280px;   /* width of each difficulty button */
+    --button-height:   54px;    /* height of each difficulty button */
+    --button-gap:      12px;    /* space between the three buttons */
     --button-radius:   999px;   /* corner roundness (0 = square, 999px = pill) */
 
     --rules-top:       18px;    /* Rules button distance from top edge */
@@ -171,8 +172,17 @@
     justify-content: center;
     align-items: center;
     gap: var(--stack-gap);
-    padding: 72px 16px 40px;     /* top / sides / bottom breathing room */
+    /* (more room at the bottom than the top, so the whole stack sits a
+       little above the middle, which looks centred to the eye) */
+    padding: 72px 16px 96px;
     text-align: center;
+  }
+  /* The logo, title and tagline: close together */
+  .brand { display: flex; flex-direction: column; align-items: center; gap: var(--brand-gap); }
+  /* The level buttons and Tutorial */
+  .actions {
+    display: flex; flex-direction: column; align-items: center; gap: 18px;
+    width: 100%; max-width: var(--button-width);
   }
 
   /* [IMAGES] [POSITIONING] Logo image size. Its file is set in the <img> tag. */
@@ -182,6 +192,9 @@
     object-fit: contain;
     display: block;
   }
+  /* [COLORS] Dark mode: a soft light glow round the logo, so its dark
+     outline shows against the dark page */
+  html.dark .logo { filter: drop-shadow(0 0 10px rgba(190, 230, 225, 0.35)) drop-shadow(0 0 2px rgba(190, 230, 225, 0.5)); }
 
   /* [FONTS] Title text */
   .title {
@@ -197,7 +210,7 @@
 
   /* [FONTS] Tagline under the title */
   .tagline {
-    margin-top: 8px;               /* [POSITIONING] gap between title and tagline */
+    margin-top: 10px;              /* [POSITIONING] gap between title and tagline */
     font-family: var(--font-tagline);
     font-size: var(--tagline-size);
     color: var(--color-text-dim);
@@ -252,9 +265,8 @@
   }
   .rules-bottom {
     width: 100%;
-    max-width: var(--button-width);
-    height: 48px;
-    margin-top: -8px;              /* sits a little closer to the buttons above */
+    max-width: 180px;              /* narrower than the levels: it's a lesser button */
+    height: 44px;
     display: flex;                 /* it's a link, so center its text like a button */
     align-items: center;
     justify-content: center;
@@ -346,29 +358,35 @@
        Keep alt text descriptive. Size is set by --logo-size in CSS.
        To ADD another image, copy this line, change src/alt, and give it its
        own class for sizing. -->
-  <img class="logo" src="assets/logo.svg" alt="Parity Blocks logo">
+  <!-- [POSITIONING] Two groups: the brand (logo, title, tagline) sit close
+       together; the buttons sit together below, with more room between
+       the two groups. -->
+  <header class="brand">
+    <img class="logo" src="assets/logo.svg" alt="Parity Blocks logo">
+    <!-- [CONTENT] Title + tagline -->
+    <div>
+      <h1 class="title">Parity Blocks</h1>
+      <p class="tagline">Place every piece. Keep every row and column even.</p>
+    </div>
+  </header>
 
-  <!-- [CONTENT] Title + tagline. If your logo image already contains the
-       name, you can delete the <h1> (keep the tagline or remove it too). -->
-  <div>
-    <h1 class="title">Parity Blocks</h1>
-    <p class="tagline">Place every piece. Keep every row and column even.</p>
+  <div class="actions">
+    <!-- [CONTENT] Difficulty buttons. data-difficulty is what the script
+         reads, so leave it alone. Change only the visible label. -->
+    <nav class="difficulty" aria-label="Choose difficulty">
+      <button class="difficulty-btn" type="button" data-difficulty="easy">Easy</button>
+      <button class="difficulty-btn" type="button" data-difficulty="medium">Medium</button>
+      <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
+    </nav>
+
+    <!-- [CONTENT] Tutorial button, under the levels (opens tutorial.html; its
+         ✕ and Finish buttons come back here). Rules stay in the top-right corner. -->
+    <a class="rules-btn rules-bottom" href="tutorial.html">Tutorial</a>
+
+    <!-- [CONTENT] Archive (calendar of solved puzzles) is hidden for now
+         (user, 2026-11-03). To bring it back, put this line back:
+         <button class="rules-btn rules-bottom" type="button" id="archive-btn">Archive</button> -->
   </div>
-
-  <!-- [CONTENT] Difficulty buttons. data-difficulty is what the script
-       reads, so leave it alone. Change only the visible label. -->
-  <nav class="difficulty" aria-label="Choose difficulty">
-    <button class="difficulty-btn" type="button" data-difficulty="easy">Easy</button>
-    <button class="difficulty-btn" type="button" data-difficulty="medium">Medium</button>
-    <button class="difficulty-btn" type="button" data-difficulty="hard">Hard</button>
-  </nav>
-
-  <!-- [CONTENT] Tutorial button, at the bottom (opens tutorial.html; its
-       ✕ and Finish buttons come back here). Rules stay in the top-right corner. -->
-  <a class="rules-btn rules-bottom" href="tutorial.html">Tutorial</a>
-
-  <!-- [CONTENT] Archive: opens the calendar of solved puzzles below -->
-  <button class="rules-btn rules-bottom" type="button" id="archive-btn">Archive</button>
 
 </main>
 
@@ -472,7 +490,9 @@ function showMonth(){
     : (solves.length ? 'Nothing solved this month' : 'Solve a puzzle to earn your first star.');
 }
 document.getElementById('cal-legend').innerHTML = LEVELS.map(([l, n]) => `<span>${star(l)}${n}</span>`).join('');
-document.getElementById('archive-btn').addEventListener('click', () => {
+// (the Archive button is hidden for now; this only runs if it's on the page)
+const archiveBtn = document.getElementById('archive-btn');
+if (archiveBtn) archiveBtn.addEventListener('click', () => {
   const now = new Date();
   shownMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   showMonth();
