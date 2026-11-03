@@ -17,7 +17,7 @@
      woodblock prints on a soft paper page, ink-colored text, buttons with
      a fine ink border. Piece colors: INKS in shapes.js. Dark mode is the
      html.dark block just below. (Same palette as the splash screen.) */
-  --color-bg:           #F5F5F2;   /* page background (paper) */
+  --color-bg:           #E3EFED;   /* page background: celadon, a pale teal-green (2026-11-03) */
   --color-text:         #1F2330;   /* ink */
   --color-text-dim:     #5E6270;
   --color-accent:       #2B4C7E;   /* indigo: headings, notes, hint glow */
@@ -82,7 +82,7 @@
    text"): Woodblock at night, a deep ink-blue page, never brown. The
    level and piece colors stay the same. */
 html.dark {
-  --color-bg:           #12151D;
+  --color-bg:           #0E1C1F;   /* dark celadon */
   --color-text:         #EDEAE3;
   --color-text-dim:     #A3A6B0;
   --color-accent:       #8FA9D6;

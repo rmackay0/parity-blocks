@@ -1,6 +1,6 @@
 <!--
   Parity Blocks logo mark (2026-11-02, the user's design).
-  Black and white on a teal square (the teal makes it pop): a 3x3 grid in
+  Black and white, no background (the page is celadon): a 3x3 grid in
   which a P pentomino is drawn only as a dotted outline, plain white
   inside, while the other four squares form an ordinary grid of solid lines.
   Where the P meets the other squares, the dotted line takes the place of
@@ -16,9 +16,7 @@
   drop a new file in assets/ and change the img src in index.html.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <!-- the teal square behind (asagi, the Easy color) -->
-  <rect width="120" height="120" rx="20" fill="#3E8E9E"/>
-  <!-- the white grid -->
+  <!-- the white grid (no background: the page's own color shows round it) -->
   <rect x="18" y="18" width="84" height="84" fill="#FFFFFF"/>
 
   <!-- the four ordinary squares: solid grid lines -->
