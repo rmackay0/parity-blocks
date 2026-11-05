@@ -22,8 +22,8 @@
        time under the highlighter: "Tap this button to enable…", then "Tap
        this dropdown to choose a highlighter color"; once a color is
        picked they go away and an empty grid (no pieces) comes in; after
-       the first highlight, "Tap a highlighted square to un-highlight it"
-       and Next lights up.
+       the first highlight, "Tap a highlighted square to un-highlight it";
+       Next lights up once they un-highlight one.
     6  Use it (user, 2026-11-05): a board with four pieces fixed and five of
        its six empty spaces highlighted (those can't be cleared). The page
        is dark except a note ("…highlight where the last empty space has to
@@ -653,8 +653,8 @@ function playDont(svg){
                        (all other text fades first); Next waits for it
      highlighter       the highlighter is shown (slides 5–7)
      highlighterIntro  slide 5: only the highlighter + its popup, then an
-                       empty grid; Next lights up once something is
-                       highlighted (messages in HL_MSG)
+                       empty grid; Next lights up once a square has been
+                       highlighted and un-highlighted (messages in HL_MSG)
      highlighterLesson slide 6: the page is dark except the note (HL_NOTE)
                        for HL_DARK_MS, then the highlighter glows twice;
                        HL_GIVEN are highlighted and can't be cleared
@@ -700,7 +700,10 @@ const SLIDES = [
     // can't be un-highlighted), then this text. (Its row needs another
     // empty space at row 4 col 1, its column one at row 2 col 5.)
     hintSquare: [3, 4],
-    hintText: `<p>The highlighted square is one of six empty spaces. Look at the row and column that the highlighted square is in. Where do two empty spaces have to go? (Use the highlighter tool.)</p>`,
+    // (point 1 is the earlier hint, brought back at the user's request)
+    hintText: `<ol>
+      <li>The dotted area must be completely filled by two pieces.</li>
+      <li>The highlighted square is one of six empty spaces. Look at the row and column that the highlighted square is in. Where do two empty spaces have to go? (Use the highlighter tool.)</li></ol>`,
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column is even. You&rsquo;re ready to play!' },
 ];
@@ -947,7 +950,7 @@ function addSolvedNote(){
      'grid'    (once a color is picked) the messages go away and the empty
                grid comes in
      'unmark'  (after the first highlight) "Tap a highlighted square to
-               un-highlight it." Next lights up.
+               un-highlight it." Next lights up once they do.
    The word "pencil" is never used to players. */
 const TAP = TOUCH ? 'Tap' : 'Click';
 const HL_MSG = {    // [CONTENT] (the user's wording, 2026-11-05)
@@ -957,7 +960,7 @@ const HL_MSG = {    // [CONTENT] (the user's wording, 2026-11-05)
 };
 const LATER_IN = ['board-wrap', 'tray'];     // (hidden until a color is picked)
 let introStage = null;
-function showHighlighterIntro(){ introStage = null; setIntroStage('enable'); }
+function showHighlighterIntro(){ introStage = null; introMarks = 0; setIntroStage('enable'); }
 function setIntroStage(stage){
   introStage = stage;
   const bubble = $('hl-bubble'), tool = $('hl-tool'), msg = HL_MSG[stage];
@@ -1006,11 +1009,15 @@ gameHooks.onHighlighter = on=>{
 };
 // A color picked → the messages go and the grid comes in
 gameHooks.onColor = ()=>{ if(SLIDES[current].highlighterIntro && introStage === 'color') setIntroStage('grid'); };
-// The first highlight → the last message, and Next lights up
+// The first highlight → the last message; then un-highlighting a square
+// lights up Next (user, 2026-11-05)
+let introMarks = 0;      // how many squares were highlighted after the last change
 gameHooks.onMark = ()=>{
-  if(!SLIDES[current].highlighterIntro || !Object.keys(getMarks()).length) return;
-  if(introStage === 'grid') setIntroStage('unmark');
-  if(!done[current]) markDone();
+  if(!SLIDES[current].highlighterIntro) return;
+  const n = Object.keys(getMarks()).length, fewer = n < introMarks;
+  introMarks = n;
+  if(introStage === 'grid' && n) setIntroStage('unmark');
+  else if(introStage === 'unmark' && fewer && !done[current]) markDone();
 };
 
 /* ── Slide 6: use the highlighter ──

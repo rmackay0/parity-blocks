@@ -52,6 +52,14 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       const pieceBoxes = await page.locator('.tray-slot .piece-box').evaluateAll(els=>els.map(e=>{ const r = e.getBoundingClientRect(); return { x:r.x, y:r.y, width:r.width, height:r.height }; }));
       check(!pieceBoxes.some(b=>overlap(pencil, b)), 'pencil clear of the pieces');
       check(!(await page.locator('.hl-color').evaluate(e=>getComputedStyle(e).visibility === 'visible')), 'no color dot while off');
+      // It stays put when pieces are turned (user, 2026-11-05)
+      const toolAt = ()=>page.locator('#hl-tool').evaluate(e=>Math.round(e.getBoundingClientRect().left) + ',' + Math.round(e.getBoundingClientRect().top));
+      const start = await toolAt();
+      const nSlots = await page.locator('.tray-slot').count();
+      for(let i = 0; i < nSlots; i++){ await tap(page.locator('.tray-slot').nth(i)); await page.waitForTimeout(330); }
+      check(await toolAt() === start, `doesn't move when every piece is rotated (${start} → ${await toolAt()})`);
+      for(let i = 0; i < nSlots; i++){ await (touch ? (async()=>{ const s = page.locator('.tray-slot').nth(i); await s.tap(); await page.waitForTimeout(60); await s.tap(); })() : page.locator('.tray-slot').nth(i).dblclick()); await page.waitForTimeout(350); }
+      check(await toolAt() === start, `doesn't move when every piece is reflected (${await toolAt()})`);
 
       // On
       await tap(page.locator('.hl-pencil'));
@@ -105,6 +113,7 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       await page.mouse.up();
       await page.waitForTimeout(400);
       if(!touch) check(await page.locator('.placed-piece').count() === 1, 'piece placed with the pencil on');
+      check(await toolAt() === start, `doesn't move when a piece is placed (${await toolAt()})`);
       await page.screenshot({ path: `hl-${label}.png` });
 
       // Saved

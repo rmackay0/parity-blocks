@@ -1084,12 +1084,15 @@ function placeHighlighterTool(){
   if(slots.length){
     // (The pieces' spaces differ in height and are centred on their row, so
     // the top row is every space that starts above the end of the shortest
-    // one in it; the pieces themselves are what the tool must stay clear of)
-    const rects = slots.map(s=>({ slot: s.getBoundingClientRect(), piece: s.querySelector('.piece-box').getBoundingClientRect() }));
-    const firstEnd = Math.min(...rects.map(r=>r.slot.bottom));
-    const topRow = rects.filter(r=>r.slot.top < firstEnd);
-    right = Math.max(...topRow.map(r=>r.piece.right));
-    highest = Math.min(...topRow.map(r=>r.piece.top));
+    // one in it.) It goes by the SPACES, not the pieces in them: a space is
+    // a square that fits its piece any way round, so the tool stays put
+    // however pieces are turned or placed (user, 2026-11-05). The 6px is a
+    // space's padding, so it sits just clear of any piece.
+    const rects = slots.map(s=>s.getBoundingClientRect());
+    const firstEnd = Math.min(...rects.map(r=>r.bottom));
+    const topRow = rects.filter(r=>r.top < firstEnd);
+    right = Math.max(...topRow.map(r=>r.right)) - 6;
+    highest = Math.min(...topRow.map(r=>r.top)) + 6;
   } else {
     // No pieces (the tutorial's practice board): above the board's right
     // edge, where the pieces' row starts

@@ -155,7 +155,13 @@ async function placePiece(page, frame, name, target, touch){
     await tapF('.board-cell[data-r="1"][data-c="1"]');
     await page.waitForTimeout(300);
     const s3 = await intro();
-    console.log(`[${label}] slide 5 after one highlight: message "${s3.message}" (expected "… a highlighted square to un-highlight it.") | Next ready ${await nextReady()} (expected true) | solved ${await frame.evaluate(()=>solved)} (expected false) | never says pencil ${!s3.saysPencil && !s0.saysPencil && !s1.saysPencil}`);
+    console.log(`[${label}] slide 5 after one highlight: message "${s3.message}" (expected "… a highlighted square to un-highlight it.") | Next ready ${await nextReady()} (expected false: waits for an un-highlight) | solved ${await frame.evaluate(()=>solved)} (expected false) | never says pencil ${!s3.saysPencil && !s0.saysPencil && !s1.saysPencil}`);
+    await tapF('.board-cell[data-r="2"][data-c="3"]');
+    await page.waitForTimeout(200);
+    console.log(`[${label}] slide 5 another highlight: Next ready ${await nextReady()} (expected false)`);
+    await tapF('.board-cell[data-r="1"][data-c="1"]');
+    await page.waitForTimeout(300);
+    console.log(`[${label}] slide 5 after un-highlighting one: Next ready ${await nextReady()} (expected true) | highlighted left ${await frame.locator('#board .board-cell.marked').count()} (expected 1)`);
     await page.screenshot({ path:`tut-${label}-5-done.png` });
     await frame.click('#next-btn');
 
