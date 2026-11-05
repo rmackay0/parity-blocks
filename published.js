@@ -6,13 +6,16 @@
    by hand, but keep the two little JSON / END comment markers around the
    data: the sandbox finds the data between them. Each entry holds a full copy of the puzzle, so
    publishing never requires touching puzzles.js.
+   Anyone can open this file, so each puzzle's title is just its level
+   ("Easy" / "Medium" / "Hard"); its own name stays in the sandbox's
+   archive (archiveId links the two). (User, 2026-11-05.)
    ═══════════════════════════════════════════════════════════════════════ */
 const PUBLISHED = /*JSON*/{
   "easy": {
     "archiveId": "amw3wdy0m2vhs",
     "publishedAt": "2026-11-05T18:50:24.134Z",
     "puzzle": {
-      "title": "Easy Puzzle #1",
+      "title": "Easy",
       "rows": 6,
       "cols": 6,
       "removed": [],
@@ -245,7 +248,7 @@ const PUBLISHED = /*JSON*/{
     "archiveId": "amvptevxigut1",
     "publishedAt": "2026-10-26T22:19:25.738Z",
     "puzzle": {
-      "title": "new_med-second_made",
+      "title": "Medium",
       "rows": 6,
       "cols": 6,
       "removed": [],
@@ -510,7 +513,7 @@ const PUBLISHED = /*JSON*/{
     "archiveId": "amw0x7mrk7q2v",
     "publishedAt": "2026-11-03T16:52:41.837Z",
     "puzzle": {
-      "title": "first_odd_shaped_hard",
+      "title": "Hard",
       "rows": 8,
       "cols": 8,
       "removed": [

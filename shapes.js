@@ -181,6 +181,7 @@ function drawPieceParts(parent, cells, color, size, gap){
     'stroke-width': PIECE_LOOK.outline, 'stroke-linejoin':'miter', class:'piece-outline' }));
 }
 
+const PIECE_ROOM = 30;   // px of room round a piece's drawing (see buildPieceShape)
 function buildPieceShape(cells, color, size, gap){
   const {rows, cols} = bounds(cells);
   const w = cols*size + (cols-1)*gap, h = rows*size + (rows-1)*gap;
@@ -190,13 +191,22 @@ function buildPieceShape(cells, color, size, gap){
   box.style.width = w + 'px';
   box.style.height = h + 'px';
 
+  /* The drawing is PIECE_ROOM px bigger than the piece on every side, so
+     its outline and its shadow (up to 10px down + 9px blur when lifted)
+     sit inside it. (It used to be exactly the piece's size with the outline
+     and shadow spilling outside; Safari doesn't always clean up what's
+     drawn outside an element when it moves, which left lines along the
+     sides of the board: user, 2026-11-05.) The extra room ignores the
+     mouse, so it never grabs a neighbouring piece. */
+  const R = PIECE_ROOM;
   const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('width', w);
-  svg.setAttribute('height', h);
-  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.setAttribute('width', w + 2*R);
+  svg.setAttribute('height', h + 2*R);
+  svg.setAttribute('viewBox', `${-R} ${-R} ${w + 2*R} ${h + 2*R}`);
   svg.classList.add('piece-svg');
   svg.style.position = 'absolute';
-  svg.style.overflow = 'visible';
+  svg.style.left = svg.style.top = -R + 'px';
+  svg.style.pointerEvents = 'none';
   drawPieceParts(svg, cells, color, size, gap);
   box.appendChild(svg);
 

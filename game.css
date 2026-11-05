@@ -61,6 +61,13 @@
   --color-hard-ink:     #FFFFFF;
   --color-level-ink:    #1F2330;
   --color-rotate:       #2B4C7E;   /* (the sandbox's main buttons) */
+  /* the highlighter's four colors (game.js HIGHLIGHTER); the first is the
+     one it starts with: soft yellow, green, pink, blue */
+  --hl-0:               #F6DC74;
+  --hl-1:               #A9DA9B;
+  --hl-2:               #F4B5C9;
+  --hl-3:               #A8CDEE;
+  --color-tool-on:      #C9D4E6;   /* the pencil button's background while it's on */
 
   /* [POSITIONING] Sizes and spacing */
   --page-gap:        14px;   /* space between pieces, board and buttons */
@@ -110,6 +117,11 @@ html.dark {
   --color-overlay:      rgba(0, 0, 0, 0.6);
   --color-shadow:       rgba(0, 0, 0, 0.55);
   --color-rotate:       #8FA9D6;
+  --hl-0:               #8E7B2C;
+  --hl-1:               #4F7B47;
+  --hl-2:               #8C4C63;
+  --hl-3:               #406688;
+  --color-tool-on:      #3A4A66;
 }
 
 @media (max-width: 480px) {
@@ -190,6 +202,36 @@ body {
 /* Puzzle page: the pieces' space */
 .tray-area { flex: 0 0 auto; position: relative; width: 100%; display: flex; justify-content: center; }
 .tray-area > .tray { flex: 0 1 auto; min-width: 0; }   /* (may shrink, so the pieces still wrap on phones) */
+.tray-area.has-hl { padding-top: 34px; }               /* room above the pieces for the highlighter */
+
+/* ── The highlighter (game.js HIGHLIGHTER) ──
+   [POSITIONING] game.js puts it above and to the right of the rightmost
+   piece in the top row. A pencil button (shaded while on); beside it, while
+   it's on, a dot in the current color with a ▾ that opens the colors. */
+.hl-tool { position: absolute; z-index: 60; display: flex; align-items: flex-start; gap: 4px; }
+.hl-tool[hidden] { display: none; }
+.hl-pencil {
+  width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--color-btn-line); background: var(--color-soft); color: var(--color-soft-ink);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.hl-pencil.on { background: var(--color-tool-on); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.18); }
+.hl-color {
+  width: 24px; height: 40px; padding: 4px 0 0; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--color-text);
+  visibility: hidden;
+}
+.hl-color.shown { visibility: visible; }
+.hl-dot { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--color-btn-line); }
+.hl-menu {
+  position: absolute; top: 46px; right: 0; display: flex; gap: 8px; padding: 7px 10px;
+  background: var(--color-panel); border: 1.5px solid var(--color-btn-line); border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+.hl-menu[hidden] { display: none; }
+.hl-swatch { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--color-btn-line); cursor: pointer; }
+.hl-swatch[aria-checked="true"] { outline: 2.5px solid var(--color-text); outline-offset: 2px; }
 
 /* ── Solved badge (celebrate.js): every success message ──
    A green check in a circle, then a title and text, in one box. With
@@ -292,6 +334,9 @@ body {
   border-radius: 4px;
   transition: background 0.12s;
 }
+/* a square colored with the highlighter (its color: --mark, set by game.js) */
+.board-cell.marked { background: var(--mark); border-color: var(--mark); }
+body.highlighting #board .board-cell:not(.removed) { cursor: crosshair; }
 .board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid-line); }
 .board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid-line); }
 #pieces-layer, #hint-overlay, #mark-overlay {
@@ -341,7 +386,9 @@ body {
 .piece-box.pressed { transform: scale(0.95); }
 /* the piece being dragged: lifted (bigger, a soft shadow below it), a little
    see-through so the green / red squares under it still show */
-.ghost { position: absolute; pointer-events: none; opacity: 0.88; z-index: 50; }
+/* (will-change: the held piece gets its own layer, so the browser moves it
+   without repainting what's behind it: no marks left where it's been) */
+.ghost { position: absolute; pointer-events: none; opacity: 0.88; z-index: 50; will-change: transform, left, top; }
 .piece-box.lifted { transform: scale(1.06); }
 .piece-box.lifted .piece-svg { filter: drop-shadow(0 10px 9px var(--color-shadow)); }
 .piece-box.lift-in { animation: liftIn 0.14s ease-out both; }

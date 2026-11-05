@@ -27,7 +27,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parity Blocks</title>
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <!-- Light / dark mode: first, so the page never flashes the wrong colors -->
 <script src="theme.js"></script>
 
@@ -58,8 +60,10 @@
   </div>
 
   <!-- The pieces to place -->
-  <div class="tray-area">
+  <div class="tray-area has-hl">
     <div class="tray" id="tray" aria-label="Available pieces"></div>
+    <!-- The highlighter (pencil + colors), built and placed by game.js -->
+    <div class="hl-tool" id="hl-tool"></div>
   </div>
 
   <!-- Mistakes only glow red here (no written explanation; see
@@ -136,9 +140,13 @@
      play.html?level=easy|medium|hard   whatever is published for that
                                         difficulty (published.js; the
                                         splash buttons use this)
-     play.html?puzzle=<id>              a specific puzzle from puzzles.js */
+     play.html?puzzle=<id>              a specific puzzle from puzzles.js
+     play.html?playtest=<id>            a puzzle uploaded from the sandbox
+                                        for testing (playtest.json; the
+                                        playtest.html page links here) */
 const params = new URLSearchParams(location.search);
 const level = params.get('level');
+const playtestId = params.get('playtest');
 const wantedPuzzle = level ? (PUBLISHED[level] && PUBLISHED[level].puzzle) : PUZZLES[params.get('puzzle')];
 
 /* ── Tutorial popup ──
@@ -197,13 +205,13 @@ gameSettings.lockWhenSolved = true;  // a solved board stays as it is (Reset to 
    Solving an Easy / Medium / Hard puzzle is recorded for the Archive
    calendar on the splash screen: one star per puzzle, so solving the same
    puzzle again (after Reset, or on another day) doesn't add another. */
-const saveKey = level ? 'level:' + level + ':' + ((PUBLISHED[level] || {}).publishedAt || '')
-                      : 'puzzle:' + params.get('puzzle');
+let saveKey = level ? 'level:' + level + ':' + ((PUBLISHED[level] || {}).publishedAt || '')
+                    : 'puzzle:' + params.get('puzzle');      // (a playtest puzzle's key is set once it's loaded)
 const myPieces = ()=>placedPieces.filter(p=>!p.locked).map(p=>({ name:p.name, cells:p.cells, row:p.row, col:p.col }));
 function saveBoard(){
   if(!puzzle || gameMode !== 'play' || solved) return;   // (a solved board was saved when it was solved)
   timerTick();
-  saveBoardState(saveKey, { placed: myPieces(), tray: trayCells, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
+  saveBoardState(saveKey, { placed: myPieces(), tray: trayCells, marks: getMarks(), elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
 }
 let restoring = false;     // true while a saved board is being put back
 function restoreBoard(){
@@ -215,8 +223,9 @@ function restoreBoard(){
     placedPieces.push({ id: 'p' + (placedIdCounter++), name: p.name, color: puzzle.pieces.find(d=>d.name===p.name).color,
                         cells: p.cells, row: p.row, col: p.col });
   });
+  setMarks(saved.marks);     // (the highlighted squares)
   startTime = Date.now() - (saved.elapsedMs || 0);
-  restoring = true;          // (a saved solved board "solves" again here: no popup, no new star)
+  restoring = true;         // (a saved solved board "solves" again here: no popup, no new star)
   renderAll();
   restoring = false;
 }
@@ -274,7 +283,7 @@ shareBtn.onclick = async ()=>{
 enableSolvedSound();         // the jingle plays when a puzzle is solved (celebrate.js)
 gameHooks.onSolved = time=>{
   solvedTime = time;
-  saveBoardState(saveKey, { placed: myPieces(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
+  saveBoardState(saveKey, { placed: myPieces(), marks: getMarks(), solved: true, elapsedMs: Date.now() - startTime, savedAt: new Date().toISOString() });
   if(restoring) return;
   // The win animation, in the popup (celebrate.js): the solved board, its
   // rows and columns counted on the jingle's notes, then it turns green
@@ -295,16 +304,38 @@ gameHooks.onSolved = time=>{
   if(level && PUBLISHED[level]) recordSolve(level, puzzle.title, Date.now() - startTime, saveKey);
 };
 
-if(wantedPuzzle){
-  document.title = 'Parity Blocks: ' + wantedPuzzle.title;
-  loadPuzzle(wantedPuzzle);
+/* The tab only ever says the level ("Parity Blocks: Easy"), never the
+   puzzle's own name: those are internal (user, 2026-11-05). They'd also
+   show up in the address bar's suggestions, which come from page titles. */
+function startPuzzle(p, tabName){
+  document.title = 'Parity Blocks: ' + tabName;
+  loadPuzzle(p);
   restoreBoard();
   gameHooks.onChange = saveBoard;                      // (set after restoring, so loading doesn't overwrite the save)
   window.addEventListener('pagehide', saveBoard);      // keep the time right if they leave without moving anything
   if(!tutorialSeen || tutorialInProgress) window.openTutorial();
-} else {
+}
+function puzzleMissing(){
   document.querySelector('.game').hidden = true;
   document.getElementById('missing-popup').hidden = false;
+}
+if(playtestId){
+  // A playtest puzzle (uploaded from the sandbox): read playtest.json first.
+  // The back button returns to the playtest page.
+  document.querySelector('.back-btn').href = 'playtest.html';
+  fetch('playtest.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(r=>r.ok ? r.json() : null)
+    .then(data=>{
+      const entry = data && (data.puzzles || []).find(e=>e.id === playtestId);
+      if(!entry) return puzzleMissing();
+      saveKey = 'playtest:' + entry.id + ':' + entry.uploadedAt;    // (a re-upload starts fresh)
+      startPuzzle(entry.puzzle, 'Playtest');
+    })
+    .catch(puzzleMissing);
+} else if(wantedPuzzle){
+  startPuzzle(wantedPuzzle, level ? level[0].toUpperCase() + level.slice(1) : 'Practice');
+} else {
+  puzzleMissing();
 }
 </script>
 </body>

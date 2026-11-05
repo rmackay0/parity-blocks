@@ -23,7 +23,12 @@
 <title>Parity Blocks</title>
 
 <!-- [IMAGES] Browser-tab icon. Point href at any .svg / .png / .ico in assets/. -->
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<!-- (favicon.svg, not logo.svg: a new name, so browsers stop showing an
+     older saved icon; the PNGs are for browsers that don't use SVG icons.
+     Same three lines on every page; made by tests/browser/make_icons.js) -->
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
 <!-- Light / dark mode: first, so the page never flashes the wrong colors -->
 <script src="theme.js"></script>

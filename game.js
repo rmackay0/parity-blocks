@@ -30,6 +30,9 @@ const gameHooks = {
   onDragStart: null,          // (source) => {}   a piece started being dragged
   onTransform: null,          // ('rotate' | 'reflect') => {}  a piece was rotated or reflected
   onPlace: null,              // () => {}  a piece was put on the grid from the top
+  onMark: null,               // () => {}  squares were highlighted / cleared (see HIGHLIGHTER)
+  onHighlighter: null,        // (on) => {}  the pencil was turned on / off
+  piecesAllowed: null,        // () => bool  false = pieces can't be picked up or turned yet (the tutorial)
 };
 
 /* [BEHAVIOR] Settings a page can change after loading this file:
@@ -115,6 +118,7 @@ function loadPuzzle(p, opts){
   } else {
     placedPieces = fixed;
     startTime = Date.now();
+    marks = {};          // (a fresh start clears the highlighter too)
   }
   if(!opts.keep || !placedPieces.some(q=>q.id===keyPieceId)) keyPieceId = null;
   solved = false;
@@ -221,7 +225,9 @@ function fitBoard(){
   const availH = boardWrapEl.clientHeight - 2*pad;
   const byW = (availW - (puzzle.cols-1)*GAP) / puzzle.cols;
   const byH = (availH - (puzzle.rows-1)*GAP) / puzzle.rows;
-  CELL = Math.max(20, Math.floor(Math.min(byW, byH, cssPx('--board-max-cell'))));
+  // (never below 10px; 20 was the floor until boards could be 16 × 16, which
+  // then ran off the sides of a phone)
+  CELL = Math.max(10, Math.floor(Math.min(byW, byH, cssPx('--board-max-cell'))));
 }
 
 function setupBoard(){
@@ -237,6 +243,7 @@ function setupBoard(){
     cell.className = 'board-cell' + (removedSet.has(r+','+c) ? ' removed' : '');
     cell.dataset.r = r;
     cell.dataset.c = c;
+    paintMark(cell);                 // (highlighted squares stay highlighted)
     boardEl.appendChild(cell);
   }
   renderFrame();
@@ -324,6 +331,7 @@ function renderTray(){
     slot.addEventListener('pointerdown', e=>onPiecePointerDown(e, {kind:'tray', name:def.name}));
     trayEl.appendChild(slot);
   });
+  placeHighlighterTool();
 }
 
 function boardFull(){ return placedPieces.filter(p=>!p.locked).length === puzzle.pieces.length; }
@@ -432,10 +440,17 @@ function playPendingFeel(){
     if(!el) return;
     el.style.transformOrigin = f.origin;
     animate(el, [
-      { transform:`translate(${f.dx}px, ${f.dy}px) rotate(${f.tilt}deg) scale(${FEEL.lift})`, filter:'drop-shadow(0 10px 10px var(--color-shadow))' },
-      { transform:'translate(0, 0) rotate(0deg) scale(0.965)', filter:'drop-shadow(0 0 0 transparent)', offset:0.55 },
+      { transform:`translate(${f.dx}px, ${f.dy}px) rotate(${f.tilt}deg) scale(${FEEL.lift})` },
+      { transform:'translate(0, 0) rotate(0deg) scale(0.965)', offset:0.55 },
       { transform:'scale(1.012)', offset:0.8 },
       { transform:'none' },
+    ], { duration: FEEL.landMs, easing:'cubic-bezier(.25,.8,.35,1)' });
+    // (the shadow shrinks on the drawing itself, which has room for it: see
+    // buildPieceShape; on the outer box it spilled outside and could leave marks)
+    animate(el.querySelector('.piece-svg'), [
+      { filter:'drop-shadow(0 10px 9px var(--color-shadow))' },
+      { filter:'drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25))', offset:0.55 },
+      { filter:'drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25))' },
     ], { duration: FEEL.landMs, easing:'cubic-bezier(.25,.8,.35,1)' });
     animate(boardOuterEl, [ { transform:'none' }, { transform:`translateY(${FEEL.thudPx}px)` }, { transform:'none' } ],
       { duration: 170, delay: FEEL.landMs * 0.45, easing:'ease-out' });
@@ -535,6 +550,7 @@ document.addEventListener('keydown', e=>{
   if(e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
   if(gameMode !== 'play' || !puzzle) return;
   if(solved && gameSettings.lockWhenSolved) return;
+  if(gameHooks.piecesAllowed && !gameHooks.piecesAllowed()) return;
   const k = e.key.toLowerCase();
   if(k === 'r' || k === 'e'){ e.preventDefault(); keyTransform(k === 'r' ? rotateCells : reflectCells); }
 });
@@ -611,6 +627,7 @@ function onPiecePointerDown(e, source){
   if(solved && gameSettings.lockWhenSolved) return;                     // a solved puzzle stays as it is
   if(e.button !== undefined && e.button !== 0) return;
   if(source.kind === 'board' && (placedPieces.find(q=>q.id===source.id) || {}).locked) return;   // fixed piece
+  if(gameHooks.piecesAllowed && !gameHooks.piecesAllowed()){ e.preventDefault(); return; }       // (not yet: the tutorial)
   e.preventDefault();
   e.stopPropagation();
   // A different piece's click is still waiting: apply its rotate first
@@ -926,6 +943,143 @@ function checkSolved(){
 const solvedCloseBtn = document.getElementById('solved-close');
 if(solvedCloseBtn) solvedCloseBtn.addEventListener('click', ()=>{
   document.getElementById('solved-popup').hidden = true;
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   HIGHLIGHTER (user, 2026-11-05)
+   An optional tool for picturing ideas. The pencil button turns it on
+   (its background shades); a dot beside it shows the color, and its ▾
+   opens the four colors. While it's on, tapping a square highlights it;
+   tapping it again clears it; tapping it with another color switches it
+   to that color. Dragging across squares does the same to each one.
+   Pieces still move as usual, and cover the highlights under them.
+   The page puts an empty <div id="hl-tool"> where the tool goes; this
+   builds it, and places it above and to the right of the rightmost piece
+   in the top row of pieces (placeHighlighterTool).
+   [COLORS] the four colors are --hl-0 … --hl-3 in game.css.
+═══════════════════════════════════════════════════════════════════ */
+const HIGHLIGHT_COLOR_COUNT = 4;
+let marks = {};             // "r,c" → color number (0-3)
+let highlighting = false;   // the pencil is on
+let markColor = 0;          // the color in use (0 = the first, the default)
+const hlToolEl = document.getElementById('hl-tool');
+
+function getMarks(){ return Object.assign({}, marks); }
+function setMarks(m){
+  marks = {};
+  Object.keys(m || {}).forEach(k=>{ const i = +m[k]; if(i >= 0 && i < HIGHLIGHT_COLOR_COUNT) marks[k] = i; });
+  if(puzzle) renderMarks();
+}
+function renderMarks(){
+  boardEl.querySelectorAll('.board-cell').forEach(cell=>paintMark(cell));
+}
+function paintMark(cell){
+  const i = marks[cell.dataset.r + ',' + cell.dataset.c];
+  cell.classList.toggle('marked', i !== undefined);
+  if(i !== undefined) cell.style.setProperty('--mark', `var(--hl-${i})`);
+  else cell.style.removeProperty('--mark');
+}
+
+function setHighlighting(on){
+  highlighting = !!on;
+  document.body.classList.toggle('highlighting', highlighting);
+  if(!hlToolEl) return;
+  hlToolEl.querySelector('.hl-pencil').classList.toggle('on', highlighting);
+  hlToolEl.querySelector('.hl-pencil').setAttribute('aria-pressed', highlighting ? 'true' : 'false');
+  hlToolEl.querySelector('.hl-color').classList.toggle('shown', highlighting);
+  if(!highlighting) showColorMenu(false);
+}
+function setMarkColor(i){
+  markColor = i;
+  if(!hlToolEl) return;
+  hlToolEl.querySelector('.hl-dot').style.background = `var(--hl-${i})`;
+  hlToolEl.querySelectorAll('.hl-swatch').forEach((b, j)=>b.setAttribute('aria-checked', j === i ? 'true' : 'false'));
+}
+function showColorMenu(open){
+  if(!hlToolEl) return;
+  hlToolEl.querySelector('.hl-menu').hidden = !open;
+  hlToolEl.querySelector('.hl-color').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+// Build the tool (pencil, color dot + ▾, the menu of colors)
+if(hlToolEl){
+  hlToolEl.innerHTML =
+    `<button type="button" class="hl-pencil" aria-pressed="false" aria-label="Highlighter" title="Highlighter">`
+    + `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4.5 19.5 L5.6 15 L15.6 5 a1.7 1.7 0 0 1 2.4 0 L19 6 a1.7 1.7 0 0 1 0 2.4 L9 18.4 Z M13.8 6.8 L17.2 10.2 M5.6 15 L9 18.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></button>`
+    + `<button type="button" class="hl-color" aria-label="Highlighter color" aria-expanded="false" title="Color">`
+    + `<span class="hl-dot"></span><svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.5 L5 6.5 L8 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`
+    + `<div class="hl-menu" role="radiogroup" aria-label="Highlighter colors" hidden>`
+    + Array.from({ length: HIGHLIGHT_COLOR_COUNT }, (_, i)=>
+        `<button type="button" class="hl-swatch" role="radio" aria-label="Color ${i+1}" style="background:var(--hl-${i})"></button>`).join('')
+    + `</div>`;
+  hlToolEl.querySelector('.hl-pencil').addEventListener('click', ()=>{
+    setHighlighting(!highlighting);
+    if(gameHooks.onHighlighter) gameHooks.onHighlighter(highlighting);
+  });
+  hlToolEl.querySelector('.hl-color').addEventListener('click', ()=>showColorMenu(hlToolEl.querySelector('.hl-menu').hidden));
+  hlToolEl.querySelectorAll('.hl-swatch').forEach((b, i)=>b.addEventListener('click', ()=>{ setMarkColor(i); showColorMenu(false); }));
+  // (tapping anywhere else closes the color menu)
+  document.addEventListener('pointerdown', e=>{ if(!hlToolEl.contains(e.target)) showColorMenu(false); });
+  setMarkColor(0);
+}
+
+/* Above and to the right of the rightmost piece in the top row of pieces
+   (user, 2026-11-05), kept on screen. Called whenever the pieces are
+   drawn and when the window changes size. */
+function placeHighlighterTool(){
+  if(!hlToolEl || hlToolEl.hidden || !hlToolEl.offsetParent) return;
+  const slots = [...trayEl.querySelectorAll('.tray-slot')];
+  if(!slots.length) return;
+  // (The pieces' spaces differ in height and are centred on their row, so
+  // the top row is every space that starts above the end of the shortest
+  // one in it; the pieces themselves are what the tool must stay clear of)
+  const rects = slots.map(s=>({ slot: s.getBoundingClientRect(), piece: s.querySelector('.piece-box').getBoundingClientRect() }));
+  const firstEnd = Math.min(...rects.map(r=>r.slot.bottom));
+  const topRow = rects.filter(r=>r.slot.top < firstEnd);
+  const right = Math.max(...topRow.map(r=>r.piece.right));
+  const highest = Math.min(...topRow.map(r=>r.piece.top));
+  const holder = hlToolEl.offsetParent.getBoundingClientRect();
+  const w = hlToolEl.offsetWidth, h = hlToolEl.offsetHeight;
+  const left = Math.max(0, Math.min(right - holder.left + 2, holder.width - w));
+  hlToolEl.style.left = left + 'px';
+  hlToolEl.style.top = (highest - holder.top - h - 4) + 'px';
+}
+
+/* Tapping / dragging over squares while the pencil is on. The first
+   square decides what the whole drag does: highlight in this color, or
+   clear (if that square already had this color). */
+let paint = null;    // { clear, done:Set } during a highlighting drag
+function canHighlight(){ return highlighting && gameMode === 'play' && puzzle && !(solved && gameSettings.lockWhenSolved); }
+function markCell(cell){
+  const k = cell.dataset.r + ',' + cell.dataset.c;
+  if(paint.done.has(k) || cell.classList.contains('removed')) return;
+  paint.done.add(k);
+  if(paint.clear) delete marks[k]; else marks[k] = markColor;
+  paintMark(cell);
+}
+function cellAt(x, y){
+  const el = document.elementFromPoint(x, y);
+  return el && el.closest ? el.closest('#board .board-cell') : null;
+}
+boardEl.addEventListener('pointerdown', e=>{
+  if(!canHighlight() || (e.button !== undefined && e.button !== 0)) return;
+  const cell = e.target.closest('.board-cell');
+  if(!cell || cell.classList.contains('removed')) return;
+  e.preventDefault();
+  paint = { clear: marks[cell.dataset.r + ',' + cell.dataset.c] === markColor, done: new Set() };
+  markCell(cell);
+  const move = ev=>{ const c = cellAt(ev.clientX, ev.clientY); if(c) markCell(c); };
+  const up = ()=>{
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
+    paint = null;
+    if(gameHooks.onMark) gameHooks.onMark();
+    if(gameHooks.onChange) gameHooks.onChange();     // (the puzzle page saves the highlights)
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
 });
 
 /* ═══════════════════════════════════════════════════════════════════

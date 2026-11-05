@@ -25,7 +25,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parity Blocks: Sandbox</title>
 <script src="theme.js"></script>
-<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geo&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -140,6 +142,7 @@
   .stamp { font-size: 0.8rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--color-cell-border); color: var(--color-text-dim); }
   .stamp.live { border-color: var(--color-valid); color: var(--color-valid); }
   .arch-actions { display: grid; grid-template-columns: 28px 28px; gap: 4px; }
+  .cloud-item .arch-actions { grid-template-columns: 28px; }
   .icon-btn svg { display: block; margin: auto; }
   .icon-btn {
     width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
@@ -191,7 +194,7 @@
       <button class="btn primary" id="save-btn">Save</button>
     </div>
     <p class="note" id="save-note">Saves the pieces on the grid (or every selected piece if the grid is empty).</p>
-    <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; eye: reveal solution &middot; &#8593; publish &middot; &#10005; delete</p>
+    <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; eye: reveal solution &middot; &#8593; publish &middot; &#9729; upload to the cloud &middot; &#10005; delete</p>
     <div class="archive" id="archive-list"></div>
     <div class="row">
       <button class="btn small" id="backup-export" title="Download the whole archive as a file">Export backup</button>
@@ -200,6 +203,15 @@
       <span style="flex:1"></span>
       <button class="btn small" id="settings-btn" title="GitHub publishing settings">&#9881; Publishing</button>
     </div>
+  </section>
+
+  <!-- Cloud: puzzles saved in the GitHub repo (playtest.json), so they're
+       kept outside this browser and friends can try them on playtest.html -->
+  <section>
+    <h2>Cloud</h2>
+    <p class="note">&#9729; on a saved puzzle uploads it (again = replace). Uploads show on <a href="playtest.html" target="_blank" style="color:inherit">playtest.html</a>, newest first, about a minute later. Anyone with that address can see them. Notes stay in this browser.</p>
+    <div class="row"><button class="btn small" id="cloud-refresh">Refresh</button><span class="note" id="cloud-status" style="flex:1"></span></div>
+    <div class="archive" id="cloud-list"></div>
   </section>
 
   <section>
@@ -213,8 +225,8 @@
   <section>
     <h2>Board</h2>
     <div class="row">
-      Rows <input type="number" id="rows-input" min="3" max="12">
-      Columns <input type="number" id="cols-input" min="3" max="12">
+      Rows <input type="number" id="rows-input" min="3" max="16">
+      Columns <input type="number" id="cols-input" min="3" max="16">
     </div>
     <p class="note" id="board-note"></p>
   </section>
@@ -482,8 +494,9 @@ function renderPanel(){
 }
 
 $('rows-input').onchange = $('cols-input').onchange = ()=>{
-  const rows = Math.max(3, Math.min(12, parseInt($('rows-input').value,10) || draft.rows));
-  const cols = Math.max(3, Math.min(12, parseInt($('cols-input').value,10) || draft.cols));
+  // (up to 16 × 16; user, 2026-11-05)
+  const rows = Math.max(3, Math.min(16, parseInt($('rows-input').value,10) || draft.rows));
+  const cols = Math.max(3, Math.min(16, parseInt($('cols-input').value,10) || draft.cols));
   const inside = ([r,c])=>r < rows && c < cols;
   draft.rows = rows; draft.cols = cols;
   draft.removed = draft.removed.filter(inside);
@@ -828,12 +841,14 @@ function renderArchive(){
       `<button class="icon-btn${entry.notes ? ' has-notes' : ''}" data-act="notes" title="${entry.notes ? 'Notes (has notes)' : 'Notes'}">&#9998;</button>` +
       `<button class="icon-btn" data-act="reveal" title="Reveal the solution"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M1 6 C3.5 1.5 12.5 1.5 15 6 C12.5 10.5 3.5 10.5 1 6 Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="6" r="2.2" fill="currentColor"/></svg></button>` +
       `<button class="icon-btn" data-act="publish" title="Publish as Easy / Medium / Hard">&#8593;</button>` +
+      `<button class="icon-btn" data-act="cloud" title="Upload to the cloud (playtest page)">&#9729;</button>` +
       `<button class="icon-btn" data-act="delete" title="Delete from archive">&#10005;</button></div>`;
     item.querySelector('b').textContent = entry.title;
     item.querySelector('.arch-main').onclick = ()=>openFromArchive(entry);
     item.querySelector('[data-act=notes]').onclick = ()=>openNotes(entry);
     item.querySelector('[data-act=publish]').onclick = ()=>openPublish(entry);
     item.querySelector('[data-act=reveal]').onclick = ()=>openSolution(entry);
+    item.querySelector('[data-act=cloud]').onclick = ()=>uploadToCloud(entry);
     item.querySelector('[data-act=delete]').onclick = ()=>{
       const live = entry.published.some(s=>isLive(entry, s));
       if(!confirm(`Delete “${entry.title}” from the archive?` + (live ? '\n\nIt stays live on the site until you publish something else in its place.' : ''))) return;
@@ -1033,11 +1048,13 @@ async function publishToGitHub(entry, level){
   const data = JSON.parse(m[1]);
   const at = new Date().toISOString();
   const puzzle = copyPuzzle(entry.puzzle);
-  puzzle.title = entry.title;
+  // Anyone can read published.js, so the title there is just the level;
+  // the puzzle's own name stays here in the archive (user, 2026-11-05)
+  puzzle.title = LEVEL_NAME[level];
   data[level] = { archiveId: entry.id, publishedAt: at, puzzle };
   const newText = text.replace(m[0], '/*JSON*/' + JSON.stringify(data, null, 2) + '/*END*/');
   const put = await fetch(api, { method:'PUT', headers, body: JSON.stringify({
-    message: `Publish “${entry.title}” as ${LEVEL_NAME[level]}`,
+    message: `Publish a new ${LEVEL_NAME[level]} puzzle`,     // (the commit message is public too)
     content: b64encode(newText), sha: file.sha, branch: s.branch,
   }) });
   if(!put.ok) throw new Error(ghError(put, 'saving published.js'));
@@ -1057,7 +1074,9 @@ function openPublish(entry){
     const opt = document.createElement('div');
     opt.className = 'level-opt';
     opt.innerHTML = `<span>${LEVEL_NAME[l]}</span><small></small>`;
-    opt.querySelector('small').textContent = now ? `now: ${now.puzzle.title}\n${fmtDate(now.publishedAt)}` : 'nothing published';
+    // (published.js only says "Easy" etc., so the name comes from the archive)
+    const liveEntry = now && archive.find(e=>e.id === now.archiveId);
+    opt.querySelector('small').textContent = now ? `now: ${liveEntry ? liveEntry.title : now.puzzle.title}\n${fmtDate(now.publishedAt)}` : 'nothing published';
     opt.onclick = ()=>{
       publishLevel = l;
       box.querySelectorAll('.level-opt').forEach(o=>o.classList.toggle('on', o === opt));
@@ -1113,6 +1132,117 @@ $('publish-go').onclick = async ()=>{
 };
 const publishGo = $('publish-go').onclick;
 
+/* ═══════════════════════════════════════════════════════════════════
+   CLOUD  (playtest.json in the GitHub repo; user, 2026-11-05)
+   Puzzles kept outside this browser, which also appear on the playtest
+   page (playtest.html) for friends to try before publishing. Uses the
+   same GitHub token as Publish. playtest.json is
+     { about, puzzles: [{ id, title, uploadedAt, puzzle }] }   newest first
+   id = the archive entry's id, so uploading it again replaces it. Notes
+   aren't uploaded (anyone can read the file).
+═══════════════════════════════════════════════════════════════════ */
+const CLOUD_FILE = 'playtest.json';
+let cloud = null;              // the puzzles in the cloud, once read
+
+// Read playtest.json from GitHub (fresh, not the site's copy): { data, sha }
+async function readCloudFile(){
+  const s = ghSettings();
+  const res = await fetch(`https://api.github.com/repos/${s.repo}/contents/${CLOUD_FILE}?ref=${encodeURIComponent(s.branch)}&t=${Date.now()}`,
+    { headers: { Authorization: 'Bearer ' + s.token, Accept: 'application/vnd.github+json' }, cache:'no-store' });
+  if(res.status === 404) return { data: { puzzles: [] }, sha: null };     // (not made yet)
+  if(!res.ok) throw new Error(ghError(res, 'reading ' + CLOUD_FILE));
+  const file = await res.json();
+  return { data: JSON.parse(b64decode(file.content)), sha: file.sha };
+}
+// Change playtest.json: change(list) returns the new list. Tries again if
+// someone else saved it at the same moment.
+async function changeCloud(change, message){
+  const s = ghSettings();
+  for(let attempt = 0; attempt < 3; attempt++){
+    const { data, sha } = await readCloudFile();
+    data.about = data.about || 'Puzzles uploaded from the sandbox for playtesting (playtest.html).';
+    data.puzzles = change(data.puzzles || []);
+    const res = await fetch(`https://api.github.com/repos/${s.repo}/contents/${CLOUD_FILE}`, {
+      method:'PUT', headers: { Authorization: 'Bearer ' + s.token, Accept: 'application/vnd.github+json' },
+      body: JSON.stringify({ message, content: b64encode(JSON.stringify(data, null, 2) + '\n'), branch: s.branch, ...(sha ? { sha } : {}) }),
+    });
+    if(res.ok){ cloud = data.puzzles; return; }
+    if(res.status !== 409 && res.status !== 422) throw new Error(ghError(res, 'saving ' + CLOUD_FILE));
+  }
+  throw new Error('Someone else kept changing ' + CLOUD_FILE + '. Try again.');
+}
+function cloudStatus(text, kind){
+  $('cloud-status').className = 'note' + (kind ? ' ' + kind : '');
+  $('cloud-status').textContent = text;
+}
+function needToken(){
+  if(ghSettings().token) return false;
+  cloudStatus('Set up ⚙ Publishing first (the same GitHub token).', 'warn-text');
+  return true;
+}
+
+async function refreshCloud(){
+  if(needToken()) return;
+  cloudStatus('Reading the cloud…');
+  try { cloud = (await readCloudFile()).data.puzzles || []; cloudStatus(''); }
+  catch(e){ cloudStatus(e.message, 'warn-text'); }
+  renderCloud();
+}
+$('cloud-refresh').onclick = refreshCloud;
+
+async function uploadToCloud(entry){
+  if(needToken()) return;
+  cloudStatus(`Uploading “${entry.title}”…`);
+  try {
+    const item = { id: entry.id, title: entry.title, uploadedAt: new Date().toISOString(), puzzle: copyPuzzle(entry.puzzle) };
+    item.puzzle.title = entry.title;
+    await changeCloud(list=>[item].concat(list.filter(e=>e.id !== entry.id)), 'Playtest: upload a puzzle');
+    cloudStatus(`Uploaded “${entry.title}”. It shows on the playtest page in about a minute.`, 'ok-text');
+  } catch(e){ cloudStatus(e.message, 'warn-text'); }
+  renderCloud();
+}
+
+async function removeFromCloud(item){
+  if(!confirm(`Remove “${item.title}” from the cloud and the playtest page?\n\n(Your archive in this browser isn't changed.)`)) return;
+  cloudStatus(`Removing “${item.title}”…`);
+  try {
+    await changeCloud(list=>list.filter(e=>e.id !== item.id), 'Playtest: remove a puzzle');
+    cloudStatus(`Removed “${item.title}”.`, 'ok-text');
+  } catch(e){ cloudStatus(e.message, 'warn-text'); }
+  renderCloud();
+}
+
+// A cloud puzzle opened here (a copy, like the archive). If it isn't in
+// this browser's archive (a new computer, cleared storage), it's added.
+function openFromCloud(item){
+  let entry = archive.find(e=>e.id === item.id);
+  if(!entry){
+    entry = { id: item.id, title: item.title, savedAt: item.uploadedAt, notes: '', puzzle: copyPuzzle(item.puzzle), published: [] };
+    archive.unshift(entry);
+    saveArchive(); renderArchive();
+    cloudStatus(`“${item.title}” wasn’t in this browser’s archive, so it’s been added.`, 'ok-text');
+  }
+  openFromArchive(entry);
+}
+
+function renderCloud(){
+  const list = $('cloud-list');
+  list.innerHTML = '';
+  if(!cloud) return;
+  if(!cloud.length){ list.innerHTML = '<p class="note">Nothing in the cloud yet.</p>'; return; }
+  cloud.forEach(item=>{
+    const p = item.puzzle, el = document.createElement('div');
+    el.className = 'arch-item cloud-item' + (item.id === loadedArchiveId ? ' loaded' : '');
+    el.innerHTML = `<div class="arch-main" title="Open a copy in the sandbox"><b></b>`
+      + `<span class="note">Uploaded ${fmtDate(item.uploadedAt)} · ${p.rows}×${p.cols} · ${p.pieces.map(d=>d.name).join(' ')}</span></div>`
+      + `<div class="arch-actions"><button class="icon-btn" data-act="remove" title="Remove from the cloud">&#10005;</button></div>`;
+    el.querySelector('b').textContent = item.title;
+    el.querySelector('.arch-main').onclick = ()=>openFromCloud(item);
+    el.querySelector('[data-act=remove]').onclick = ()=>removeFromCloud(item);
+    list.appendChild(el);
+  });
+}
+
 /* ── Publishing settings ── */
 $('settings-btn').onclick = ()=>{
   const s = ghSettings();
@@ -1147,6 +1277,7 @@ $('settings-test').onclick = async ()=>{
 ═══════════════════════════════════════════════════════════════════ */
 loadArchive();
 renderArchive();
+if(ghSettings().token) refreshCloud();   // (the cloud list, if publishing is set up)
 $('save-name').value = draft.title || '';
 renderStartSelect();
 setMode('play');

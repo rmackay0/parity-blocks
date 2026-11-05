@@ -1,11 +1,60 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-05)
+## START HERE (updated 2026-11-05, evening)
 
-**Status: everything is committed AND pushed** (pushed 2026-11-05 with
-the user's OK). Live on Vercel: the new win animation, one dotted rule,
-sandbox dark mode, and the 8 × 8 "first_odd_shaped_hard" as Hard
-(published from the sandbox, ae110df).
+**Status: the "notes fr claude v1" PDF work is committed but NOT pushed**
+(waiting for the user's OK). Before that, everything was pushed. See the
+2026-11-05 (evening) section just below.
+
+**2026-11-05 (evening): highlighter, playtest cloud, names hidden, fixes**
+(user's PDF "notes_fr_claude_v1" + a chat request)
+- **Sandbox boards up to 16 × 16** (was 12). game.js's smallest square is
+  now 10px (was 20) so a 16 × 16 fits a phone. Only 12 pieces exist (60
+  blocks), so big boards need many pieces.
+- **Highlighter** (game.js "HIGHLIGHTER", CSS in game.css): pencil button
+  in `<div id="hl-tool">` (play.html, tutorial slides 5–6); shaded when on;
+  a dot + ▾ beside it opens 4 colors (`--hl-0..3`, light + dark). Tap =
+  highlight, again = clear, other color = switch; dragging paints. Placed
+  by `placeHighlighterTool()` above and to the right of the rightmost
+  piece in the top row (user's choice). Highlights (`marks`, color numbers)
+  are saved with the board (`marks` in pb_progress), cleared by Reset.
+  Hooks: `onMark`, `onHighlighter`, `piecesAllowed`. Test: `highlighter_test.js`.
+- **Tutorial slide 5 replaced** by the highlighter lesson (user's board:
+  W Z N I fixed, F + Y to place; `PUZZLE_HL`, `HL_GIVEN`, `HL_GOAL` (2,3)).
+  Note line → board comes in → 5 squares highlighted → steps; pieces
+  locked (`piecesAllowed`) until (2,3) is highlighted in any color, trying
+  nudges step 1. Phones: note above the board, scrolls to show the board.
+  Fixed piece colors avoid the highlighter colors (the user's picture had
+  yellow I / light blue Z). The old empty-spaces slide code is gone.
+  Wording adapted by Claude (user allowed it): confirm with the user.
+- **Playtest cloud**: `playtest.json` (in the repo) + `playtest.html`
+  (unlinked, noindex; boxes newest first: name, empty board, date →
+  `play.html?playtest=<id>`, tab "Playtest", back → playtest.html).
+  Sandbox: ☁ on an archive entry uploads (same GitHub token; again =
+  replace, moves to front); "Cloud" section lists them (open = copy, and
+  adds to this browser's archive if missing; ✕ removes). Notes are NOT
+  uploaded (public file). Every upload is a commit on main, so `git
+  fetch` before committing. Test: `cloud_test.js` (needs `python3 -m
+  http.server 8765` in the project folder; fakes GitHub).
+- **Internal names hidden**: tab = "Parity Blocks: Easy/Medium/Hard"
+  (Practice / Playtest otherwise); published.js titles are just the level
+  (Publish writes `LEVEL_NAME`; the dialog shows the archive's name via
+  archiveId); publish commit messages say "Publish a new Hard puzzle".
+  Old commit messages in git history still contain names.
+- **Tab icon**: new `assets/favicon.svg` (cropped grid, new name beats
+  cached icons) + `favicon-32.png`, `apple-touch-icon.png`, `/favicon.ico`
+  (made by `tests/browser/make_icons.js`).
+- **Marks beside the board (Safari)**: piece SVGs were exactly piece-sized
+  with `overflow: visible`, so outlines/shadows drew outside their box and
+  Safari didn't always repaint them. Now the SVG has `PIECE_ROOM` (30px)
+  round it (pointer-events none), the landing shadow animates on the SVG,
+  and the ghost has `will-change`. `trails_test.js` (Chromium/WebKit/
+  Firefox, laptop/phone, light/dark) was clean before AND after: headless
+  screenshots repaint everything, so it can't show the bug. Needs the
+  user's real Safari / iPhone check.
+- Still failing, unrelated (same before these changes): `next_level_test`
+  (Hard: "room between the time and the buttons"), `share_test` (times
+  out on #solved-share).
 
 **The look right now, at a glance (2026-11-02/03 redesign; the dated
 sections below have the history and the reasons)**
@@ -47,7 +96,8 @@ previous project; don't push there.
 | `theme.js` | Light / dark mode (2026-11-02). Light is the default; `html.dark` = dark. Loaded first in each page's `<head>`. Any `[data-theme-toggle]` button (the moon / sun) switches it; `ParityTheme.makeButton()` = the "Dark mode" text button next to Large text (rules popup, tutorial). Saved in `localStorage.pb_theme` |
 | `celebrate.js` | `solvedCelebration()` = the win animation in the Solved popup (2026-11-02). Also the solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker. Sound unlocks on the first real tap (touchend/pointerup/click/keydown) |
 | `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
-| `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (slide 5's in `EMPTY_LINES`) |
+| `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (slide 5 = highlighter, its note in `HL_LINES`) |
+| `playtest.html` / `playtest.json` | Unlinked playtest page + the cloud puzzles the sandbox uploads (2026-11-05) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
 | `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 6 slides, `next_level_test.js` the Solved popup, `look_screens.js` screenshots of every page (laptop/phone × light/dark; `ONLY=phone-dark` for one), `feel_test.js` the piece animations, `share_test.js`, `theme_toggle_test.js` |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |

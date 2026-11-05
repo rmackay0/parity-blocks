@@ -1,0 +1,24 @@
+<!--
+  Browser-tab icon (2026-11-05): the same drawing as logo.svg, cropped
+  close round the grid so it reads at tab size. It has its own file name
+  because browsers keep a saved copy of a tab icon under its address, and
+  some kept showing an older logo from logo.svg. PNG copies for browsers
+  that want them (favicon-32.png, apple-touch-icon.png, ../favicon.ico)
+  are made by tests/browser/make_icons.js; rerun it after changing this.
+  (Never write two dashes in a row inside this comment: it breaks the file.)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 15 90 90" width="90" height="90">
+  <rect x="18" y="18" width="84" height="84" fill="#FFFFFF"/>
+  <g stroke="#1F2330" stroke-width="4" stroke-linecap="square" fill="none">
+    <path d="M74,18 H102 V102 H46"/>
+    <path d="M74,46 H102 M74,74 H102 M74,74 V102"/>
+  </g>
+  <g stroke="#1F2330" stroke-width="4" stroke-linecap="square" fill="none">
+    <path d="M18,18 H74" stroke-dasharray="3 7"/>
+    <path d="M74,18 V74" stroke-dasharray="3 7"/>
+    <path d="M18,18 V102" stroke-dasharray="2.87 6.91"/>
+    <path d="M18,102 H46" stroke-dasharray="3.4 7.27"/>
+    <path d="M46,102 V74" stroke-dasharray="3.4 7.27"/>
+    <path d="M46,74 H74" stroke-dasharray="3.4 7.27"/>
+  </g>
+</svg>

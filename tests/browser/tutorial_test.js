@@ -121,27 +121,42 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] slide 4 solved: squares all look the same ${await frame.evaluate(()=>new Set([...document.querySelectorAll('.board-cell')].map(el=>getComputedStyle(el).backgroundColor)).size === 1)} (expected true) | sound loaded ${await frame.evaluate(()=>solvedAudio !== null)} (expected false)`);
     await frame.click('#next-btn');
 
-    // Slide 5: same board, same place; empty spaces lit, pieces + dotted lines fade, empty spaces counted
-    const emptyState = ()=>frame.evaluate(()=>({
+    // Slide 5: the highlighter (2026-11-05). A line, then the board, then five
+    // highlighted squares; the pieces wait until the sixth is highlighted
+    const hlState = ()=>frame.evaluate(()=>({
       lines: document.querySelectorAll('#n-boardr .empty-card p.shown').length,
-      lit: document.querySelectorAll('#tut-overlay .sq-glow.on').length,
-      pieces: getComputedStyle(document.getElementById('pieces-layer')).opacity,
-      dotted: getComputedStyle(document.getElementById('hint-overlay')).opacity,
-      counts: document.querySelectorAll('#tut-overlay .count').length,
+      board: document.getElementById('board-wrap').classList.contains('shown'),
+      pencil: !document.getElementById('hl-tool').hidden && document.getElementById('hl-tool').classList.contains('shown'),
+      marked: document.querySelectorAll('#board .board-cell.marked').length,
+      steps: document.getElementById('n-trayl').classList.contains('shown'),
+      // (the pencil must never sit on the notes or the pieces)
+      pencilClear: (()=>{ const t = document.getElementById('hl-tool').getBoundingClientRect();
+        return [...document.querySelectorAll('#n-trayl .step, #n-boardr .empty-card, .tray-slot .piece-box')].every(el=>{
+          const r = el.getBoundingClientRect(); return t.right <= r.left || r.right <= t.left || t.bottom <= r.top || r.bottom <= t.top; }); })(),
     }));
-    await page.waitForTimeout(100);
-    console.log(`[${label}] slide 5 board moved: ${board4 !== await boardAt()} (expected false) | Next ready ${await nextReady()} (expected false)`);
-    await page.waitForTimeout(1200);
-    console.log(`[${label}] slide 5 at 1.3 s:`, JSON.stringify(await emptyState()), '(expected 1 line, 0 lit)');
-    await page.waitForTimeout(1700);
-    console.log(`[${label}] slide 5 at 3 s:`, JSON.stringify(await emptyState()), '(expected 1 line, 6 lit, pieces 1, dotted 1: pieces wait until 3.9 s)');
-    await page.waitForTimeout(2400);
-    console.log(`[${label}] slide 5 at 5.4 s:`, JSON.stringify(await emptyState()), '(expected 2 lines, 6 lit, pieces 0, dotted 0, 0 counts)');
-    await page.screenshot({ path:`tut-${label}-5-lit.png` });
-    await page.waitForTimeout(7300);
-    console.log(`[${label}] slide 5 at 12.7 s: counts "${await counts()}" (expected 2 0 0 2 2 0 | 0 2 0 2 0 2) | Next ready ${await nextReady()} (expected false)`);
-    await page.waitForTimeout(3300);
-    console.log(`[${label}] slide 5 done:`, JSON.stringify(await emptyState()), `(expected 3 lines, 6 lit) | Next ready ${await nextReady()} (expected true) | board moved ${board4 !== await boardAt()} | scroll needed ${await needsScroll()}px`);
+    await page.waitForTimeout(600);
+    console.log(`[${label}] slide 5 at 0.6 s:`, JSON.stringify(await hlState()), '(expected 1 line, no board, no pencil, 0 marked, no steps)');
+    await page.screenshot({ path:`tut-${label}-5-start.png` });
+    await page.waitForTimeout(4400);
+    console.log(`[${label}] slide 5 at 5 s:`, JSON.stringify(await hlState()), `(expected 3 lines, board, pencil, 5 marked, steps) | first step glowing ${await lit('step0')} | Next ready ${await nextReady()} (expected false) | scroll needed ${await needsScroll()}px`);
+    await page.screenshot({ path:`tut-${label}-5-marked.png` });
+    // Too soon: the F can't be picked up yet
+    const fBox = await frame.locator('.tray-slot[data-name="F"]').boundingBox(), mid = await frame.locator('.board-cell[data-r="4"][data-c="4"]').boundingBox();
+    await page.mouse.move(fBox.x + fBox.width/2, fBox.y + fBox.height/2); await page.mouse.down();
+    await page.mouse.move(mid.x + 20, mid.y + 20, { steps: 8 }); await page.mouse.up();
+    await page.waitForTimeout(400);
+    console.log(`[${label}] slide 5 dragging F too soon: pieces placed ${await frame.evaluate(()=>placedPieces.filter(p=>!p.locked).length)} (expected 0) | first step nudged ${await frame.evaluate(()=>document.getElementById('step0').classList.contains('nudge'))} (expected true)`);
+    // Pencil on, pick the 4th color (any color counts), highlight row 3 column 4
+    const tapF = async sel=>{ const l = frame.locator(sel); await (touch ? l.tap() : l.click()); };
+    await tapF('.hl-pencil'); await tapF('.hl-color'); await tapF('.hl-swatch:nth-child(4)');
+    await tapF('.board-cell[data-r="2"][data-c="3"]');
+    await page.waitForTimeout(300);
+    console.log(`[${label}] slide 5 after highlighting the sixth: steps glowing ${await lit2()} (expected false, true) | (2,3) color ${await frame.evaluate(()=>getMarks()['2,3'])} (expected 3)`);
+    await page.screenshot({ path:`tut-${label}-5-goal.png` });
+    const TARGET5 = { F: [[3,4],[4,3],[4,4],[4,5],[5,5]], Y: [[0,5],[1,5],[2,4],[2,5],[3,5]] };
+    for(const [name, target] of Object.entries(TARGET5)) await placePiece(page, frame, name, target, touch);
+    await page.waitForTimeout(8000);
+    console.log(`[${label}] slide 5 counted: "${await counts()}" (expected 4 6 4 4 6 6 | 4 4 6 4 6 6) | Next ready ${await nextReady()} (expected true) | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())} | highlights kept ${await frame.locator('#board .board-cell.marked').count()} (expected 6)`);
     await page.screenshot({ path:`tut-${label}-5-done.png` });
     await frame.click('#next-btn');
 
