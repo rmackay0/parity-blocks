@@ -17,7 +17,7 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
 (async ()=>{
   for(const engine of ['chromium', 'webkit']){
     const browser = await pw[engine].launch();
-    for(const [w, h, dev, touch] of [[1280, 800, 'laptop', false], [390, 844, 'phone', true]])
+    for(const [w, h, dev, touch] of [[1280, 800, 'laptop', false], [390, 844, 'phone', true], [375, 812, 'mini', true]])
     for(const theme of ['light', 'dark']){
       const label = `${engine}-${dev}-${theme}`;
       console.log(label);
@@ -49,8 +49,17 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       check(pencil.x >= rightEdge - 120, 'pencil near the rightmost top piece');
       for(const sel of ['.back-btn', '.theme-toggle', '.reset-btn', '.rules-btn'])
         check(!overlap(tool, await page.locator(sel).boundingBox()), 'tool clear of ' + sel);
-      const pieceBoxes = await page.locator('.tray-slot .piece-box').evaluateAll(els=>els.map(e=>{ const r = e.getBoundingClientRect(); return { x:r.x, y:r.y, width:r.width, height:r.height }; }));
-      check(!pieceBoxes.some(b=>overlap(pencil, b)), 'pencil clear of the pieces');
+      // At least 8px between the button and every piece (iPhone mini: it looked like it touched one)
+      const clearance = ()=>page.evaluate(()=>{
+        const t = document.getElementById('hl-tool').getBoundingClientRect();
+        return Math.min(...[...document.querySelectorAll('.tray-slot .piece-box')].map(e=>{
+          const r = e.getBoundingClientRect();
+          const dx = Math.max(r.left - t.right, t.left - r.right, 0), dy = Math.max(r.top - t.bottom, t.top - r.bottom, 0);
+          return Math.round(Math.hypot(dx, dy));
+        }));
+      });
+      check(await clearance() >= 8, `at least 8px from every piece (${await clearance()}px)`);
+      if(theme === 'light') await page.screenshot({ path: `hl-${engine}-${dev}-start.png`, clip: { x:0, y:0, width:w, height:300 } });
       check(!(await page.locator('.hl-color').evaluate(e=>getComputedStyle(e).visibility === 'visible')), 'no color dot while off');
       // It stays put when pieces are turned (user, 2026-11-05)
       const toolAt = ()=>page.locator('#hl-tool').evaluate(e=>Math.round(e.getBoundingClientRect().left) + ',' + Math.round(e.getBoundingClientRect().top));
@@ -58,6 +67,7 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       const nSlots = await page.locator('.tray-slot').count();
       for(let i = 0; i < nSlots; i++){ await tap(page.locator('.tray-slot').nth(i)); await page.waitForTimeout(330); }
       check(await toolAt() === start, `doesn't move when every piece is rotated (${start} → ${await toolAt()})`);
+      check(await clearance() >= 8, `still 8px from every piece after turning them (${await clearance()}px)`);
       for(let i = 0; i < nSlots; i++){ await (touch ? (async()=>{ const s = page.locator('.tray-slot').nth(i); await s.tap(); await page.waitForTimeout(60); await s.tap(); })() : page.locator('.tray-slot').nth(i).dblclick()); await page.waitForTimeout(350); }
       check(await toolAt() === start, `doesn't move when every piece is reflected (${await toolAt()})`);
 

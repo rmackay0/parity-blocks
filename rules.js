@@ -206,6 +206,8 @@ function build(){
   // Clicking the dimmed area outside the popup closes it
   backdrop.addEventListener('click', e=>{ if(e.target === backdrop) closeRules(); });
   document.body.appendChild(backdrop);
+  // Phones: a ▾ while the rules go on below the screen (scroll-hint.js)
+  if(window.attachScrollHint) attachScrollHint(popup);
 }
 
 /* ── Large text ── (same setting as the tutorial's button: 'pb_largeText') */

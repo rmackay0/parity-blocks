@@ -1107,7 +1107,9 @@ function placeHighlighterTool(){
   const w = hlToolEl.offsetWidth, h = hlToolEl.offsetHeight;
   const left = Math.max(0, Math.min(right - holder.left + 2 + nudge.x, holder.width - w));
   hlToolEl.style.left = left + 'px';
-  hlToolEl.style.top = Math.max(0, highest - holder.top - h - 4 + nudge.y) + 'px';
+  // (10px clear of the tallest piece: at 4px it looked like it was touching
+  // a piece on an iPhone mini, user 2026-11-05)
+  hlToolEl.style.top = Math.max(0, highest - holder.top - h - 10 + nudge.y) + 'px';
 }
 
 /* Tapping / dragging over squares while the pencil is on. The first

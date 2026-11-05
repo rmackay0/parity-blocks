@@ -101,6 +101,22 @@ html.dark {
 .theme-toggle:active { transform: translateY(1px); }
 .theme-toggle:focus-visible { outline: 3px solid #2B4C7E; outline-offset: 3px; }
 
+/* ── "There's more below" (scroll-hint.js; phones only) ──
+   A small round ▾ at the bottom of the tutorial / the rules while they go
+   on below the screen. Bobs gently; fades in and out. */
+.scroll-hint {
+  position: fixed; z-index: 1001; transform: translateX(-50%);
+  width: 38px; height: 38px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--rules-btn-line); background: var(--rules-btn-bg); color: var(--rules-text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.scroll-hint.shown { opacity: 0.92; visibility: visible; animation: scrollBob 1.6s ease-in-out infinite; }
+@keyframes scrollBob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 5px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-hint.shown { animation: none; } }
+
 /* ── Popup ── */
 .rules-backdrop {
   position: fixed;

@@ -203,7 +203,7 @@
   /* ── Slides 5–7: the highlighter (game.js builds and places it) ──
      Room above the pieces for it */
   .play { position: relative; }
-  .play.with-hl .tray { margin-top: 50px; }   /* (it sits 16px higher here than in the game: hlOffset) */
+  .play.with-hl .tray { margin-top: 56px; }   /* (it sits 16px higher here than in the game: hlOffset; 10px clear of the pieces) */
   /* Slide 5: the grid comes in after the highlighter's popup. Hidden things
      keep their space. Hiding is instant (no fade), so the grid never shows
      for a moment before the text; only coming in fades. */
@@ -243,6 +243,7 @@
   .tut-dim { position: fixed; inset: 0; z-index: 85; background: rgba(0, 0, 0, 0.72); opacity: 0; pointer-events: none; transition: opacity 0.8s; }
   .tut-dim.on { opacity: 1; pointer-events: auto; }
   .raised { position: relative; z-index: 86; }
+  .scroll-hint { z-index: 80; }   /* (the ▾ for more below: under the dark screens and the hint) */
   /* [COLORS] Slide 6's hint, when it pops in: a soft glow for a few seconds */
   @keyframes hintIn { 0% { box-shadow: 0 0 0 0 rgba(var(--glow), 0); } 30% { box-shadow: 0 0 0 4px rgba(var(--glow), 0.6), 0 0 18px rgba(var(--glow), 0.5); }
                       100% { box-shadow: 0 0 0 0 rgba(var(--glow), 0); } }
@@ -473,6 +474,7 @@
 <script src="shapes.js"></script>
 <script src="game.js"></script>
 <script src="celebrate.js"></script>
+<script src="scroll-hint.js"></script>   <!-- (phones: a ▾ while a slide goes on below the screen) -->
 <script>
 /* ═══════════════════════════════════════════════════════════════════
    WORDING HELPERS
@@ -1239,6 +1241,7 @@ try { startAt = parseInt(sessionStorage.getItem(SLIDE_KEY), 10) || 0; } catch(e)
 if(!(startAt > 0 && startAt < SLIDES.length)) startAt = 0;
 for(let i = 0; i < startAt; i++) done[i] = true;
 showSlide(startAt);
+attachScrollHint(document.querySelector('.tut-body'));   // (phones: a ▾ while the slide goes on below)
 </script>
 </body>
 </html>
