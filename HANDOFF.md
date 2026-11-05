@@ -2,10 +2,10 @@
 
 ## START HERE (updated 2026-11-05)
 
-**Status: committed, NOT pushed yet** (waiting for the user's OK). Local
-main = origin/main (ae110df, the sandbox's publish of the 8 × 8
-"first_odd_shaped_hard" as Hard) + the new win animation + one dotted
-rule + sandbox dark mode + test fixes. Live on Vercel = the older version.
+**Status: everything is committed AND pushed** (pushed 2026-11-05 with
+the user's OK). Live on Vercel: the new win animation, one dotted rule,
+sandbox dark mode, and the 8 × 8 "first_odd_shaped_hard" as Hard
+(published from the sandbox, ae110df).
 
 **The look right now, at a glance (2026-11-02/03 redesign; the dated
 sections below have the history and the reasons)**
