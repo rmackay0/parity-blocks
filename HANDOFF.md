@@ -2,9 +2,12 @@
 
 ## START HERE (updated 2026-11-05, evening)
 
-**Status: the "notes fr claude v1" PDF work is committed but NOT pushed**
-(waiting for the user's OK). Before that, everything was pushed. See the
-2026-11-05 (evening) section just below.
+**Status: everything is committed AND pushed** (2026-11-05 evening, with
+the user's OK): the "notes fr claude v1" PDF work and the chat requests
+after it. See the 2026-11-05 (evening) section just below.
+**Ask the user next time:** how the iPhone fixes (stuck piece copy, marks
+beside the board) behave on real Safari; whether slide 6 needs a
+"that's right" moment after highlighting the correct square.
 
 **2026-11-05 (evening): highlighter, playtest cloud, names hidden, fixes**
 (user's PDF "notes_fr_claude_v1" + a chat request)
