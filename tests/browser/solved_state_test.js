@@ -16,7 +16,7 @@ const PUB = JSON.parse(src.split('/*JSON*/')[1].split('/*END*/')[0]);
 // The real solution of a published puzzle, as game pieces {name, cells, row, col}
 function solution(level){
   const p = PUB[level].puzzle;
-  const res = S.analyzePuzzle({ rows:p.rows, cols:p.cols, blocked:p.blocked, dotted:p.hintOutline,
+  const res = S.analyzePuzzle({ rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed, dotted:p.hintOutline,
     pieces: p.pieces.map(d=>({ name:d.name, cells:d.cells })) });
   return res.tilings.find(t=>t.parity).placements.map(pl=>{
     const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));
@@ -85,9 +85,9 @@ function check(label, got, want){
     await page.click('#solved-close'); await page.waitForTimeout(200);
     check('solved: no "Solved in" above the board', await page.locator('.tray-area .win-badge').count(), 0);
     // (the win animation since 2026-11-02: the solved board with every piece on it)
-    check('solved: popup has the win animation', await page.locator('#solved-win .win-show .mb-piece').count(), 6);
+    check('solved: popup has the win animation', await page.locator('#solved-win .win-show .mb-piece').count(), sol.length);
     // (since 2026-11-03: rows + columns counted, then a green cover + check hide the solution)
-    check('solved: popup counts every row and column', await page.locator('#solved-win .rb-hl').count(), 12);
+    check('solved: popup counts every row and column', await page.locator('#solved-win .rb-hl').count(), PUB.hard.puzzle.rows + PUB.hard.puzzle.cols);
     check('solved: popup board ends green with a check', await page.evaluate(()=>{
       const c = document.querySelector('#solved-win .win-cover'), k = document.querySelector('#solved-win .win-check-big');
       return !!c && !!k && c === c.parentNode.lastElementChild.previousElementSibling;     // (on top of everything but the check)
@@ -106,7 +106,7 @@ function check(label, got, want){
 
     // 3. Reopen: finished board, badge, no popup, still one star
     await page.reload(); await page.waitForTimeout(400);
-    check('reopened: pieces on the board', await page.locator('.placed-piece').count(), 6);
+    check('reopened: pieces on the board', await page.locator('.placed-piece').count(), sol.length);
     check('reopened: popup shown', await visible('solved-popup'), false);
     check('reopened: squares all look the same', await looks(), 1);
     check('reopened: board locked', await page.evaluate(()=>document.getElementById('board-outer').classList.contains('locked')), true);

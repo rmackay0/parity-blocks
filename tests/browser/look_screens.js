@@ -13,7 +13,7 @@ const PUB = JSON.parse(src.split('/*JSON*/')[1].split('/*END*/')[0]);
 // The real solution of a published puzzle, as game pieces {name, cells, row, col}
 function solution(level){
   const p = PUB[level].puzzle;
-  const res = S.analyzePuzzle({ rows:p.rows, cols:p.cols, blocked:p.blocked, dotted:p.hintOutline,
+  const res = S.analyzePuzzle({ rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed, dotted:p.hintOutline,
     pieces: p.pieces.map(d=>({ name:d.name, cells:d.cells })) });
   return res.tilings.find(t=>t.parity).placements.map(pl=>{
     const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));

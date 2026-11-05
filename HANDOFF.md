@@ -1,10 +1,11 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-03, end of session)
+## START HERE (updated 2026-11-05)
 
-**Status: everything is committed AND pushed** (pushed 2026-11-03 with
-the user's OK; origin/main = local main at commit 1979db0 + this notes
-commit). Live on Vercel.
+**Status: committed, NOT pushed yet** (waiting for the user's OK). Local
+main = origin/main (ae110df, the sandbox's publish of the 8 × 8
+"first_odd_shaped_hard" as Hard) + the new win animation + one dotted
+rule + sandbox dark mode + test fixes. Live on Vercel = the older version.
 
 **The look right now, at a glance (2026-11-02/03 redesign; the dated
 sections below have the history and the reasons)**
@@ -82,7 +83,7 @@ previous project; don't push there.
   picture are gone; the one rule now reads "You can't place a piece
   across a dotted line." (was "…dotted perimeter").
 - Sandbox: the "Dotted square" mode is gone. Old puzzles (published Easy
-  has 6, Hard 4, as `blocked`) still load and play the same; under the
+  has 6 as `blocked`; the new 8 × 8 Hard has none) still load and play the same; under the
   one rule they're consistent anyway (no piece fits inside a line round 1
   or 2 squares). In Dotted mode, clicking an old dotted square opens it;
   the board note shows "N old dotted squares" while any are left. The
