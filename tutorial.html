@@ -16,8 +16,7 @@
     3  "Don't place a piece over…": three pictures animate one at a time
        (a dotted line, the edge of the grid, another piece)
     4  Reflect (double-click / tap twice, or E), then drag: same two-step
-       note, plus "you can also rotate and reflect pieces on the grid".
-       On solving, the blocks are counted
+       note. On solving, the blocks are counted
     5  Meet the highlighter (user, 2026-11-05): short messages one at a
        time under the highlighter: "Tap this button to enable…", then "Tap
        this dropdown to choose a highlighter color"; once a color is
@@ -217,6 +216,10 @@
   .hl-tool.glowing .hl-pencil   { animation: hlGlow 1.1s ease-in-out infinite alternate; }
   .hl-tool.glow-twice .hl-pencil { animation: hlGlow 0.55s ease-in-out 4 alternate; }
   .hl-tool.glow-color .hl-color  { border-radius: 8px; animation: hlGlow 1.1s ease-in-out infinite alternate; }
+  /* slide 5: the grid's glow, once (same glow as the highlighter's) */
+  @keyframes gridInvite { 0%, 100% { box-shadow: var(--color-board-shadow); }
+                          45% { box-shadow: 0 0 0 5px rgba(var(--glow),0.85), 0 0 30px rgba(var(--glow),0.7); } }
+  #board-outer.invite { animation: gridInvite 1.4s ease-in-out 1; }
   /* Slide 5's popup, just under the highlighter (its little arrow points
      up at it). game.js / showHighlighterIntro place it. */
   /* (z-index under the highlighter's, so its color menu opens over the popup) */
@@ -679,7 +682,8 @@ const SLIDES = [
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   { kind: 'dont' },
   { kind: 'play', puzzle: PUZZLE_3, steps: REFLECT_STEPS,
-    boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.',
+    // ("You can also rotate and reflect pieces once they're on the grid."
+    // removed 2026-11-05: user, "people will be able to figure that out")
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   // The highlighter, in two slides (user's spec, 2026-11-05): meet it, then use it
@@ -777,6 +781,7 @@ function showSlide(i){
   $('hl-tool').classList.remove('glowing', 'glow-twice');
   $('hl-bubble').hidden = true;
   $('hl-bubble').classList.remove('gone', 'no-arrow');
+  $('board-outer').classList.remove('invite');
   $('hl-tool').classList.remove('glow-color');
   $('tray').style.minHeight = '';
   $('tut-dim').classList.remove('on');
@@ -888,9 +893,8 @@ function showHint(){
     + holes.map(b=>`<rect ${box(b, 'fill="black"')}/>`).join('') + `</mask></defs>`
     + `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.75)" mask="url(#spot-mask)"/>`
     // (a glowing ring around a single square; for an area, a ring on every square would look busy)
-    + (puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '')
-    // (the hintSquare gets its own glowing ring, so it stands out from the area)
-    + (hs && cellAt(hs) ? `<rect ${box(cellAt(hs).getBoundingClientRect(), 'class="spot-ring"')}/>` : '');
+    // (the hintSquare is lit like the area, no ring: user, 2026-11-05)
+    + (puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '');
   // The explanation goes on whichever side of the squares has more room,
   // never over them (if it's too tall for that room, it scrolls inside)
   const card = $('spot-card'), gapPx = 16;
@@ -959,6 +963,8 @@ const HL_MSG = {    // [CONTENT] (the user's wording, 2026-11-05)
   unmark: { text: `${TAP} a highlighted square to un-highlight it.` },
 };
 const LATER_IN = ['board-wrap', 'tray'];     // (hidden until a color is picked)
+const GRID_GLOW_MS = 450;          // the grid glows as it comes in…
+const GRID_GLOW_AGAIN_MS = 4000;   // …and again this much later if no square has been tapped
 let introStage = null;
 function showHighlighterIntro(){ introStage = null; introMarks = 0; setIntroStage('enable'); }
 function setIntroStage(stage){
@@ -966,7 +972,14 @@ function setIntroStage(stage){
   const bubble = $('hl-bubble'), tool = $('hl-tool'), msg = HL_MSG[stage];
   tool.classList.remove('glowing', 'glow-color');
   if(msg && msg.glow) tool.classList.add(msg.glow);
-  if(stage === 'grid') LATER_IN.forEach(id=>$(id).classList.add('shown'));
+  if(stage === 'grid'){
+    LATER_IN.forEach(id=>$(id).classList.add('shown'));
+    // A soft glow round the grid as it comes in, and once more if they
+    // haven't tapped a square 4 s later: a nudge with no words (user, 2026-11-05)
+    const glowGrid = ()=>{ const b = $('board-outer'); b.classList.remove('invite'); void b.offsetWidth; b.classList.add('invite'); };
+    later(GRID_GLOW_MS, glowGrid);
+    later(GRID_GLOW_MS + GRID_GLOW_AGAIN_MS, ()=>{ if(introStage === 'grid') glowGrid(); });
+  }
   if(!msg){ bubble.classList.add('gone'); return; }
   bubble.hidden = false;
   bubble.innerHTML = `<p>${msg.text}</p>`;

@@ -150,7 +150,8 @@ async function placePiece(page, frame, name, target, touch){
     await tapF('.hl-swatch:nth-child(2)');
     await page.waitForTimeout(900);
     const s2 = await intro();
-    console.log(`[${label}] slide 5 color picked:`, JSON.stringify(s2), `(expected grid 1, no message, no glow) | board top same as before ${s2.tallBoardStill === s0.tallBoardStill} | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
+    console.log(`[${label}] slide 5 grid glows as it comes in: ${await frame.evaluate(()=>document.getElementById('board-outer').classList.contains('invite') && getComputedStyle(document.getElementById('board-outer')).animationName)} (expected gridInvite)`);
+    console.log(`[${label}] slide 5 color picked:`, JSON.stringify(s2), `(expected grid 1, no message, no glow on the highlighter) | board top same as before ${s2.tallBoardStill === s0.tallBoardStill} | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-5-grid.png` });
     await tapF('.board-cell[data-r="1"][data-c="1"]');
     await page.waitForTimeout(300);
@@ -209,7 +210,7 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] all placed, uneven: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')} (expected true, true)`);
     await page.screenshot({ path:`tut-${label}-7-hint-btn.png` });
     await frame.click('#hint-btn'); await page.waitForTimeout(500);
-    console.log(`[${label}] Hint opened: rings ${await frame.locator('#spot-svg .spot-ring').count()} (expected 1: on the notch's empty space) | holes ${await frame.locator('#spot-mask rect[fill=black]').count()} (expected 11: dotted area + that square) | (3,4) highlighted ${await frame.evaluate(()=>getMarks()['3,4'] === 0)} (expected true) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).trim().slice(0, 50))}`);
+    console.log(`[${label}] Hint opened: rings ${await frame.locator('#spot-svg .spot-ring').count()} (expected 0: the notch's square is lit like the area, not circled) | holes ${await frame.locator('#spot-mask rect[fill=black]').count()} (expected 11: dotted area + that square) | (3,4) highlighted ${await frame.evaluate(()=>getMarks()['3,4'] === 0)} (expected true) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).trim().slice(0, 50))}`);
     await page.screenshot({ path:`tut-${label}-7-hint.png` });
     await frame.click('#spot-ok'); await page.waitForTimeout(200);
     // That highlight can't be cleared
