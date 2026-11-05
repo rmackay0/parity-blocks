@@ -32,6 +32,7 @@ const gameHooks = {
   onPlace: null,              // () => {}  a piece was put on the grid from the top
   onMark: null,               // () => {}  squares were highlighted / cleared (see HIGHLIGHTER)
   onHighlighter: null,        // (on) => {}  the pencil was turned on / off
+  onColor: null,              // (i) => {}  a highlighter color was picked
   piecesAllowed: null,        // () => bool  false = pieces can't be picked up or turned yet (the tutorial)
 };
 
@@ -1064,7 +1065,10 @@ if(hlToolEl){
     if(gameHooks.onHighlighter) gameHooks.onHighlighter(highlighting);
   });
   hlToolEl.querySelector('.hl-color').addEventListener('click', ()=>showColorMenu(hlToolEl.querySelector('.hl-menu').hidden));
-  hlToolEl.querySelectorAll('.hl-swatch').forEach((b, i)=>b.addEventListener('click', ()=>{ setMarkColor(i); showColorMenu(false); }));
+  hlToolEl.querySelectorAll('.hl-swatch').forEach((b, i)=>b.addEventListener('click', ()=>{
+    setMarkColor(i); showColorMenu(false);
+    if(gameHooks.onColor) gameHooks.onColor(i);
+  }));
   // (tapping anywhere else closes the color menu)
   document.addEventListener('pointerdown', e=>{ if(!hlToolEl.contains(e.target)) showColorMenu(false); });
   setMarkColor(0);

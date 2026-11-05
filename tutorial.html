@@ -18,10 +18,12 @@
     4  Reflect (double-click / tap twice, or E), then drag: same two-step
        note, plus "you can also rotate and reflect pieces on the grid".
        On solving, the blocks are counted
-    5  Meet the highlighter (user, 2026-11-05): at first only the
-       highlighter button shows, glowing, with a popup saying what it does.
-       Then an empty grid (no pieces) comes in; Next lights up once they've
-       highlighted something.
+    5  Meet the highlighter (user, 2026-11-05): short messages one at a
+       time under the highlighter: "Tap this button to enable…", then "Tap
+       this dropdown to choose a highlighter color"; once a color is
+       picked they go away and an empty grid (no pieces) comes in; after
+       the first highlight, "Tap a highlighted square to un-highlight it"
+       and Next lights up.
     6  Use it (user, 2026-11-05): a board with four pieces fixed and five of
        its six empty spaces highlighted (those can't be cleared). The page
        is dark except a note ("…highlight where the last empty space has to
@@ -214,14 +216,19 @@
                       to   { box-shadow: 0 0 0 6px rgba(var(--glow),0.9),  0 0 30px rgba(var(--glow),0.75); } }
   .hl-tool.glowing .hl-pencil   { animation: hlGlow 1.1s ease-in-out infinite alternate; }
   .hl-tool.glow-twice .hl-pencil { animation: hlGlow 0.55s ease-in-out 4 alternate; }
+  .hl-tool.glow-color .hl-color  { border-radius: 8px; animation: hlGlow 1.1s ease-in-out infinite alternate; }
   /* Slide 5's popup, just under the highlighter (its little arrow points
      up at it). game.js / showHighlighterIntro place it. */
+  /* (z-index under the highlighter's, so its color menu opens over the popup) */
   .hl-bubble {
-    position: absolute; z-index: 70; width: min(340px, calc(100% - 8px)); padding: 12px 16px;
+    position: absolute; z-index: 55; width: min(320px, calc(100% - 8px)); padding: 12px 16px;
+    display: flex; align-items: center; transition: opacity 0.4s;
     background: var(--color-panel); border: 2px solid rgba(var(--glow), 0.8); border-radius: 14px;
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18); text-align: left;
   }
   .hl-bubble[hidden] { display: none; }
+  .hl-bubble.gone { opacity: 0; pointer-events: none; }        /* (faded away; keeps its place) */
+  .hl-bubble.no-arrow::before { display: none; }
   .hl-bubble::before {    /* the arrow */
     content: ''; position: absolute; top: -9px; right: var(--arrow-right, 20px); width: 14px; height: 14px;
     background: var(--color-panel); border-left: 2px solid rgba(var(--glow), 0.8); border-top: 2px solid rgba(var(--glow), 0.8);
@@ -647,7 +654,7 @@ function playDont(svg){
      highlighter       the highlighter is shown (slides 5–7)
      highlighterIntro  slide 5: only the highlighter + its popup, then an
                        empty grid; Next lights up once something is
-                       highlighted (wording in HL_INTRO)
+                       highlighted (messages in HL_MSG)
      highlighterLesson slide 6: the page is dark except the note (HL_NOTE)
                        for HL_DARK_MS, then the highlighter glows twice;
                        HL_GIVEN are highlighted and can't be cleared
@@ -766,6 +773,8 @@ function showSlide(i){
   $('hl-tool').hidden = !s.highlighter;
   $('hl-tool').classList.remove('glowing', 'glow-twice');
   $('hl-bubble').hidden = true;
+  $('hl-bubble').classList.remove('gone', 'no-arrow');
+  $('hl-tool').classList.remove('glow-color');
   $('tray').style.minHeight = '';
   $('tut-dim').classList.remove('on');
   $('n-boardr').classList.remove('raised');
@@ -931,43 +940,77 @@ function addSolvedNote(){
 }
 
 /* ── Slide 5: meet the highlighter ──
-   At first only the highlighter shows, glowing, with a popup under it
-   saying what it does. HL_GRID_MS later a totally empty grid comes in
-   (the popup stays). Next lights up once they've highlighted a square.
-   The word "pencil" is never used to players (user, 2026-11-05). */
-const TAP = TOUCH ? 'Tap' : 'Click', TAPPING = TOUCH ? 'tapping' : 'clicking';
-const HL_INTRO =    // [CONTENT] (the user's wording, 2026-11-05, finished by Claude)
-  `This is the optional <b>highlighter</b> tool. ${TAP} it to turn it on, then you can make marks on the grid by ${TAPPING} any of the squares. ${TAP} an already highlighted square to un-highlight it.`;
-const HL_GRID_MS = 2600;   // the empty grid comes in
-const LATER_IN = ['board-wrap', 'tray'];     // (hidden until HL_GRID_MS)
-function showHighlighterIntro(){
-  $('hl-bubble').innerHTML = `<p>${HL_INTRO}</p>`;
-  $('hl-bubble').hidden = false;
-  $('hl-tool').classList.add('glowing');
+   Short messages, one at a time, in a popup under the highlighter (user,
+   2026-11-05), each pointing at what to tap, which glows:
+     'enable'  "Tap this button to enable the highlighter tool."
+     'color'   (once it's on) "Tap this dropdown to choose a highlighter color."
+     'grid'    (once a color is picked) the messages go away and the empty
+               grid comes in
+     'unmark'  (after the first highlight) "Tap a highlighted square to
+               un-highlight it." Next lights up.
+   The word "pencil" is never used to players. */
+const TAP = TOUCH ? 'Tap' : 'Click';
+const HL_MSG = {    // [CONTENT] (the user's wording, 2026-11-05)
+  enable: { text: `${TAP} this button to enable the highlighter tool.`, point: '.hl-pencil', glow: 'glowing' },
+  color:  { text: `${TAP} this dropdown to choose a highlighter color.`, point: '.hl-color', glow: 'glow-color' },
+  unmark: { text: `${TAP} a highlighted square to un-highlight it.` },
+};
+const LATER_IN = ['board-wrap', 'tray'];     // (hidden until a color is picked)
+let introStage = null;
+function showHighlighterIntro(){ introStage = null; setIntroStage('enable'); }
+function setIntroStage(stage){
+  introStage = stage;
+  const bubble = $('hl-bubble'), tool = $('hl-tool'), msg = HL_MSG[stage];
+  tool.classList.remove('glowing', 'glow-color');
+  if(msg && msg.glow) tool.classList.add(msg.glow);
+  if(stage === 'grid') LATER_IN.forEach(id=>$(id).classList.add('shown'));
+  if(!msg){ bubble.classList.add('gone'); return; }
+  bubble.hidden = false;
+  bubble.innerHTML = `<p>${msg.text}</p>`;
+  bubble.classList.toggle('no-arrow', !msg.point);
+  bubble.classList.remove('gone');
   placeBubble();
-  later(HL_GRID_MS, ()=>LATER_IN.forEach(id=>$(id).classList.add('shown')));
 }
-// The popup goes just under the highlighter, its arrow pointing at it;
-// the (empty) pieces' row grows to make room, so the grid comes in below it
+// The popup goes just under the highlighter, its arrow pointing at what to
+// tap. The (empty) pieces' row makes room for the tallest message, so the
+// grid comes in below it and never moves when the message changes.
 function placeBubble(){
   const bubble = $('hl-bubble'), tool = $('hl-tool');
-  if(bubble.hidden) return;
+  if(bubble.hidden || !SLIDES[current].highlighterIntro) return;
   placeHighlighterTool();
   const play = $('play').getBoundingClientRect(), t = tool.getBoundingClientRect();
-  const button = tool.querySelector('.hl-pencil').getBoundingClientRect();
   const w = bubble.offsetWidth;
   const left = Math.max(4, Math.min(t.right - play.left - w + 6, play.width - w - 4));
   bubble.style.left = left + 'px';
   bubble.style.top = (t.bottom - play.top + 12) + 'px';
-  bubble.style.setProperty('--arrow-right', Math.max(10, left + w - (button.left + button.width/2 - play.left) - 9) + 'px');
-  const need = (t.bottom + 12 + bubble.offsetHeight + 18) - $('tray').getBoundingClientRect().top;
+  const msg = HL_MSG[introStage], target = msg && msg.point && tool.querySelector(msg.point);
+  if(target){
+    const b = target.getBoundingClientRect();
+    bubble.style.setProperty('--arrow-right', Math.max(10, left + w - (b.left + b.width/2 - play.left) - 9) + 'px');
+  }
+  // (the tallest of the messages, measured once at this width)
+  const shown = bubble.innerHTML;
+  let tallest = 0;
+  Object.values(HL_MSG).forEach(m=>{ bubble.innerHTML = `<p>${m.text}</p>`; tallest = Math.max(tallest, bubble.offsetHeight); });
+  bubble.innerHTML = shown;
+  bubble.style.minHeight = tallest + 'px';
+  const need = (t.bottom + 12 + tallest + 18) - $('tray').getBoundingClientRect().top;
   $('tray').style.minHeight = Math.max(60, need) + 'px';
 }
 window.addEventListener('resize', ()=>setTimeout(placeBubble, 150));   // (after game.js re-fits the board)
-// Turning it on stops the glow; the first highlight lights up Next
-gameHooks.onHighlighter = on=>{ if(on) $('hl-tool').classList.remove('glowing'); };
+// Turned on → the color message (turned off again before that → back to the first)
+gameHooks.onHighlighter = on=>{
+  if(!SLIDES[current].highlighterIntro) return;
+  if(on && introStage === 'enable') setIntroStage('color');
+  else if(!on && introStage === 'color') setIntroStage('enable');
+};
+// A color picked → the messages go and the grid comes in
+gameHooks.onColor = ()=>{ if(SLIDES[current].highlighterIntro && introStage === 'color') setIntroStage('grid'); };
+// The first highlight → the last message, and Next lights up
 gameHooks.onMark = ()=>{
-  if(SLIDES[current].highlighterIntro && Object.keys(getMarks()).length && !done[current]) markDone();
+  if(!SLIDES[current].highlighterIntro || !Object.keys(getMarks()).length) return;
+  if(introStage === 'grid') setIntroStage('unmark');
+  if(!done[current]) markDone();
 };
 
 /* ── Slide 6: use the highlighter ──

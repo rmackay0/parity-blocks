@@ -210,6 +210,7 @@ body {
    it's on, a dot in the current color with a ▾ that opens the colors. */
 .hl-tool { position: absolute; z-index: 60; display: flex; align-items: flex-start; gap: 4px; }
 .hl-tool[hidden] { display: none; }
+.hl-tool button { -webkit-tap-highlight-color: transparent; }   /* (no grey / blue flash on phones; the button shows its own "on" look) */
 .hl-pencil {
   width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
