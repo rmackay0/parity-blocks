@@ -9,19 +9,16 @@
    ═══════════════════════════════════════════════════════════════════════ */
 const PUBLISHED = /*JSON*/{
   "easy": {
-    "archiveId": "puzzles-js:easy-puzzle-1",
-    "publishedAt": "2026-10-17T12:00:00.000Z",
+    "archiveId": "amw3wdy0m2vhs",
+    "publishedAt": "2026-11-05T18:50:24.134Z",
     "puzzle": {
       "title": "Easy Puzzle #1",
       "rows": 6,
       "cols": 6,
+      "removed": [],
       "blocked": [
         [
           0,
-          0
-        ],
-        [
-          0,
           3
         ],
         [
@@ -38,16 +35,6 @@ const PUBLISHED = /*JSON*/{
         ],
         [
           4,
-          3
-        ]
-      ],
-      "hiddenBlocked": [
-        [
-          0,
-          0
-        ],
-        [
-          0,
           3
         ]
       ],
