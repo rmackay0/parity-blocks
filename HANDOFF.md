@@ -82,6 +82,15 @@
   level ("Medium", `.win-level` in `--color-medium` etc.) sits above
   "Solved!" (play.html passes `level`). Timings `WIN_*` at the top of
   that section. Test: `win_test.js` (frames: win-*.png).
+- **Tutorial hints (user):** slide 6's last sentence ("In this
+  particular puzzle there needs to be either 2 or 0 empty spaces…") is now
+  a hint (`HL_HINT`) that pops into the note after 90 s (`HL_HINT_MS`)
+  unless row 3 col 4 is highlighted or it's solved (`hl_hint_test.js`,
+  fake clock). Final slide's Hint: spotlights the dotted area + the empty
+  space in its notch (`hintSquare` [3,4] = row 4 col 5), highlights that
+  square for good (locked), new text "The highlighted square is one of
+  six empty spaces…" (old two-point text gone). User wrote "(use the
+  highlighting tool)"; Claude wrote "(Use the highlighter tool.)".
 - Still failing, unrelated (same before these changes): `next_level_test`
   (Hard: "room between the time and the buttons"), `share_test` (times
   out on #solved-share).

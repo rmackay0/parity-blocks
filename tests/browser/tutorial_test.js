@@ -193,9 +193,18 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] all placed, uneven: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')} (expected true, true)`);
     await page.screenshot({ path:`tut-${label}-7-hint-btn.png` });
     await frame.click('#hint-btn'); await page.waitForTimeout(500);
-    console.log(`[${label}] Hint opened: spotlit squares ${await frame.locator('#spot-svg .spot-ring').count()} (expected 0: the dotted area is lit, no ring) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).trim().slice(0, 45))}`);
+    console.log(`[${label}] Hint opened: rings ${await frame.locator('#spot-svg .spot-ring').count()} (expected 1: on the notch's empty space) | holes ${await frame.locator('#spot-mask rect[fill=black]').count()} (expected 11: dotted area + that square) | (3,4) highlighted ${await frame.evaluate(()=>getMarks()['3,4'] === 0)} (expected true) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).trim().slice(0, 50))}`);
     await page.screenshot({ path:`tut-${label}-7-hint.png` });
     await frame.click('#spot-ok'); await page.waitForTimeout(200);
+    // That highlight can't be cleared
+    await tapF('.hl-pencil');
+    await page.evaluate(()=>{});
+    const notch = frame.locator('.board-cell[data-r="3"][data-c="4"]'), nb = await notch.boundingBox();
+    const covered = await frame.evaluate(()=>placedPieces.some(p=>p.cells.some(([r,c])=>p.row+r === 3 && p.col+c === 4)));
+    if(!covered){ await tapF('.board-cell[data-r="3"][data-c="4"]'); }
+    else await frame.evaluate(()=>{ const c = document.querySelector('.board-cell[data-r="3"][data-c="4"]'); c.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, button:0, clientX:1, clientY:1 })); window.dispatchEvent(new PointerEvent('pointerup', {})); });
+    console.log(`[${label}] tapping the hint's square: still highlighted ${await frame.evaluate(()=>getMarks()['3,4'] === 0)} (expected true)`);
+    await tapF('.hl-pencil');
     await frame.click('#back-btn'); await page.waitForTimeout(250); await frame.click('#next-btn'); await page.waitForTimeout(250);
     for(const [name, target] of Object.entries(TARGETS[4])) await placePiece(page, frame, name, target, touch);
     await page.waitForTimeout(1500);

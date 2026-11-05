@@ -687,10 +687,13 @@ const SLIDES = [
     // The hint is offered once every piece is placed (no rule broken) but
     // the rows and columns aren't all even
     hintWhenUneven: true,
-    // (Reworded by Claude on 2026-10-27 when empty spaces were removed; to be checked by the user)
-    hintText: `<ol>
-      <li>The dotted area must be completely filled by two pieces.</li>
-      <li>Knowing this about the dotted area, which squares have to be left uncovered so that every row and column has an even number of blocks?</li></ol>`,
+    // The Hint (user, 2026-11-05): the dotted area AND the empty space in
+    // the notch at the top of it (row 4, column 5: one of the six empty
+    // spaces in the solution) stay lit; that square gets highlighted (and
+    // can't be un-highlighted), then this text. (Its row needs another
+    // empty space at row 4 col 1, its column one at row 2 col 5.)
+    hintSquare: [3, 4],
+    hintText: `<p>The highlighted square is one of six empty spaces. Look at the row and column that the highlighted square is in. Where do two empty spaces have to go? (Use the highlighter tool.)</p>`,
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column is even. You&rsquo;re ready to play!' },
 ];
@@ -836,7 +839,8 @@ function glowBigNote(){
    A glowing Hint button fades in under the orange note once every piece
    is placed with no rule broken but the rows/columns aren't all even
    (hintWhenUneven). It opens a spotlight: the page goes dark except the
-   dotted area, with an explanation (hintText). */
+   dotted area and the slide's hintSquare (which gets highlighted, for
+   good), with an explanation (hintText). */
 let hintOffered = false;
 function checkHint(){
   // (game.js gives the board's frame the 'uneven' glow exactly then)
@@ -852,10 +856,19 @@ function showHint(){
   $('spot-text').innerHTML = SLIDES[current].hintText;
   $('spot').hidden = false;
   const W = innerWidth, H = innerHeight, pad = 5;
-  // (The squares left lit: the dotted squares, or if there are none, the dotted area)
-  const lit = puzzle.blocked.length ? puzzle.blocked : (puzzle.hintOutline || []);
-  const holes = lit.map(([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`))
-    .filter(Boolean).map(el=>el.getBoundingClientRect());
+  // The slide's hintSquare (an empty space) gets highlighted in the
+  // highlighter's first color, and can't be un-highlighted
+  const hs = SLIDES[current].hintSquare;
+  if(hs){
+    const k = hs[0] + ',' + hs[1], m = getMarks();
+    m[k] = 0; setMarks(m);
+    setLockedMarks([k]);
+  }
+  // (The squares left lit: the dotted squares, or if there are none, the
+  // dotted area; plus the hintSquare)
+  const lit = (puzzle.blocked.length ? puzzle.blocked : (puzzle.hintOutline || [])).concat(hs ? [hs] : []);
+  const cellAt = ([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
+  const holes = lit.map(cellAt).filter(Boolean).map(el=>el.getBoundingClientRect());
   const box = (b, extra)=>`x="${b.left - pad}" y="${b.top - pad}" width="${b.width + 2*pad}" height="${b.height + 2*pad}" rx="8" ${extra}`;
   const svg = $('spot-svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -863,7 +876,9 @@ function showHint(){
     + holes.map(b=>`<rect ${box(b, 'fill="black"')}/>`).join('') + `</mask></defs>`
     + `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.75)" mask="url(#spot-mask)"/>`
     // (a glowing ring around a single square; for an area, a ring on every square would look busy)
-    + (puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '');
+    + (puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '')
+    // (the hintSquare gets its own glowing ring, so it stands out from the area)
+    + (hs && cellAt(hs) ? `<rect ${box(cellAt(hs).getBoundingClientRect(), 'class="spot-ring"')}/>` : '');
   // The explanation goes on whichever side of the squares has more room,
   // never over them (if it's too tall for that room, it scrolls inside)
   const card = $('spot-card'), gapPx = 16;
