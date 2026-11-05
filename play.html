@@ -289,7 +289,7 @@ gameHooks.onSolved = time=>{
   // rows and columns counted on the jingle's notes, then it turns green
   // with a check mark; then "Solved!" and the time
   document.getElementById('solved-win').replaceChildren(solvedCelebration({
-    puzzle, time, sound: true,
+    puzzle, time, sound: true, level,          // (level: "Medium" etc. above "Solved!")
     pieces: placedPieces.map(q=>({ cells:q.cells, color:q.color, row:q.row, col:q.col })),
   }));
   // The next level up, if it's published: a "Play Medium" / "Play Hard" button

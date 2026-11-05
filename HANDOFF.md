@@ -73,6 +73,15 @@
     press is cancelled (`cancelPress`), pointercancel / blur / hidden page
     put the piece back, and renderAll sweeps stray ghosts. `ghost_test.js`
     fails on the old code, passes now (Chromium + WebKit).
+- **New win animation** (celebrate.js `solvedCelebration`, user's spec):
+  green bands (`.win-band`) exactly the grid's size, clipped to the
+  squares, in turns row 1, col 1, row 2, col 2…, counts popping in; then
+  the whole board green (`.win-cover`), a subtle squash-and-bounce, and
+  on the big note (1.46 s) the numbers pop away and the check pops in.
+  The board itself is centred (stage margin = the counts' room). The
+  level ("Medium", `.win-level` in `--color-medium` etc.) sits above
+  "Solved!" (play.html passes `level`). Timings `WIN_*` at the top of
+  that section. Test: `win_test.js` (frames: win-*.png).
 - Still failing, unrelated (same before these changes): `next_level_test`
   (Hard: "room between the time and the buttons"), `share_test` (times
   out on #solved-share).

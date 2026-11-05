@@ -292,6 +292,14 @@ body {
 }
 .win-cover { fill: var(--color-valid); color: var(--color-valid); }      /* (color: the frame of a board with cut squares is a stroke) */
 .win-check-big { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; }
+/* the green bands that count each row and column (exactly the grid's size) */
+.win-band { fill: var(--color-valid); opacity: 0.42; }
+/* "Easy" / "Medium" / "Hard" above "Solved!", in that level's color
+   (the start screen's buttons) */
+.win-level { font-family: var(--font-display); font-size: 1.6rem; line-height: 1.1; letter-spacing: 0.03em; color: var(--color-text); }
+.win-level.easy   { color: var(--color-easy); }
+.win-level.medium { color: var(--color-medium); }
+.win-level.hard   { color: var(--color-hard); }
 .win-title { font-family: var(--font-display); font-weight: 400; font-size: 2.2rem; line-height: 1.1; color: var(--color-valid); letter-spacing: 0.03em; }
 .win-time { margin: 4px 0 0 !important; font-size: 1.1rem; color: var(--color-text); }
 .win-time b { font-variant-numeric: tabular-nums; }

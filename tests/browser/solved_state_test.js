@@ -87,7 +87,8 @@ function check(label, got, want){
     // (the win animation since 2026-11-02: the solved board with every piece on it)
     check('solved: popup has the win animation', await page.locator('#solved-win .win-show .mb-piece').count(), sol.length);
     // (since 2026-11-03: rows + columns counted, then a green cover + check hide the solution)
-    check('solved: popup counts every row and column', await page.locator('#solved-win .rb-hl').count(), PUB.hard.puzzle.rows + PUB.hard.puzzle.cols);
+    // (since 2026-11-05: green bands the size of the grid, row 1, column 1, row 2, …)
+    check('solved: popup counts every row and column', await page.locator('#solved-win .win-band').count(), PUB.hard.puzzle.rows + PUB.hard.puzzle.cols);
     check('solved: popup board ends green with a check', await page.evaluate(()=>{
       const c = document.querySelector('#solved-win .win-cover'), k = document.querySelector('#solved-win .win-check-big');
       return !!c && !!k && c === c.parentNode.lastElementChild.previousElementSibling;     // (on top of everything but the check)
