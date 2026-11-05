@@ -32,8 +32,10 @@ const RULES_TEXT = {
   rulesHeading: 'Rules',
   reflect: TOUCH ? 'Pieces can be reflected: tap one twice.' : 'Pieces can be reflected: double-click one.',
   rotate: TOUCH ? 'Pieces can be rotated: tap one.' : 'Pieces can be rotated: click one.',
-  gap: 'You can’t place a piece on a dotted square.',
-  dotted: 'You can’t place a piece across a dotted perimeter.',
+  // (One dotted rule only since 2026-11-03: the "dotted square" rule is gone.
+  // A puzzle's dotted squares are still kept clear by this one, since no
+  // piece fits inside a line round one or two squares.)
+  dotted: 'You can’t place a piece across a dotted line.',
   ok: 'Got it',
   tutorial: 'Play the tutorial',
 };
@@ -177,12 +179,7 @@ function build(){
     figure(arrowSvg(true)),
     figure(pieceOnly(rotateCells(F_PIECE.cells), F_PIECE.color, 22)),
   ]);
-  item(popup, [[T.gap]], [
-    // (a dotted square in the middle of a small board: dotted lines aren't
-    // drawn along the board's own edge, so a 1 × 1 board would show none)
-    figure(miniBoard({ rows:3, cols:3, cell:30, gaps:[[1,1]] })),
-  ]);
-  // Half inside the dotted square, half outside
+  // Half inside the dotted line, half outside
   const crossing = { color:INKS.asagi, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
   item(popup, [[T.dotted]], [
     figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],

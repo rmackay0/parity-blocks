@@ -54,7 +54,7 @@ previous project; don't push there.
 | `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter, `drawDottedLines` + `groupSquares` for every dotted line) |
 | `rules.js` / `rules.css` | Rules popup (Rules button); "Play the tutorial" button on puzzle pages |
 | `solver.js` | DLX exact-cover solver + parity check + puzzle finder (pure JS; Node + browser + Worker) |
-| `sandbox.html` | Admin puzzle builder: archive (localStorage), notes, publish, analyze & flip through solutions, Shape/Dotted square/Dotted area editing |
+| `sandbox.html` | Admin puzzle builder: archive (localStorage), notes, publish, analyze & flip through solutions, Shape/Dotted area editing (no Dotted square mode since 2026-11-03), dark-mode button by the title |
 | `analyzer.html` | Admin analyzer + puzzle finder |
 | `sandbox-classic.html` | The original free-form sandbox (old, mostly described further down) |
 | `tests/solver.test.js` | `node tests/solver.test.js` — 52 checks |
@@ -73,6 +73,22 @@ previous project; don't push there.
 - **Specs come as PDFs** ("instructions v1/v2/v3") with notes beside
   screenshots; follow them closely, flag any typos/ambiguities briefly.
 - Vocabulary below (block / piece / dotted square) is mandatory.
+
+**2026-11-03 (latest): one dotted rule only (user request)**
+- Why: the user's 8 × 8 sandbox puzzle had 20 touching *dotted squares*,
+  which look exactly like a 20-square dotted area, so their correct
+  solution was refused and Analyze found nothing (36 open squares for 50).
+- Rules popup: the "can't place a piece on a dotted square" rule and its
+  picture are gone; the one rule now reads "You can't place a piece
+  across a dotted line." (was "…dotted perimeter").
+- Sandbox: the "Dotted square" mode is gone. Old puzzles (published Easy
+  has 6, Hard 4, as `blocked`) still load and play the same; under the
+  one rule they're consistent anyway (no piece fits inside a line round 1
+  or 2 squares). In Dotted mode, clicking an old dotted square opens it;
+  the board note shows "N old dotted squares" while any are left. The
+  game, solver and tutorial still handle `blocked` unchanged.
+- Sandbox has a dark-mode button (moon / sun) right of its title.
+- Test: `sandbox_dotted_test.js` (also screenshots sandbox-light/dark).
 
 **2026-11-03 (later): new win animation, solution hidden (user request)**
 - User: no confetti; a screenshot of the Solved popup (to share a time)
