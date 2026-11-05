@@ -233,6 +233,11 @@
   .tut-dim { position: fixed; inset: 0; z-index: 85; background: rgba(0, 0, 0, 0.72); opacity: 0; pointer-events: none; transition: opacity 0.8s; }
   .tut-dim.on { opacity: 1; pointer-events: auto; }
   .raised { position: relative; z-index: 86; }
+  /* [COLORS] Slide 6's hint, when it pops in: a soft glow for a few seconds */
+  @keyframes hintIn { 0% { box-shadow: 0 0 0 0 rgba(var(--glow), 0); } 30% { box-shadow: 0 0 0 4px rgba(var(--glow), 0.6), 0 0 18px rgba(var(--glow), 0.5); }
+                      100% { box-shadow: 0 0 0 0 rgba(var(--glow), 0); } }
+  .empty-card p.hl-hint { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(var(--glow), 0.1); }
+  .empty-card p.hl-hint.shown { animation: hintIn 2.4s ease-out 2; }
   .raised .empty-card { background: var(--color-panel); }
   /* Phones: on slide 6 the note comes first (it's read before anything
      else), then the pieces and the board */
@@ -955,10 +960,15 @@ gameHooks.onMark = ()=>{
    can't be cleared). Everything is dark except the note for HL_DARK_MS;
    then the dark lifts and the highlighter glows twice. Pieces can be
    moved at any time (user's choice). The answer is HL_GOAL, but nothing
-   checks it: see "CHECK IN WITH THE USER" at the top of this file. */
+   checks it: see "CHECK IN WITH THE USER" at the top of this file.
+   If HL_GOAL still isn't highlighted after HL_HINT_MS (and the puzzle
+   isn't solved), HL_HINT pops into the note (user, 2026-11-05). */
 const HL_NOTE =    // [CONTENT] (the user's wording, 2026-11-05)
-  'Before dragging the remaining pieces onto the grid, use the <b>highlighter</b> tool to highlight where the last empty space has to go. In this particular puzzle there need to be either 2 or 0 empty spaces in every row and column.';
+  'Before dragging the remaining pieces onto the grid, use the <b>highlighter</b> tool to highlight where the last empty space has to go.';
+const HL_HINT =    // [CONTENT] (was the note's last sentence; user, 2026-11-05)
+  '<b>Hint:</b> In this particular puzzle there needs to be either 2 or 0 empty spaces in every row and column.';
 const HL_DARK_MS = 2000;
+const HL_HINT_MS = 90000;    // a minute and a half of not finding it
 function showHighlighterLesson(){
   const given = HL_GIVEN.map(([r,c])=>r + ',' + c);
   const m = {};
@@ -967,7 +977,8 @@ function showHighlighterLesson(){
   setLockedMarks(given);
   const card = document.createElement('div');
   card.className = 'empty-card';
-  card.innerHTML = `<p class="note shown">${HL_NOTE}</p>`;
+  card.innerHTML = `<p class="note shown">${HL_NOTE}</p><p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
+  later(HL_HINT_MS, showHighlightHint);
   $('n-boardr').appendChild(card);
   $('n-boardr').classList.add('raised');
   placeHighlighterTool();          // (on phones the note sits above the pieces and just moved them down)
@@ -988,6 +999,18 @@ function showHighlighterLesson(){
     const room = $('hl-tool').getBoundingClientRect().top - bodyBox.top - 4;
     if(over > 0 && room > 0) body.scrollBy({ top: Math.min(over, room), behavior: 'smooth' });
   });
+}
+// The hint, unless they've found the square (or solved it) by now
+function showHighlightHint(){
+  if(solved || getMarks()[HL_GOAL] !== undefined) return;
+  const hint = $('hl-hint');
+  if(!hint) return;
+  hint.hidden = false;
+  requestAnimationFrame(()=>hint.classList.add('shown'));
+  placeHighlighterTool();          // (on phones the note grew, moving the pieces down)
+  // make sure it's in view (on phones the note is at the top and may be scrolled away)
+  const body = $('play').parentElement, top = hint.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+  if(top < 0) body.scrollBy({ top, behavior: 'smooth' });
 }
 
 /* ── "Don't place a piece over" slide ──
