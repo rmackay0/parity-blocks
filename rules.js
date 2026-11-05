@@ -135,16 +135,16 @@ function build(){
   close.addEventListener('click', closeRules);
   popup.appendChild(close);
 
-  // Top-left: switch between large and standard text, and light / dark
-  // mode (theme.js); both shared with the tutorial
+  // Top-left: the moon / sun (dark mode, theme.js) at the far left, then
+  // large / standard text; both shared with the tutorial (user, 2026-11-05)
   const viewBtns = document.createElement('div');
   viewBtns.className = 'view-btns';
+  if(window.ParityTheme) viewBtns.appendChild(ParityTheme.makeButton());
   const sizeBtn = document.createElement('button');
   sizeBtn.type = 'button';
   sizeBtn.className = 'text-size-btn';
   sizeBtn.addEventListener('click', ()=>setLargeText(!isLargeText()));
   viewBtns.appendChild(sizeBtn);
-  if(window.ParityTheme) viewBtns.appendChild(ParityTheme.makeButton());
   popup.appendChild(viewBtns);
 
   const h2 = document.createElement('h2');

@@ -21,7 +21,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     page.on('pageerror', e=>errors.push(e.message));
     await page.clock.install();
     await page.goto(BASE + 'tutorial.html');
-    await page.clock.runFor(3000);                     // (past the dark)
+    await page.clock.runFor(4000);                     // (past the dark, 3.5 s)
     const text = await page.innerText('#n-boardr');     // (only the text you can see)
     check(!/there needs? to be/.test(text), 'at first the note has no hint sentence');
     check(await page.isHidden('#hl-hint'), 'hint hidden');

@@ -26,7 +26,7 @@
     6  Use it (user, 2026-11-05): a board with four pieces fixed and five of
        its six empty spaces highlighted (those can't be cleared). The page
        is dark except a note ("…highlight where the last empty space has to
-       go…"); after ~2 s the dark lifts and the highlighter glows twice. The
+       go…"); after 3.5 s the dark lifts and the highlighter glows twice. The
        answer: row 3, column 4. Pieces can be moved at any time. On
        solving, the blocks are counted.
        ** CHECK IN WITH THE USER: nothing confirms a correct highlight, so
@@ -239,7 +239,7 @@
   }
   .hl-bubble p { margin: 0; }
   .hl-bubble b { color: var(--color-accent); font-weight: 700; }
-  /* Slide 6: everything dark except the note, for about 2 s */
+  /* Slide 6: everything dark except the note, for 3.5 s (HL_DARK_MS) */
   .tut-dim { position: fixed; inset: 0; z-index: 85; background: rgba(0, 0, 0, 0.72); opacity: 0; pointer-events: none; transition: opacity 0.8s; }
   .tut-dim.on { opacity: 1; pointer-events: auto; }
   .raised { position: relative; z-index: 86; }
@@ -406,8 +406,9 @@
     <!-- Large text / Standard text and Dark mode / Light mode (styled in
          rules.css; shared with the rules popup; dark mode is theme.js) -->
     <div class="view-btns">
+      <!-- moon / sun (dark mode, theme.js) at the far left, then Large text -->
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
       <button type="button" class="text-size-btn" id="text-size-btn"></button>
-      <button type="button" class="text-size-btn theme-btn" onclick="ParityTheme.setDark(!ParityTheme.isDark())"></button>
     </div>
     <h1>Tutorial</h1>
     <div class="dots" id="dots"></div>
@@ -456,7 +457,7 @@
   </footer>
 </div>
 
-<!-- Slide 6: darkens everything but its note for about 2 s -->
+<!-- Slide 6: darkens everything but its note for 3.5 s -->
 <div class="tut-dim" id="tut-dim"></div>
 
 <!-- The final slide's hint: darkens the page except the dotted area,
@@ -651,7 +652,7 @@ function playDont(svg){
      hintWhenUneven    once every piece is placed with no rule broken but the
                        rows/columns aren't all even, a glowing Hint button
                        appears under the orange note (see showHint)
-     hintText          what the Hint says
+     hintSteps         what the Hint lights up and says, one step per "Got it"
      countAnimation    on solving, count the blocks in each row and column
                        (all other text fades first); Next waits for it
      highlighter       the highlighter is shown (slides 5–7)
@@ -698,16 +699,18 @@ const SLIDES = [
     // The hint is offered once every piece is placed (no rule broken) but
     // the rows and columns aren't all even
     hintWhenUneven: true,
-    // The Hint (user, 2026-11-05): the dotted area AND the empty space in
-    // the notch at the top of it (row 4, column 5: one of the six empty
-    // spaces in the solution) stay lit; that square gets highlighted (and
-    // can't be un-highlighted), then this text. (Its row needs another
-    // empty space at row 4 col 1, its column one at row 2 col 5.)
-    hintSquare: [3, 4],
-    // (point 1 is the earlier hint, brought back at the user's request)
-    hintText: `<ol>
-      <li>The dotted area must be completely filled by two pieces.</li>
-      <li>The highlighted square is one of six empty spaces. Look at the row and column that the highlighted square is in. Where do two empty spaces have to go? (Use the highlighter tool.)</li></ol>`,
+    // The Hint, in two parts, each with its own "Got it" (user, 2026-11-05):
+    //   1. the dotted area lit, and the earlier hint about it
+    //   2. the empty space in the notch at the top of the dotted area
+    //      (row 4, column 5: one of the six empty spaces in the solution)
+    //      gets highlighted (for good: it can't be un-highlighted) and lit
+    //      on its own. (Its row needs another empty space at row 4 col 1,
+    //      its column one at row 2 col 5.)
+    hintSteps: [
+      { lit: 'area', text: 'The dotted area must be completely filled by two pieces.' },
+      { lit: [[3, 4]], mark: [3, 4],
+        text: 'The highlighted square is one of six empty spaces. Look at the row and column that the highlighted square is in. Where do two empty spaces have to go? (Use the highlighter tool.)' },
+    ],
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column is even. You&rsquo;re ready to play!' },
 ];
@@ -856,8 +859,8 @@ function glowBigNote(){
    A glowing Hint button fades in under the orange note once every piece
    is placed with no rule broken but the rows/columns aren't all even
    (hintWhenUneven). It opens a spotlight: the page goes dark except the
-   dotted area and the slide's hintSquare (which gets highlighted, for
-   good), with an explanation (hintText). */
+   squares each of its steps lights up, with that step's text; "Got it"
+   moves on to the next step (hintSteps). */
 let hintOffered = false;
 function checkHint(){
   // (game.js gives the board's frame the 'uneven' glow exactly then)
@@ -868,22 +871,26 @@ function offerHint(){
   hintOffered = true;
   $('hint-btn').classList.add('shown', 'lit');
 }
-function showHint(){
+/* The hint comes in steps (the slide's hintSteps), one "Got it" each:
+   { lit: 'area' (the dotted squares, or else the dotted area) or a list
+     of squares, mark: a square to highlight for good, text } */
+let hintStep = 0;
+function showHint(step){
+  hintStep = step || 0;
+  const s = SLIDES[current].hintSteps[hintStep];
   $('hint-btn').classList.remove('lit');
-  $('spot-text').innerHTML = SLIDES[current].hintText;
+  $('spot-text').innerHTML = `<p>${s.text}</p>`;
   $('spot').hidden = false;
   const W = innerWidth, H = innerHeight, pad = 5;
-  // The slide's hintSquare (an empty space) gets highlighted in the
-  // highlighter's first color, and can't be un-highlighted
-  const hs = SLIDES[current].hintSquare;
-  if(hs){
-    const k = hs[0] + ',' + hs[1], m = getMarks();
+  // A square this step highlights (in the highlighter's first color) and
+  // that can't be un-highlighted
+  if(s.mark){
+    const k = s.mark[0] + ',' + s.mark[1], m = getMarks();
     m[k] = 0; setMarks(m);
     setLockedMarks([k]);
   }
-  // (The squares left lit: the dotted squares, or if there are none, the
-  // dotted area; plus the hintSquare)
-  const lit = (puzzle.blocked.length ? puzzle.blocked : (puzzle.hintOutline || [])).concat(hs ? [hs] : []);
+  // The squares left lit
+  const lit = s.lit === 'area' ? (puzzle.blocked.length ? puzzle.blocked : (puzzle.hintOutline || [])) : s.lit;
   const cellAt = ([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
   const holes = lit.map(cellAt).filter(Boolean).map(el=>el.getBoundingClientRect());
   const box = (b, extra)=>`x="${b.left - pad}" y="${b.top - pad}" width="${b.width + 2*pad}" height="${b.height + 2*pad}" rx="8" ${extra}`;
@@ -892,14 +899,16 @@ function showHint(){
   svg.innerHTML = `<defs><mask id="spot-mask"><rect width="${W}" height="${H}" fill="white"/>`
     + holes.map(b=>`<rect ${box(b, 'fill="black"')}/>`).join('') + `</mask></defs>`
     + `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.75)" mask="url(#spot-mask)"/>`
-    // (a glowing ring around a single square; for an area, a ring on every square would look busy)
-    // (the hintSquare is lit like the area, no ring: user, 2026-11-05)
-    + (puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '');
-  // The explanation goes on whichever side of the squares has more room,
-  // never over them (if it's too tall for that room, it scrolls inside)
+    // (a glowing ring round each dotted square, when the area is made of
+    // them; never round an area or the highlighted square: user, 2026-11-05)
+    + (s.lit === 'area' && puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '');
+  $('spot-ok').textContent = 'Got it';
+  // The explanation goes above or below the whole board, whichever has
+  // more room, never over it: the hint asks them to look at rows and
+  // columns (if it's too tall for that room, it scrolls inside)
   const card = $('spot-card'), gapPx = 16;
-  const top = holes.length ? Math.min(...holes.map(b=>b.top)) - pad : H/2;
-  const bottom = holes.length ? Math.max(...holes.map(b=>b.bottom)) + pad : H/2;
+  const boardBox = $('board-outer').getBoundingClientRect();
+  const top = boardBox.top, bottom = boardBox.bottom;
   const below = H - bottom > top;      // more room under the squares than above them?
   card.style.top    = below ? (bottom + gapPx) + 'px' : '';
   card.style.bottom = below ? '' : (H - top + gapPx) + 'px';
@@ -909,10 +918,16 @@ function showHint(){
   $('spot-ok').focus({ preventScroll: true });
 }
 function hideHint(){ $('spot').hidden = true; }
+// "Got it": the next part of the hint, or (after the last) close it.
+// Tapping the dark area does the same.
+function nextHint(){
+  const steps = SLIDES[current].hintSteps || [];
+  if(hintStep + 1 < steps.length) showHint(hintStep + 1); else hideHint();
+}
 // (The Hint button is created with its slide, so listen on the page)
-document.addEventListener('click', e=>{ if(e.target.closest('#hint-btn')) showHint(); });
-$('spot-ok').onclick = hideHint;
-$('spot').onclick = e=>{ if(!$('spot-card').contains(e.target)) hideHint(); };   // tapping the dark area closes it too
+document.addEventListener('click', e=>{ if(e.target.closest('#hint-btn')) showHint(0); });
+$('spot-ok').onclick = nextHint;
+$('spot').onclick = e=>{ if(!$('spot-card').contains(e.target)) nextHint(); };
 
 // A tutorial puzzle got solved: freeze it (the uncovered squares stay as
 // they are); then run the counting animation, or show the solved note and
@@ -1041,11 +1056,13 @@ gameHooks.onMark = ()=>{
    checks it: see "CHECK IN WITH THE USER" at the top of this file.
    If HL_GOAL still isn't highlighted after HL_HINT_MS (and the puzzle
    isn't solved), HL_HINT pops into the note (user, 2026-11-05). */
-const HL_NOTE =    // [CONTENT] (the user's wording, 2026-11-05)
-  'Before dragging the remaining pieces onto the grid, use the <b>highlighter</b> tool to highlight where the last empty space has to go.';
+const HL_NOTE = [  // [CONTENT] (the user's wording, 2026-11-05: two steps, one line each)
+  '<b>1st:</b> Highlight the square where the remaining empty space has to go.',
+  '<b>2nd:</b> Drag the remaining pieces into their spots.',
+];
 const HL_HINT =    // [CONTENT] (was the note's last sentence; user, 2026-11-05)
   '<b>Hint:</b> In this particular puzzle there needs to be either 2 or 0 empty spaces in every row and column.';
-const HL_DARK_MS = 2000;
+const HL_DARK_MS = 3500;     // (was 2 s; user, 2026-11-05: 1.5 s longer to read it)
 const HL_HINT_MS = 90000;    // a minute and a half of not finding it
 function showHighlighterLesson(){
   const given = HL_GIVEN.map(([r,c])=>r + ',' + c);
@@ -1055,7 +1072,8 @@ function showHighlighterLesson(){
   setLockedMarks(given);
   const card = document.createElement('div');
   card.className = 'empty-card';
-  card.innerHTML = `<p class="note shown">${HL_NOTE}</p><p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
+  card.innerHTML = HL_NOTE.map(t=>`<p class="note shown">${t}</p>`).join('')
+    + `<p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
   later(HL_HINT_MS, showHighlightHint);
   $('n-boardr').appendChild(card);
   $('n-boardr').classList.add('raised');

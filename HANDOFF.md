@@ -62,7 +62,7 @@ beside the board) behave on real Safari; whether slide 6 needs a
   - Tutorial is now **7 slides**: 5 = meet the highlighter (only it +
     a popup `#hl-bubble` at first, glowing; then an empty grid
     `PUZZLE_EMPTY`; Next once anything is highlighted), 6 = use it
-    (`PUZZLE_HL`; page dark except the note `HL_NOTE` for 2 s, then the
+    (`PUZZLE_HL`; page dark except the note `HL_NOTE` for 3.5 s (`HL_DARK_MS`), then the
     highlighter glows twice; `HL_GIVEN` locked via `setLockedMarks`;
     pieces free). The grid no longer flashes before the text (hiding is
     instant: `.later-in:not(.shown)` has no transition). Tutorial nudges

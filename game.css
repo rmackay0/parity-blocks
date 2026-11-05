@@ -117,10 +117,12 @@ html.dark {
   --color-overlay:      rgba(0, 0, 0, 0.6);
   --color-shadow:       rgba(0, 0, 0, 0.55);
   --color-rotate:       #8FA9D6;
-  --hl-0:               #8E7B2C;
-  --hl-1:               #4F7B47;
-  --hl-2:               #8C4C63;
-  --hl-3:               #406688;
+  /* (bright, at least as bright as the pieces: user, 2026-11-05; the dim
+     ones before were hard to see) */
+  --hl-0:               #F2D35A;
+  --hl-1:               #95D083;
+  --hl-2:               #F0A2BD;
+  --hl-3:               #8FC0EC;
   --color-tool-on:      #3A4A66;
 }
 

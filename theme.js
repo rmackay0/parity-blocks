@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════
    PARITY BLOCKS: LIGHT / DARK MODE
    ═══════════════════════════════════════════════════════════════════
-   Light (white background) is the default. It switches with the round
-   moon / sun button at the top left of the start screen and the puzzle
-   page (any button with data-theme-toggle), or the "Dark mode" button
-   next to "Large text" in the rules popup and the tutorial.
+   Light is the default. It switches with the round moon / sun button,
+   the same on every page (any button with data-theme-toggle): top left of
+   the start screen, the puzzle page, the sandbox, and (far left, Large
+   text to its right) the rules popup and the tutorial.
    The choice is remembered in this browser (localStorage 'pb_theme') and
-   shared by every page.
+   shared by every page; pages already open follow it straight away.
 
    Dark mode = the class "dark" on <html>. Each stylesheet keeps its
    light colors in :root and its dark ones in an html.dark { … } block
@@ -44,20 +44,33 @@
   function setDark(on){
     try { localStorage.setItem(KEY, on ? 'dark' : 'light'); } catch(e){}
     apply();
+    // Tell the page around this one (the puzzle page round the tutorial)
+    // and any page inside it (the tutorial in the puzzle page) straight
+    // away too, so everything on screen switches together (user, 2026-11-05)
+    const note = { type: 'pb-theme' };
+    try { if(window.parent !== window) window.parent.postMessage(note, '*'); } catch(e){}
+    for(let i = 0; i < window.frames.length; i++){ try { window.frames[i].postMessage(note, '*'); } catch(e){} }
   }
 
-  // A "Dark mode" / "Light mode" button (styled like the Large text button)
+  // The round moon / sun button, the same everywhere (the rules popup uses
+  // this; the tutorial and the pages have it in their HTML). The click is
+  // handled below, like every [data-theme-toggle] button.
   function makeButton(){
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'text-size-btn theme-btn';
-    btn.addEventListener('click', ()=>setDark(!isDark()));
+    btn.className = 'theme-toggle';
+    btn.setAttribute('data-theme-toggle', '');
+    apply();
     return btn;
   }
 
-  // Switched in another tab, or in the tutorial shown over the puzzle page
-  // (a separate page in a frame): follow it here too
+  // Follow a switch made anywhere else: another tab or page (storage), the
+  // page around or inside this one (message), and a page the browser kept
+  // and shows again, e.g. after its Back button (pageshow / visibilitychange)
   window.addEventListener('storage', e=>{ if(e.key === KEY) apply(); });
+  window.addEventListener('message', e=>{ if(e.data && e.data.type === 'pb-theme') apply(); });
+  window.addEventListener('pageshow', apply);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) apply(); });
 
   // Any [data-theme-toggle] button switches the mode (set up once the page is read)
   document.addEventListener('click', e=>{

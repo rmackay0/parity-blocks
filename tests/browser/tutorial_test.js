@@ -174,8 +174,10 @@ async function placePiece(page, frame, name, target, touch){
       marked: document.querySelectorAll('#board .board-cell.marked').length }));
     console.log(`[${label}] slide 6 at 0.3 s:`, JSON.stringify(await lesson()), '(expected dark, note above it (86), no glow yet, 5 marked)');
     await page.screenshot({ path:`tut-${label}-6-dark.png` });
-    await page.waitForTimeout(2300);
-    console.log(`[${label}] slide 6 at 2.6 s:`, JSON.stringify(await lesson()), `(expected not dark, glowing twice) | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
+    await page.waitForTimeout(2700);
+    console.log(`[${label}] slide 6 at 3.0 s: still dark ${(await lesson()).dark} (expected true: the note holds 3.5 s)`);
+    await page.waitForTimeout(1100);
+    console.log(`[${label}] slide 6 at 4.1 s:`, JSON.stringify(await lesson()), `(expected not dark, glowing twice) | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-6-lit.png` });
     // The given highlights can't be cleared
     await tapF('.hl-pencil');
@@ -210,9 +212,18 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] all placed, uneven: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')} (expected true, true)`);
     await page.screenshot({ path:`tut-${label}-7-hint-btn.png` });
     await frame.click('#hint-btn'); await page.waitForTimeout(500);
-    console.log(`[${label}] Hint opened: rings ${await frame.locator('#spot-svg .spot-ring').count()} (expected 0: the notch's square is lit like the area, not circled) | holes ${await frame.locator('#spot-mask rect[fill=black]').count()} (expected 11: dotted area + that square) | (3,4) highlighted ${await frame.evaluate(()=>getMarks()['3,4'] === 0)} (expected true) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).trim().slice(0, 50))}`);
+    // Part 1: the dotted area and its hint
+    const hintNow = ()=>frame.evaluate(()=>({ holes: document.querySelectorAll('#spot-mask rect[fill=black]').length,
+      rings: document.querySelectorAll('#spot-svg .spot-ring').length, marked: getMarks()['3,4'] === 0,
+      open: !document.getElementById('spot').hidden, text: document.getElementById('spot-text').innerText.trim().slice(0, 50) }));
+    console.log(`[${label}] Hint part 1:`, JSON.stringify(await hintNow()), '(expected 10 holes: the dotted area, no rings, not marked yet, "The dotted area must be completely filled…")');
     await page.screenshot({ path:`tut-${label}-7-hint.png` });
+    await frame.click('#spot-ok'); await page.waitForTimeout(300);
+    // Part 2: the notch's square, highlighted, and its hint
+    console.log(`[${label}] Hint part 2:`, JSON.stringify(await hintNow()), '(expected 1 hole: that square, no ring, marked, "The highlighted square is one of six…", still open)');
+    await page.screenshot({ path:`tut-${label}-7-hint2.png` });
     await frame.click('#spot-ok'); await page.waitForTimeout(200);
+    console.log(`[${label}] Hint after the second Got it: open ${(await hintNow()).open} (expected false)`);
     // That highlight can't be cleared
     await tapF('.hl-pencil');
     await page.evaluate(()=>{});
