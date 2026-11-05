@@ -336,7 +336,12 @@ body {
 }
 /* a square colored with the highlighter (its color: --mark, set by game.js) */
 .board-cell.marked { background: var(--mark); border-color: var(--mark); }
-body.highlighting #board .board-cell:not(.removed) { cursor: crosshair; }
+/* While the highlighter is on, the mouse is a little pencil over the squares
+   (user, 2026-11-05; was a cross). Dark ink with a white edge so it shows on
+   light and dark squares; its tip (3, 21) is the point that's clicked. */
+body.highlighting #board .board-cell:not(.removed) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 21 L4.3 15.6 L15.2 4.7 a1.9 1.9 0 0 1 2.7 0 L19.3 6.1 a1.9 1.9 0 0 1 0 2.7 L8.4 19.7 Z' stroke='%23fff' stroke-width='4.2'/%3E%3Cpath d='M3 21 L4.3 15.6 L15.2 4.7 a1.9 1.9 0 0 1 2.7 0 L19.3 6.1 a1.9 1.9 0 0 1 0 2.7 L8.4 19.7 Z' fill='%23fff' stroke='%231F2330' stroke-width='1.8'/%3E%3Cpath d='M13.4 6.5 L17.5 10.6 M4.3 15.6 L8.4 19.7' stroke='%231F2330' stroke-width='1.8'/%3E%3C/g%3E%3C/svg%3E") 3 21, crosshair;
+}
 .board-cell.hl-valid   { background: var(--color-valid-bg);   border-color: var(--color-valid-line); }
 .board-cell.hl-invalid { background: var(--color-invalid-bg); border-color: var(--color-invalid-line); }
 #pieces-layer, #hint-overlay, #mark-overlay {

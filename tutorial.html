@@ -7,7 +7,7 @@
   and from "Play the tutorial" in the Rules popup. It can also be opened
   on its own: tutorial.html.
 
-  Six slides:
+  Seven slides:
     1  Game objectives and the 12 pentominoes   (no task: Next is ready)
     2  Rotate (click / tap, or R), then drag onto the grid: a two-step
        note, each step glowing in turn. On solving, the other text fades,
@@ -18,14 +18,19 @@
     4  Reflect (double-click / tap twice, or E), then drag: same two-step
        note, plus "you can also rotate and reflect pieces on the grid".
        On solving, the blocks are counted
-    5  The highlighter (user, 2026-11-05; replaced the empty-spaces slide):
-       "optional, a tool for picturing ideas", then a board comes in with
-       four pieces fixed and five of its six empty spaces highlighted. The
-       player turns on the pencil and highlights the sixth (row 3, column
-       4: the only square that makes row 3 and column 4 even), in any
-       color; only then can they drag in the F and the Y. On solving, the
-       blocks are counted. The pencil stays on the last slide too.
-    6  Make every row and column even (the parity puzzle). If they place
+    5  Meet the highlighter (user, 2026-11-05): at first only the
+       highlighter button shows, glowing, with a popup saying what it does.
+       Then an empty grid (no pieces) comes in; Next lights up once they've
+       highlighted something.
+    6  Use it (user, 2026-11-05): a board with four pieces fixed and five of
+       its six empty spaces highlighted (those can't be cleared). The page
+       is dark except a note ("…highlight where the last empty space has to
+       go…"); after ~2 s the dark lifts and the highlighter glows twice. The
+       answer: row 3, column 4. Pieces can be moved at any time. On
+       solving, the blocks are counted.
+       ** CHECK IN WITH THE USER: nothing confirms a correct highlight, so
+       players may be unsure they did it right (user's own worry). **
+    7  Make every row and column even (the parity puzzle). If they place
        every piece but the rows/columns aren't all even, a glowing Hint
        button appears: it darkens the page, spotlights the dotted area
        and explains. (This puzzle has no dotted squares.) On solving, the
@@ -33,8 +38,8 @@
   (2026-10-27: the old empty-space slides and the red X squares were
   removed; X squares became dotted squares. Slide 5 was then added back
   in a new form at the user's request, and on 2026-11-05 replaced by the
-  highlighter slide.)
-  Slides 2 and 4–6 run on the game's own code
+  two highlighter slides.) The highlighter shows on slides 5–7.
+  Slides 2 and 4–7 run on the game's own code
   (game.js / game.css), with some pieces fixed in place. Next turns green
   only once the slide's task (and any animation) is finished.
   Refreshing the page comes back to the same slide (sessionStorage
@@ -194,28 +199,48 @@
 
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  /* ── Slides 5–6: the highlighter (game.js builds and places it) ──
-     Room above the pieces for the pencil */
+  /* ── Slides 5–7: the highlighter (game.js builds and places it) ──
+     Room above the pieces for it */
   .play { position: relative; }
-  .play.with-hl .tray { margin-top: 34px; }
-  /* Slide 5: the board (and its pieces and the pencil) comes in after the
-     first line of the note; they keep their space while hidden */
-  .play .later-in { opacity: 0; visibility: hidden; transition: opacity 0.7s, visibility 0.7s; }
-  .play .later-in.shown { opacity: 1; visibility: visible; }
-  /* (highlighted squares pop in one at a time) */
-  @keyframes markIn { from { transform: scale(0.6); } to { transform: none; } }
-  .board-cell.mark-in { animation: markIn 0.35s cubic-bezier(.3,1.5,.5,1) both; }
-  /* Phones: on slide 5 the note comes first (it's read before the board
-     comes in), then the steps, the pieces and the board */
+  .play.with-hl .tray { margin-top: 50px; }   /* (it sits 16px higher here than in the game: hlOffset) */
+  /* Slide 5: the grid comes in after the highlighter's popup. Hidden things
+     keep their space. Hiding is instant (no fade), so the grid never shows
+     for a moment before the text; only coming in fades. */
+  .play .later-in:not(.shown) { opacity: 0; visibility: hidden; transition: none; }
+  .play .later-in.shown { opacity: 1; visibility: visible; transition: opacity 0.7s, visibility 0.7s; }
+  /* [COLORS] The highlighter glowing: steadily while slide 5's popup points
+     at it, or twice (slide 6) to say "use me now" */
+  @keyframes hlGlow { from { box-shadow: 0 0 0 3px rgba(var(--glow),0.45), 0 0 10px rgba(var(--glow),0.35); }
+                      to   { box-shadow: 0 0 0 6px rgba(var(--glow),0.9),  0 0 30px rgba(var(--glow),0.75); } }
+  .hl-tool.glowing .hl-pencil   { animation: hlGlow 1.1s ease-in-out infinite alternate; }
+  .hl-tool.glow-twice .hl-pencil { animation: hlGlow 0.55s ease-in-out 4 alternate; }
+  /* Slide 5's popup, just under the highlighter (its little arrow points
+     up at it). game.js / showHighlighterIntro place it. */
+  .hl-bubble {
+    position: absolute; z-index: 70; width: min(340px, calc(100% - 8px)); padding: 12px 16px;
+    background: var(--color-panel); border: 2px solid rgba(var(--glow), 0.8); border-radius: 14px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18); text-align: left;
+  }
+  .hl-bubble[hidden] { display: none; }
+  .hl-bubble::before {    /* the arrow */
+    content: ''; position: absolute; top: -9px; right: var(--arrow-right, 20px); width: 14px; height: 14px;
+    background: var(--color-panel); border-left: 2px solid rgba(var(--glow), 0.8); border-top: 2px solid rgba(var(--glow), 0.8);
+    transform: rotate(45deg);
+  }
+  .hl-bubble p { margin: 0; }
+  .hl-bubble b { color: var(--color-accent); font-weight: 700; }
+  /* Slide 6: everything dark except the note, for about 2 s */
+  .tut-dim { position: fixed; inset: 0; z-index: 85; background: rgba(0, 0, 0, 0.72); opacity: 0; pointer-events: none; transition: opacity 0.8s; }
+  .tut-dim.on { opacity: 1; pointer-events: auto; }
+  .raised { position: relative; z-index: 86; }
+  .raised .empty-card { background: var(--color-panel); }
+  /* Phones: on slide 6 the note comes first (it's read before anything
+     else), then the pieces and the board */
   @media (max-width: 760px) {
     .play.hl-lesson { grid-template-areas: "boardr" "trayl" "tray" "stat" "board" "boardl" "below"; }
     .play.hl-lesson .empty-card { margin: 0 0 4px; }
-    .play.hl-lesson .empty-card p { margin-bottom: 4px; }
-    .play.hl-lesson .status { display: none; }   /* (always empty in the tutorial; its room goes to the board) */
+    .play.hl-lesson .status, .play.hl-intro .status { display: none; }   /* (always empty in the tutorial; its room goes to the board) */
   }
-  /* a step that's tried too soon (a piece grabbed before the highlight) gives a little nudge */
-  @keyframes nudge { 0%, 100% { transform: none; } 30% { transform: translateX(-5px); } 60% { transform: translateX(5px); } }
-  .step.nudge { animation: nudge 0.35s ease-in-out 2; }
   /* The note beside the board: its lines appear one at a time (each keeps
      its space while hidden, so nothing moves) */
   .empty-card { max-width: 340px; padding: 14px 18px; text-align: left;
@@ -388,8 +413,10 @@
     <section class="play" id="play" hidden>
       <div class="note n-trayl" id="n-trayl"></div>
       <div class="tray" id="tray" aria-label="Pieces to place"></div>
-      <!-- The highlighter (slides 5–6), built and placed by game.js -->
+      <!-- The highlighter (slides 5–7), built and placed by game.js -->
       <div class="hl-tool" id="hl-tool" hidden></div>
+      <!-- Slide 5: the popup under the highlighter saying what it does -->
+      <div class="hl-bubble note" id="hl-bubble" hidden></div>
       <div class="note n-trayr" id="n-trayr" style="grid-area:trayr"></div>
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <div class="board-wrap" id="board-wrap">
@@ -413,6 +440,9 @@
     <button class="foot-btn next" id="next-btn" aria-disabled="true">Next</button>
   </footer>
 </div>
+
+<!-- Slide 6: darkens everything but its note for about 2 s -->
+<div class="tut-dim" id="tut-dim"></div>
 
 <!-- The final slide's hint: darkens the page except the dotted area,
      with an explanation (drawn by showHint; wording in SLIDES) -->
@@ -447,6 +477,7 @@ const COLOR = { I:INKS.indigo, F:INKS.gold, W:INKS.vermilion, N:INKS.moss, P:INK
                 U:INKS.wisteria, V:INKS.persimmon };
 gameSettings.distinctColors = false;     // (use these colors, not the game's own palette)
 gameSettings.explain = false;            // mistakes only glow red; no message saying what's wrong
+gameSettings.hlOffset = { x: 26, y: -16 };   // the highlighter a little higher and further right (user, 2026-11-05)
 function fixedPiece(name, absCells, color){
   const r0 = Math.min(...absCells.map(c=>c[0])), c0 = Math.min(...absCells.map(c=>c[1]));
   return { name, color: color || COLOR[name], row: r0, col: c0, cells: absCells.map(([r,c])=>[r-r0, c-c0]) };
@@ -477,7 +508,7 @@ const PUZZLE_3 = {
   ],
   pieces: [ trayPiece('F', [[0,1],[0,2],[1,0],[1,1],[2,1]]), trayPiece('N', [[0,0],[1,0],[2,0],[2,1],[3,1]]) ],
 };
-// Slide 5, the highlighter (the user's board, 2026-11-05). W, Z, N and I
+// Slide 6, using the highlighter (the user's board, 2026-11-05). W, Z, N and I
 // are fixed; the player places F and Y. (Colors: none of them looks like a
 // highlighter color, so the highlights never read as pieces; the user's
 // picture had a yellow I and a light blue Z, too close to those.) solver.js: one way to fit, and it passes parity.
@@ -498,8 +529,11 @@ const PUZZLE_HL = {
     { name:'Y', color: INKS.wisteria,  cells: [[0,1],[1,0],[1,1],[2,1],[3,1]] },
   ],
 };
-const HL_GIVEN = [[0,0],[0,3],[2,1],[3,0],[3,1]];
-const HL_GOAL = '2,3';
+const HL_GIVEN = [[0,0],[0,3],[2,1],[3,0],[3,1]];   // (given highlights: they can't be cleared)
+const HL_GOAL = '2,3';     // (the answer; nothing checks it, see the note at the top)
+// Slide 5: a totally empty grid to try the highlighter on (no pieces, so
+// it's never "solved")
+const PUZZLE_EMPTY = { title: 'Tutorial highlighter practice', rows: 6, cols: 6, blocked: [], pieces: [] };
 const PUZZLE_4 = {
   title: 'Tutorial 3', rows: 6, cols: 6,
   blocked: [],     // (its dotted square at (3,4) was removed 2026-10-27; still exactly one solution)
@@ -605,11 +639,14 @@ function playDont(svg){
      hintText          what the Hint says
      countAnimation    on solving, count the blocks in each row and column
                        (all other text fades first); Next waits for it
-     highlighter       the pencil is shown (slides 5 and 6)
-     highlighterLesson slide 5: the note, board and highlights come in one
-                       by one (wording in HL_LINES); pieces can't be moved
-                       until HL_GOAL is highlighted (a step until 'goal')
-     solvedTitle      once solved, a solved badge (celebrate.js: checkmark
+     highlighter       the highlighter is shown (slides 5–7)
+     highlighterIntro  slide 5: only the highlighter + its popup, then an
+                       empty grid; Next lights up once something is
+                       highlighted (wording in HL_INTRO)
+     highlighterLesson slide 6: the page is dark except the note (HL_NOTE)
+                       for HL_DARK_MS, then the highlighter glows twice;
+                       HL_GIVEN are highlighted and can't be cleared
+     solvedTitle       once solved, a solved badge (celebrate.js: checkmark
      solvedNote        animation + jingle) appears beside the board with this
                        title and text                                        */
 const ROTATE_STEPS = [
@@ -633,13 +670,9 @@ const SLIDES = [
     boardRight: 'You can also rotate and reflect pieces once they&rsquo;re on the grid.',
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
-  // The highlighter (user's spec, 2026-11-05; wording adapted by Claude, as allowed)
+  // The highlighter, in two slides (user's spec, 2026-11-05): meet it, then use it
+  { kind: 'play', puzzle: PUZZLE_EMPTY, highlighter: true, highlighterIntro: true },
   { kind: 'play', puzzle: PUZZLE_HL, highlighter: true, highlighterLesson: true,
-    steps: [
-      { html: (TOUCH ? 'Tap' : 'Click') + ' the <b>pencil</b>, then highlight where the last empty space has to go. (To un-highlight a square, '
-              + (TOUCH ? 'tap' : 'click') + ' it again.)', until: 'goal' },
-      { html: 'Then drag in the pieces.', until: 'place' },
-    ],
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   { kind: 'play', puzzle: PUZZLE_4, highlighter: true,
@@ -714,15 +747,23 @@ function showSlide(i){
   $('intro').hidden = s.kind !== 'intro';
   $('dont-slide').hidden = s.kind !== 'dont';
   const onBoard = s.kind === 'play';   // slides that show the game's board
+  // (Slide 5 hides its grid BEFORE anything is shown, so it never flashes
+  // up ahead of the popup: the glitch the user saw, 2026-11-05)
+  LATER_IN.forEach(id=>{ $(id).classList.toggle('later-in', !!s.highlighterIntro); $(id).classList.remove('shown'); });
   $('play').hidden = !onBoard;
   $('play').classList.remove('counting');
   $('play').classList.toggle('with-hl', !!s.highlighter);
+  $('play').classList.toggle('hl-intro', !!s.highlighterIntro);
   $('play').classList.toggle('hl-lesson', !!s.highlighterLesson);
   $('hl-tool').hidden = !s.highlighter;
-  setHighlighting(false);                    // (the pencil starts off on every slide)
+  $('hl-tool').classList.remove('glowing', 'glow-twice');
+  $('hl-bubble').hidden = true;
+  $('tray').style.minHeight = '';
+  $('tut-dim').classList.remove('on');
+  $('n-boardr').classList.remove('raised');
+  setHighlighting(false);                    // (the highlighter starts off on every slide)
   setMarkColor(0);
   showColorMenu(false);
-  hlGoalDone = false;
   hideHint();
   $('tut-overlay').innerHTML = '';
   ['tut-overlay', 'n-boardr'].forEach(id=>$(id).classList.remove('fading'));
@@ -744,8 +785,7 @@ function showSlide(i){
     loadPuzzle(s.puzzle);
     lightSteps();             // (now that it's in play mode, the first step glows)
   }
-  LATER_IN.forEach(id=>$(id).classList.toggle('later-in', !!s.highlighterLesson));
-  LATER_IN.forEach(id=>$(id).classList.remove('shown'));
+  if(s.highlighterIntro) showHighlighterIntro();
   if(s.highlighterLesson) showHighlighterLesson();
   renderDots();
   updateNext();
@@ -870,68 +910,85 @@ function addSolvedNote(){
   $('n-boardr').appendChild(solvedBadge(s.solvedTitle, s.solvedNote, { animate: true }));   // (no sound in the tutorial)
 }
 
-/* ── Slide 5: the highlighter ──
-   A note beside the board, a line at a time: line 1 alone; then the board,
-   its pieces and the pencil come in; five of its six empty spaces get
-   highlighted one by one (the highlighter's first color); then line 2,
-   the steps (the first one glowing) and line 3. The F and Y can't be
-   picked up until the sixth empty space (HL_GOAL) is highlighted, in any
-   color; trying makes the first step flash. */
-const HL_LINES = [   // [CONTENT] (from the user's notes, 2026-11-05; "to un-highlight…" is in the first step)
-  'The <b>highlighter</b> is optional: a tool for picturing your ideas.',
-  'Five of the six empty spaces are highlighted.',
-];
-const HL_BOARD_MS  = 1400;   // the board comes in
-const HL_MARKS_MS  = 2300;   // the first highlight (then one every HL_MARK_STEP)
-const HL_MARK_STEP = 280;
-const HL_TEXT_MS   = 4000;   // line 2
-const HL_STEPS_MS  = 4700;   // the steps
-const LATER_IN = ['board-wrap', 'tray', 'hl-tool', 'n-trayl'];   // (kept hidden until HL_BOARD_MS / HL_TEXT_MS)
-let hlGoalDone = false;
+/* ── Slide 5: meet the highlighter ──
+   At first only the highlighter shows, glowing, with a popup under it
+   saying what it does. HL_GRID_MS later a totally empty grid comes in
+   (the popup stays). Next lights up once they've highlighted a square.
+   The word "pencil" is never used to players (user, 2026-11-05). */
+const TAP = TOUCH ? 'Tap' : 'Click', TAPPING = TOUCH ? 'tapping' : 'clicking';
+const HL_INTRO =    // [CONTENT] (the user's wording, 2026-11-05, finished by Claude)
+  `This is the optional <b>highlighter</b> tool. ${TAP} it to turn it on, then you can make marks on the grid by ${TAPPING} any of the squares. ${TAP} an already highlighted square to un-highlight it.`;
+const HL_GRID_MS = 2600;   // the empty grid comes in
+const LATER_IN = ['board-wrap', 'tray'];     // (hidden until HL_GRID_MS)
+function showHighlighterIntro(){
+  $('hl-bubble').innerHTML = `<p>${HL_INTRO}</p>`;
+  $('hl-bubble').hidden = false;
+  $('hl-tool').classList.add('glowing');
+  placeBubble();
+  later(HL_GRID_MS, ()=>LATER_IN.forEach(id=>$(id).classList.add('shown')));
+}
+// The popup goes just under the highlighter, its arrow pointing at it;
+// the (empty) pieces' row grows to make room, so the grid comes in below it
+function placeBubble(){
+  const bubble = $('hl-bubble'), tool = $('hl-tool');
+  if(bubble.hidden) return;
+  placeHighlighterTool();
+  const play = $('play').getBoundingClientRect(), t = tool.getBoundingClientRect();
+  const button = tool.querySelector('.hl-pencil').getBoundingClientRect();
+  const w = bubble.offsetWidth;
+  const left = Math.max(4, Math.min(t.right - play.left - w + 6, play.width - w - 4));
+  bubble.style.left = left + 'px';
+  bubble.style.top = (t.bottom - play.top + 12) + 'px';
+  bubble.style.setProperty('--arrow-right', Math.max(10, left + w - (button.left + button.width/2 - play.left) - 9) + 'px');
+  const need = (t.bottom + 12 + bubble.offsetHeight + 18) - $('tray').getBoundingClientRect().top;
+  $('tray').style.minHeight = Math.max(60, need) + 'px';
+}
+window.addEventListener('resize', ()=>setTimeout(placeBubble, 150));   // (after game.js re-fits the board)
+// Turning it on stops the glow; the first highlight lights up Next
+gameHooks.onHighlighter = on=>{ if(on) $('hl-tool').classList.remove('glowing'); };
+gameHooks.onMark = ()=>{
+  if(SLIDES[current].highlighterIntro && Object.keys(getMarks()).length && !done[current]) markDone();
+};
+
+/* ── Slide 6: use the highlighter ──
+   The board with five of its six empty spaces highlighted (HL_GIVEN; they
+   can't be cleared). Everything is dark except the note for HL_DARK_MS;
+   then the dark lifts and the highlighter glows twice. Pieces can be
+   moved at any time (user's choice). The answer is HL_GOAL, but nothing
+   checks it: see "CHECK IN WITH THE USER" at the top of this file. */
+const HL_NOTE =    // [CONTENT] (the user's wording, 2026-11-05)
+  'Before dragging the remaining pieces onto the grid, use the <b>highlighter</b> tool to highlight where the last empty space has to go. In this particular puzzle there need to be either 2 or 0 empty spaces in every row and column.';
+const HL_DARK_MS = 2000;
 function showHighlighterLesson(){
+  const given = HL_GIVEN.map(([r,c])=>r + ',' + c);
+  const m = {};
+  given.forEach(k=>{ m[k] = 0; });
+  setMarks(m);
+  setLockedMarks(given);
   const card = document.createElement('div');
   card.className = 'empty-card';
-  card.innerHTML = HL_LINES.map(t=>`<p class="note">${t}</p>`).join('');
+  card.innerHTML = `<p class="note shown">${HL_NOTE}</p>`;
   $('n-boardr').appendChild(card);
-  const lines = card.querySelectorAll('p');
-  // Show a line; on phones the note sits below the board, so scroll gently
-  // until the new line is in view
-  const showLine = p=>{
-    p.classList.add('shown');
-    const body = $('play').parentElement;
-    const over = p.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom + 12;
-    if(over > 0) body.scrollBy({ top: over, behavior: 'smooth' });
-  };
-  requestAnimationFrame(()=>showLine(lines[0]));
-  placeHighlighterTool();                 // (the note above the pieces on phones moved them down)
-  later(HL_BOARD_MS, ()=>{ placeHighlighterTool(); ['board-wrap', 'tray', 'hl-tool'].forEach(id=>$(id).classList.add('shown')); });
-  HL_GIVEN.forEach(([r,c], i)=>later(HL_MARKS_MS + i*HL_MARK_STEP, ()=>{
-    const m = getMarks(); m[r + ',' + c] = 0; setMarks(m);
-    const cell = boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
-    if(cell) cell.classList.add('mark-in');
-  }));
-  later(HL_TEXT_MS, ()=>showLine(lines[1]));
-  later(HL_STEPS_MS, ()=>{
-    $('n-trayl').classList.add('shown');
-    // Phones: scroll gently until the whole board shows, but never past
-    // the steps (the note above them has been read by now)
+  $('n-boardr').classList.add('raised');
+  placeHighlighterTool();          // (on phones the note sits above the pieces and just moved them down)
+  // dark straight away (no fade in), so nothing else is seen first
+  const dim = $('tut-dim');
+  dim.style.transition = 'none';
+  dim.classList.add('on');
+  void dim.offsetWidth;
+  dim.style.transition = '';
+  later(HL_DARK_MS, ()=>{
+    dim.classList.remove('on');
+    later(800, ()=>$('n-boardr').classList.remove('raised'));
+    $('hl-tool').classList.add('glow-twice');
+    // Phones: scroll gently until the whole board shows, keeping the
+    // highlighter on screen (the note above it has been read by now)
     const body = $('play').parentElement, bodyBox = body.getBoundingClientRect();
     const over = $('board-outer').getBoundingClientRect().bottom - bodyBox.bottom + 8;
-    const room = $('n-trayl').getBoundingClientRect().top - bodyBox.top - 4;
+    const room = $('hl-tool').getBoundingClientRect().top - bodyBox.top - 4;
     if(over > 0 && room > 0) body.scrollBy({ top: Math.min(over, room), behavior: 'smooth' });
   });
 }
-// The pieces wait for the sixth empty space (only on slide 5)
-gameHooks.piecesAllowed = ()=>{
-  if(!SLIDES[current].highlighterLesson || hlGoalDone) return true;
-  const step = $('step0');                 // (nudge: the first step flashes)
-  if(step){ step.classList.remove('nudge'); void step.offsetWidth; step.classList.add('nudge'); }
-  return false;
-};
-gameHooks.onMark = ()=>{
-  if(!SLIDES[current].highlighterLesson || hlGoalDone) return;
-  if(getMarks()[HL_GOAL] !== undefined){ hlGoalDone = true; stepEvent('goal'); }
-};
 
 /* ── "Don't place a piece over" slide ──
    Plays each picture's animation in turn with a highlighted square behind
@@ -1038,6 +1095,7 @@ $('text-size-btn').onclick = ()=>{
     setupBoard(); renderAll();                       // re-fit the board to the new space
     const s = SLIDES[current];
     if(gameMode === 'view' && s.countAnimation && done[current]) drawCounts(false);   // re-place the counts
+    placeBubble();                                   // (slide 5's popup, if it's showing)
   }
 };
 showLargeText();

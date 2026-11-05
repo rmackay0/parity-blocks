@@ -52,6 +52,27 @@
   Firefox, laptop/phone, light/dark) was clean before AND after: headless
   screenshots repaint everything, so it can't show the bug. Needs the
   user's real Safari / iPhone check.
+- **Later the same evening (user's chat notes):**
+  - Rules popup title ("How to Play") now Lilita One, 2.3rem (rules.css
+    `--rules-title-font`; the font is @imported at the top of rules.css).
+  - Highlighter cursor = a small pencil (data-URI SVG, game.css).
+  - Tutorial is now **7 slides**: 5 = meet the highlighter (only it +
+    a popup `#hl-bubble` at first, glowing; then an empty grid
+    `PUZZLE_EMPTY`; Next once anything is highlighted), 6 = use it
+    (`PUZZLE_HL`; page dark except the note `HL_NOTE` for 2 s, then the
+    highlighter glows twice; `HL_GIVEN` locked via `setLockedMarks`;
+    pieces free). The grid no longer flashes before the text (hiding is
+    instant: `.later-in:not(.shown)` has no transition). Tutorial nudges
+    the highlighter up/right (`gameSettings.hlOffset`). Never says "pencil".
+  - **CHECK IN WITH THE USER:** slide 6 gives no confirmation that the
+    right square was highlighted; the user worried players may want one.
+  - **Duplicated piece on iPhone Safari (friend's report):** a drag's
+    lifted copy (`.ghost`) was left behind when a second touch began
+    before the first ended (the old press was forgotten) or Safari lost /
+    cancelled the touch. Now: one drag at a time by pointerId, a stale
+    press is cancelled (`cancelPress`), pointercancel / blur / hidden page
+    put the piece back, and renderAll sweeps stray ghosts. `ghost_test.js`
+    fails on the old code, passes now (Chromium + WebKit).
 - Still failing, unrelated (same before these changes): `next_level_test`
   (Hard: "room between the time and the buttons"), `share_test` (times
   out on #solved-share).

@@ -1,3 +1,6 @@
+/* (The popup's title font, loaded here so every page with the popup has
+   it. An @import has to be the first thing in the file.) */
+@import url('https://fonts.googleapis.com/css2?family=Lilita+One&display=swap');
 /* ═══════════════════════════════════════════════════════════════════
    RULES POPUP + RULES BUTTON
    Shared by index.html (splash) and play.html (game). The popup's text
@@ -8,7 +11,10 @@
   /* [FONTS] Geo for headings and buttons; Nunito for the text you read */
   --rules-font:          'Geo', 'Segoe UI', sans-serif;
   --rules-text-font:     'Nunito', 'Segoe UI', sans-serif;
-  --rules-title-size:    2rem;
+  /* the popup's title: Lilita One, the start screen's title font, a little
+     bigger than the Geo it was (user, 2026-11-05) */
+  --rules-title-font:    'Lilita One', 'Segoe UI', sans-serif;
+  --rules-title-size:    2.3rem;
   --rules-heading-size:  1.5rem;     /* "Goals" / "Rules" */
   --rules-text-size:     1rem;
   --rules-caption-size:  0.9rem;     /* labels under pictures */
@@ -128,6 +134,8 @@ html.dark {
 }
 .rules-popup h2, .rules-popup h3 { font-family: var(--rules-font); }
 .rules-popup h2 {
+  font-family: var(--rules-title-font);
+  letter-spacing: 0.01em;
   font-size: var(--rules-title-size);
   font-weight: 400;
   color: var(--rules-title);

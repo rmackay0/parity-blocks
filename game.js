@@ -119,6 +119,7 @@ function loadPuzzle(p, opts){
     placedPieces = fixed;
     startTime = Date.now();
     marks = {};          // (a fresh start clears the highlighter too)
+    lockedMarks = new Set();
   }
   if(!opts.keep || !placedPieces.some(q=>q.id===keyPieceId)) keyPieceId = null;
   solved = false;
@@ -361,6 +362,8 @@ function renderAll(){
   if(!puzzle) return;
   if(gameMode === 'view'){ renderView(); return; }
   statusEl.classList.remove('good');
+  // A lifted copy with no piece being held must never stay on the board
+  if(!press || !press.ghost) piecesLayerEl.querySelectorAll('.ghost').forEach(g=>g.remove());
   recomputeValidity();
   renderTray();
   renderBoardPieces();
@@ -630,6 +633,15 @@ function onPiecePointerDown(e, source){
   if(gameHooks.piecesAllowed && !gameHooks.piecesAllowed()){ e.preventDefault(); return; }       // (not yet: the tutorial)
   e.preventDefault();
   e.stopPropagation();
+  // One piece at a time. A second finger while one is held is ignored; a
+  // press whose finger-up never arrived (iPhone Safari can lose it) is
+  // cancelled first. Before this, the old press was simply forgotten and
+  // its lifted copy stayed on the board: the "duplicated piece" a player
+  // saw on an iPhone (2026-11-05).
+  if(press){
+    if(press.pointerId !== undefined && press.pointerId !== e.pointerId && press.fresh()) return;
+    cancelPress();
+  }
   // A different piece's click is still waiting: apply its rotate first
   if(pendingClick && !sameSource(pendingClick.source, source)) flushPendingClick();
   let cells, color, name, grabDR, grabDC;
@@ -646,7 +658,10 @@ function onPiecePointerDown(e, source){
     grabDR = blk ? +blk.dataset.dr : 0;
     grabDC = blk ? +blk.dataset.dc : 0;
   }
-  press = { source, startX:e.clientX, startY:e.clientY, grabDR, grabDC, cells, color, name, dragging:false, ghost:null };
+  press = { source, startX:e.clientX, startY:e.clientY, grabDR, grabDC, cells, color, name, dragging:false, ghost:null,
+            pointerId: e.pointerId, lastSeen: performance.now(),
+            // (still being moved recently: a real second finger, not a lost one)
+            fresh(){ return performance.now() - this.lastSeen < 1500; } };
   // Feel: the piece squeezes a little under the finger / mouse
   press.pressedEl = source.kind === 'tray' ? trayPieceEl(source.name) : (boardPieceEl(source.id) || {}).firstChild;
   if(press.pressedEl) press.pressedEl.classList.add('pressed');
@@ -724,8 +739,32 @@ function overTray(clientX, clientY){
   return clientX>=r.left && clientX<=r.right && clientY>=r.top && clientY<=r.bottom;
 }
 
-function onPointerMove(e){
+/* Stop a press without doing anything: the piece stays (or goes back)
+   exactly where it was, and its lifted copy is removed. For a press the
+   browser cancels (iPhone Safari does when it takes over the touch) or
+   one whose finger-up was lost. */
+function cancelPress(){
   if(!press) return;
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerUp);
+  const p = press;
+  press = null;
+  clearHighlights();
+  if(p.pressedEl) p.pressedEl.classList.remove('pressed');
+  if(p.ghost) p.ghost.remove();
+  renderAll();          // (redraws the piece it came from, and sweeps up any stray lifted copy)
+}
+// Leaving the page or the window mid-drag also cancels it
+window.addEventListener('blur', cancelPress);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) cancelPress(); });
+
+// (another finger's events, while one piece is held, are ignored)
+const otherPointer = e=>press && press.pointerId !== undefined && e.pointerId !== undefined && e.pointerId !== press.pointerId;
+
+function onPointerMove(e){
+  if(!press || otherPointer(e)) return;
+  press.lastSeen = performance.now();
   // Sideways speed (px per ms), for the lean while dragging
   const now = performance.now();
   if(press.lastX !== undefined && press.lastT && now > press.lastT && press.tiltTarget !== undefined){
@@ -756,7 +795,10 @@ function onPointerMove(e){
 }
 
 function onPointerUp(e){
-  if(!press) return;
+  if(!press || otherPointer(e)) return;
+  // The browser took the touch away (not the player letting go): put
+  // everything back as it was, rather than dropping the piece anywhere
+  if(e.type === 'pointercancel'){ cancelPress(); return; }
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup', onPointerUp);
   window.removeEventListener('pointercancel', onPointerUp);
@@ -902,7 +944,9 @@ function checkSolved(){
   boardOuterEl.classList.remove('uneven');
   boardOuterEl.classList.toggle('locked', solved && gameSettings.lockWhenSolved);
   if(solved) return;
-  if(!boardFull()){ explainLater(''); return; }
+  // (a board with no pieces at all, like the tutorial's highlighter
+  // practice, is never "solved")
+  if(!boardFull() || !puzzle.pieces.length){ explainLater(''); return; }
 
   // Count filled squares on the board (overlapping squares count once)
   const filled = new Set();
@@ -960,11 +1004,14 @@ if(solvedCloseBtn) solvedCloseBtn.addEventListener('click', ()=>{
 ═══════════════════════════════════════════════════════════════════ */
 const HIGHLIGHT_COLOR_COUNT = 4;
 let marks = {};             // "r,c" → color number (0-3)
+let lockedMarks = new Set(); // "r,c" highlights that can't be cleared or changed (the tutorial's given ones)
 let highlighting = false;   // the pencil is on
 let markColor = 0;          // the color in use (0 = the first, the default)
 const hlToolEl = document.getElementById('hl-tool');
 
 function getMarks(){ return Object.assign({}, marks); }
+// Highlights the player can't clear or recolor, e.g. ['0,0', '2,1']
+function setLockedMarks(keys){ lockedMarks = new Set(keys || []); }
 function setMarks(m){
   marks = {};
   Object.keys(m || {}).forEach(k=>{ const i = +m[k]; if(i >= 0 && i < HIGHLIGHT_COLOR_COUNT) marks[k] = i; });
@@ -1029,20 +1076,31 @@ if(hlToolEl){
 function placeHighlighterTool(){
   if(!hlToolEl || hlToolEl.hidden || !hlToolEl.offsetParent) return;
   const slots = [...trayEl.querySelectorAll('.tray-slot')];
-  if(!slots.length) return;
-  // (The pieces' spaces differ in height and are centred on their row, so
-  // the top row is every space that starts above the end of the shortest
-  // one in it; the pieces themselves are what the tool must stay clear of)
-  const rects = slots.map(s=>({ slot: s.getBoundingClientRect(), piece: s.querySelector('.piece-box').getBoundingClientRect() }));
-  const firstEnd = Math.min(...rects.map(r=>r.slot.bottom));
-  const topRow = rects.filter(r=>r.slot.top < firstEnd);
-  const right = Math.max(...topRow.map(r=>r.piece.right));
-  const highest = Math.min(...topRow.map(r=>r.piece.top));
+  let right, highest;
+  if(slots.length){
+    // (The pieces' spaces differ in height and are centred on their row, so
+    // the top row is every space that starts above the end of the shortest
+    // one in it; the pieces themselves are what the tool must stay clear of)
+    const rects = slots.map(s=>({ slot: s.getBoundingClientRect(), piece: s.querySelector('.piece-box').getBoundingClientRect() }));
+    const firstEnd = Math.min(...rects.map(r=>r.slot.bottom));
+    const topRow = rects.filter(r=>r.slot.top < firstEnd);
+    right = Math.max(...topRow.map(r=>r.piece.right));
+    highest = Math.min(...topRow.map(r=>r.piece.top));
+  } else {
+    // No pieces (the tutorial's practice board): above the board's right
+    // edge, where the pieces' row starts
+    const w = hlToolEl.offsetWidth;
+    right = boardOuterEl.getBoundingClientRect().right - w;
+    highest = trayEl.getBoundingClientRect().top + hlToolEl.offsetHeight;
+  }
+  // gameSettings.hlOffset nudges it (px; the tutorial puts it a little
+  // higher and further right, user 2026-11-05)
+  const nudge = gameSettings.hlOffset || { x: 0, y: 0 };
   const holder = hlToolEl.offsetParent.getBoundingClientRect();
   const w = hlToolEl.offsetWidth, h = hlToolEl.offsetHeight;
-  const left = Math.max(0, Math.min(right - holder.left + 2, holder.width - w));
+  const left = Math.max(0, Math.min(right - holder.left + 2 + nudge.x, holder.width - w));
   hlToolEl.style.left = left + 'px';
-  hlToolEl.style.top = (highest - holder.top - h - 4) + 'px';
+  hlToolEl.style.top = Math.max(0, highest - holder.top - h - 4 + nudge.y) + 'px';
 }
 
 /* Tapping / dragging over squares while the pencil is on. The first
@@ -1052,7 +1110,7 @@ let paint = null;    // { clear, done:Set } during a highlighting drag
 function canHighlight(){ return highlighting && gameMode === 'play' && puzzle && !(solved && gameSettings.lockWhenSolved); }
 function markCell(cell){
   const k = cell.dataset.r + ',' + cell.dataset.c;
-  if(paint.done.has(k) || cell.classList.contains('removed')) return;
+  if(paint.done.has(k) || cell.classList.contains('removed') || lockedMarks.has(k)) return;
   paint.done.add(k);
   if(paint.clear) delete marks[k]; else marks[k] = markColor;
   paintMark(cell);
@@ -1066,6 +1124,7 @@ boardEl.addEventListener('pointerdown', e=>{
   const cell = e.target.closest('.board-cell');
   if(!cell || cell.classList.contains('removed')) return;
   e.preventDefault();
+  if(lockedMarks.has(cell.dataset.r + ',' + cell.dataset.c)) return;   // (a given highlight stays)
   paint = { clear: marks[cell.dataset.r + ',' + cell.dataset.c] === markColor, done: new Set() };
   markCell(cell);
   const move = ev=>{ const c = cellAt(ev.clientX, ev.clientY); if(c) markCell(c); };

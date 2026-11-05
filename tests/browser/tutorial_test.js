@@ -55,7 +55,7 @@ async function placePiece(page, frame, name, target, touch){
     const counts = async ()=>(await frame.locator('#tut-overlay .count').allTextContents()).join(' ');
     const boardAt = ()=>frame.evaluate(()=>{ const r = document.getElementById('board-outer').getBoundingClientRect(); return Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width); });
     const needsScroll = ()=>frame.evaluate(()=>{ const b = document.querySelector('.tut-body'); return b.scrollHeight - b.clientHeight; });
-    console.log(`[${label}] slides: ${await frame.locator('.dot').count()} (expected 6) | slide 1 Next ready:`, await nextReady());
+    console.log(`[${label}] slides: ${await frame.locator('.dot').count()} (expected 7) | slide 1 Next ready:`, await nextReady());
     await page.screenshot({ path:`tut-${label}-1.png` });
     await frame.click('#next-btn');
 
@@ -121,50 +121,65 @@ async function placePiece(page, frame, name, target, touch){
     console.log(`[${label}] slide 4 solved: squares all look the same ${await frame.evaluate(()=>new Set([...document.querySelectorAll('.board-cell')].map(el=>getComputedStyle(el).backgroundColor)).size === 1)} (expected true) | sound loaded ${await frame.evaluate(()=>solvedAudio !== null)} (expected false)`);
     await frame.click('#next-btn');
 
-    // Slide 5: the highlighter (2026-11-05). A line, then the board, then five
-    // highlighted squares; the pieces wait until the sixth is highlighted
-    const hlState = ()=>frame.evaluate(()=>({
-      lines: document.querySelectorAll('#n-boardr .empty-card p.shown').length,
-      board: document.getElementById('board-wrap').classList.contains('shown'),
-      pencil: !document.getElementById('hl-tool').hidden && document.getElementById('hl-tool').classList.contains('shown'),
-      marked: document.querySelectorAll('#board .board-cell.marked').length,
-      steps: document.getElementById('n-trayl').classList.contains('shown'),
-      // (the pencil must never sit on the notes or the pieces)
-      pencilClear: (()=>{ const t = document.getElementById('hl-tool').getBoundingClientRect();
-        return [...document.querySelectorAll('#n-trayl .step, #n-boardr .empty-card, .tray-slot .piece-box')].every(el=>{
-          const r = el.getBoundingClientRect(); return t.right <= r.left || r.right <= t.left || t.bottom <= r.top || r.bottom <= t.top; }); })(),
-    }));
-    await page.waitForTimeout(600);
-    console.log(`[${label}] slide 5 at 0.6 s:`, JSON.stringify(await hlState()), '(expected 1 line, no board, no pencil, 0 marked, no steps)');
-    await page.screenshot({ path:`tut-${label}-5-start.png` });
-    await page.waitForTimeout(4400);
-    console.log(`[${label}] slide 5 at 5 s:`, JSON.stringify(await hlState()), `(expected 3 lines, board, pencil, 5 marked, steps) | first step glowing ${await lit('step0')} | Next ready ${await nextReady()} (expected false) | scroll needed ${await needsScroll()}px`);
-    await page.screenshot({ path:`tut-${label}-5-marked.png` });
-    // Too soon: the F can't be picked up yet
-    const fBox = await frame.locator('.tray-slot[data-name="F"]').boundingBox(), mid = await frame.locator('.board-cell[data-r="4"][data-c="4"]').boundingBox();
-    await page.mouse.move(fBox.x + fBox.width/2, fBox.y + fBox.height/2); await page.mouse.down();
-    await page.mouse.move(mid.x + 20, mid.y + 20, { steps: 8 }); await page.mouse.up();
-    await page.waitForTimeout(400);
-    console.log(`[${label}] slide 5 dragging F too soon: pieces placed ${await frame.evaluate(()=>placedPieces.filter(p=>!p.locked).length)} (expected 0) | first step nudged ${await frame.evaluate(()=>document.getElementById('step0').classList.contains('nudge'))} (expected true)`);
-    // Pencil on, pick the 4th color (any color counts), highlight row 3 column 4
+    // (the highlighter never sits on the notes, the popup or the pieces)
+    const toolClear = ()=>frame.evaluate(()=>{ const t = document.getElementById('hl-tool').getBoundingClientRect();
+      return [...document.querySelectorAll('#n-trayl .step, #n-boardr .empty-card, #hl-bubble:not([hidden]), .tray-slot .piece-box, #board-outer')].every(el=>{
+        const r = el.getBoundingClientRect(); return t.right <= r.left || r.right <= t.left || t.bottom <= r.top || r.bottom <= t.top; }); });
     const tapF = async sel=>{ const l = frame.locator(sel); await (touch ? l.tap() : l.click()); };
-    await tapF('.hl-pencil'); await tapF('.hl-color'); await tapF('.hl-swatch:nth-child(4)');
-    await tapF('.board-cell[data-r="2"][data-c="3"]');
-    await page.waitForTimeout(300);
-    console.log(`[${label}] slide 5 after highlighting the sixth: steps glowing ${await lit2()} (expected false, true) | (2,3) color ${await frame.evaluate(()=>getMarks()['2,3'])} (expected 3)`);
-    await page.screenshot({ path:`tut-${label}-5-goal.png` });
-    const TARGET5 = { F: [[3,4],[4,3],[4,4],[4,5],[5,5]], Y: [[0,5],[1,5],[2,4],[2,5],[3,5]] };
-    for(const [name, target] of Object.entries(TARGET5)) await placePiece(page, frame, name, target, touch);
-    await page.waitForTimeout(8000);
-    console.log(`[${label}] slide 5 counted: "${await counts()}" (expected 4 6 4 4 6 6 | 4 4 6 4 6 6) | Next ready ${await nextReady()} (expected true) | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())} | highlights kept ${await frame.locator('#board .board-cell.marked').count()} (expected 6)`);
+
+    // Slide 5: meet the highlighter (2026-11-05). Only it + its popup at
+    // first (the grid must never show before the text), then an empty grid
+    const gridShown = ()=>frame.evaluate(()=>getComputedStyle(document.getElementById('board-wrap')).opacity);
+    console.log(`[${label}] slide 5 right away: grid opacity ${await gridShown()} (expected 0) | popup shown ${await frame.isVisible('#hl-bubble')} (expected true)`);
+    await page.waitForTimeout(800);
+    const intro = ()=>frame.evaluate(()=>({ grid: getComputedStyle(document.getElementById('board-wrap')).opacity,
+      glowing: document.getElementById('hl-tool').classList.contains('glowing'),
+      saysPencil: /pencil/i.test(document.getElementById('play').innerText),
+      pieces: document.querySelectorAll('.placed-piece, .tray-slot').length }));
+    console.log(`[${label}] slide 5 at 0.8 s:`, JSON.stringify(await intro()), `(expected grid 0, glowing, never says pencil, 0 pieces) | clear ${await toolClear()} | Next ready ${await nextReady()} (expected false)`);
+    await page.screenshot({ path:`tut-${label}-5-start.png` });
+    await page.waitForTimeout(2800);
+    console.log(`[${label}] slide 5 at 3.6 s:`, JSON.stringify(await intro()), `(expected grid 1) | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
+    await page.screenshot({ path:`tut-${label}-5-grid.png` });
+    await tapF('.hl-pencil');
+    console.log(`[${label}] slide 5 highlighter on: still glowing ${await frame.evaluate(()=>document.getElementById('hl-tool').classList.contains('glowing'))} (expected false) | Next ready ${await nextReady()} (expected false)`);
+    await tapF('.board-cell[data-r="1"][data-c="1"]');
+    await page.waitForTimeout(200);
+    console.log(`[${label}] slide 5 after one highlight: Next ready ${await nextReady()} (expected true) | solved ${await frame.evaluate(()=>solved)} (expected false)`);
     await page.screenshot({ path:`tut-${label}-5-done.png` });
     await frame.click('#next-btn');
 
-    // Slide 6: parity puzzle
+    // Slide 6: use it. Dark except the note for 2 s, then the highlighter glows twice
+    await page.waitForTimeout(300);
+    const lesson = ()=>frame.evaluate(()=>({ dark: document.getElementById('tut-dim').classList.contains('on'),
+      noteAbove: getComputedStyle(document.getElementById('n-boardr')).zIndex,
+      glowTwice: document.getElementById('hl-tool').classList.contains('glow-twice'),
+      marked: document.querySelectorAll('#board .board-cell.marked').length }));
+    console.log(`[${label}] slide 6 at 0.3 s:`, JSON.stringify(await lesson()), '(expected dark, note above it (86), no glow yet, 5 marked)');
+    await page.screenshot({ path:`tut-${label}-6-dark.png` });
+    await page.waitForTimeout(2300);
+    console.log(`[${label}] slide 6 at 2.6 s:`, JSON.stringify(await lesson()), `(expected not dark, glowing twice) | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
+    await page.screenshot({ path:`tut-${label}-6-lit.png` });
+    // The given highlights can't be cleared
+    await tapF('.hl-pencil');
+    await tapF('.board-cell[data-r="0"][data-c="0"]');
+    console.log(`[${label}] slide 6 tapping a given highlight: still highlighted ${await frame.evaluate(()=>getMarks()['0,0'] === 0)} (expected true)`);
+    // Highlight the answer in the 4th color, then place the pieces
+    await tapF('.hl-color'); await tapF('.hl-swatch:nth-child(4)');
+    await tapF('.board-cell[data-r="2"][data-c="3"]');
+    console.log(`[${label}] slide 6 (2,3) color ${await frame.evaluate(()=>getMarks()['2,3'])} (expected 3)`);
+    const TARGET6 = { F: [[3,4],[4,3],[4,4],[4,5],[5,5]], Y: [[0,5],[1,5],[2,4],[2,5],[3,5]] };
+    for(const [name, target] of Object.entries(TARGET6)) await placePiece(page, frame, name, target, touch);
+    await page.waitForTimeout(8000);
+    console.log(`[${label}] slide 6 counted: "${await counts()}" (expected 4 6 4 4 6 6 | 4 4 6 4 6 6) | Next ready ${await nextReady()} (expected true) | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())}`);
+    await page.screenshot({ path:`tut-${label}-6-done.png` });
+    await frame.click('#next-btn');
+
+    // Slide 7: parity puzzle
     const shown = id => frame.evaluate(i=>document.getElementById(i).classList.contains('shown'), id);
     await page.waitForTimeout(650);
-    console.log(`[${label}] slide 6: orange note glowing ${await lit('big-note')} (expected true) | Hint shown ${await shown('hint-btn')} (expected false)`);
-    await page.screenshot({ path:`tut-${label}-6-start.png` });
+    console.log(`[${label}] slide 7: orange note glowing ${await lit('big-note')} (expected true) | Hint shown ${await shown('hint-btn')} (expected false) | highlighter clear ${await toolClear()}`);
+    await page.screenshot({ path:`tut-${label}-7-start.png` });
     // Every piece placed with no rule broken, but uneven (puzzle4_tilings.js #0) → glowing Hint button
     const WRONG = { W: [[3,1],[3,2],[4,2],[4,3],[5,3]], P: [[3,5],[4,4],[4,5],[5,4],[5,5]],
                     N: [[0,1],[0,2],[0,3],[1,0],[1,1]], V: [[3,0],[4,0],[5,0],[5,1],[5,2]] };
@@ -176,18 +191,18 @@ async function placePiece(page, frame, name, target, touch){
     await placePiece(page, frame, 'V', WRONG.V, touch);
     await page.waitForTimeout(300);
     console.log(`[${label}] all placed, uneven: Hint shown ${await shown('hint-btn')}, glowing ${await lit('hint-btn')} (expected true, true)`);
-    await page.screenshot({ path:`tut-${label}-6-hint-btn.png` });
+    await page.screenshot({ path:`tut-${label}-7-hint-btn.png` });
     await frame.click('#hint-btn'); await page.waitForTimeout(500);
     console.log(`[${label}] Hint opened: spotlit squares ${await frame.locator('#spot-svg .spot-ring').count()} (expected 0: the dotted area is lit, no ring) | text starts ${JSON.stringify((await frame.textContent('#spot-text')).trim().slice(0, 45))}`);
-    await page.screenshot({ path:`tut-${label}-6-hint.png` });
+    await page.screenshot({ path:`tut-${label}-7-hint.png` });
     await frame.click('#spot-ok'); await page.waitForTimeout(200);
     await frame.click('#back-btn'); await page.waitForTimeout(250); await frame.click('#next-btn'); await page.waitForTimeout(250);
     for(const [name, target] of Object.entries(TARGETS[4])) await placePiece(page, frame, name, target, touch);
     await page.waitForTimeout(1500);
-    console.log(`[${label}] slide 6 counting: orange note "${(await frame.textContent('#n-boardr')).trim()}" (expected "")`);
+    console.log(`[${label}] slide 7 counting: orange note "${(await frame.textContent('#n-boardr')).trim()}" (expected "")`);
     await page.waitForTimeout(6500);
-    console.log(`[${label}] slide 6 done: Finish ready ${await nextReady()}, counts "${await counts()}" | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())}`);
-    await page.screenshot({ path:`tut-${label}-6-done.png` });
+    console.log(`[${label}] slide 7 done: Finish ready ${await nextReady()}, counts "${await counts()}" | badge ${JSON.stringify((await frame.textContent('#n-boardr')).replace(/\s+/g,' ').trim())}`);
+    await page.screenshot({ path:`tut-${label}-7-done.png` });
     await frame.click('#next-btn');
     await page.waitForTimeout(250);
     console.log(`[${label}] after Finish, popup closed:`, await page.isHidden('#tutorial-overlay'),
