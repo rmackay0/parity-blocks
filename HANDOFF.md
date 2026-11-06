@@ -1,8 +1,37 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-05, evening)
+## START HERE (updated 2026-11-06)
 
-**Status: everything is committed AND pushed** (2026-11-05 evening, with
+**Status:** the 2026-11-06 tutorial work below is committed, NOT pushed
+(push only with the user's OK). Everything before it is pushed.
+
+**2026-11-06: tutorial on phones, glows never cut off** (tutorial.html)
+- Phones, on solving (slides 2, 4, 6, 7): nothing on the slide is cleared
+  or moves while it counts. The solved note floats in `#win-float`
+  (`planPhoneWin`): just above the column counts if it fits on screen
+  (slides 2/4/6), else under the grid; if that runs off the bottom, the
+  grid slides up (`#board-wrap` transform) into the empty pieces' row; last
+  resort (Large text, SE) it covers the grid's bottom. The highlighter fades.
+- Slide 6: the highlighter glows until tapped (`glowing`, was twice).
+  Phones: the 90 s hint is a popup over the grid (`showLessonHint`) with
+  Got it, then a small Hint button (`#hl-hint-btn`) at the left end of the
+  pieces' row brings it back; no scrolling.
+- Last slide on phones: "Make sure…" is a Got it popup at the start (the
+  slide shows only pieces + grid). The popup code (`showHint(steps, i,
+  onClose)`) now takes any list of steps; `over: true` = over the grid.
+- Slides 2 and 4 on phones: shorter, closer step boxes, tighter glow.
+- Glows: `.tut-body` reaches `--edge-room` (24px) behind the header and the
+  Back/Next bar (which sit on top), padded the same, so nothing that
+  glows is clipped at its edges; scroll-hint.js reads `--edge-room`. Use
+  `visibleArea()` (header bottom → footer top) to ask what's on screen.
+  New test: `glow_clip_test.js` (every glow, laptops + phones, Large text).
+- Tests updated: tutorial_test (badge anywhere, glowing, phone popups),
+  hl_hint_test (phone popup + Hint button), scroll_hint_test (Large text,
+  since slide 1 no longer scrolls on an SE).
+- Answered: phones' scroll bars are the phone's own (iOS shows a thin one
+  only while scrolling; pages can't make it stay). We could draw our own.
+
+**Earlier status: everything is committed AND pushed** (2026-11-05 evening, with
 the user's OK): the "notes fr claude v1" PDF work and the chat requests
 after it. See the 2026-11-05 (evening) section just below.
 **Ask the user next time:** how the iPhone fixes (stuck piece copy, marks

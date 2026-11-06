@@ -17,6 +17,8 @@ const shown = p=>p.evaluate(()=>[...document.querySelectorAll('.scroll-hint')].s
     for(const [w, h, dev, touch] of [[375, 667, 'phone', true], [1280, 800, 'laptop', false]]){
       console.log(`${engine} ${dev}`);
       const ctx = await browser.newContext({ viewport:{ width:w, height:h }, hasTouch:touch, isMobile:touch });
+      // (Large text, so slide 1 goes on below the screen: since 2026-11-05 it fits an SE with standard text)
+      await ctx.addInitScript(()=>localStorage.setItem('pb_largeText', '1'));
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', e=>errors.push(e.message));

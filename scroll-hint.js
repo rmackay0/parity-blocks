@@ -40,8 +40,11 @@
       const show = PHONE.matches && onScreen && more;
       hint.classList.toggle('shown', show);
       if(show){
+        // (--edge-room: how far the area reaches down behind something else,
+        // e.g. the tutorial's Back / Next bar, so it sits above that instead)
+        const room = parseFloat(getComputedStyle(el).getPropertyValue('--edge-room')) || 0;
         hint.style.left = (r.left + r.width/2) + 'px';
-        hint.style.top = (r.bottom - 50) + 'px';
+        hint.style.top = (r.bottom - room - 50) + 'px';
       }
     }
     const later = ()=>{ if(!queued){ queued = true; requestAnimationFrame(update); } };

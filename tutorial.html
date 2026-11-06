@@ -26,16 +26,22 @@
     6  Use it (user, 2026-11-05): a board with four pieces fixed and five of
        its six empty spaces highlighted (those can't be cleared). The page
        is dark except a note ("…highlight where the last empty space has to
-       go…"); after 3.5 s the dark lifts and the highlighter glows twice. The
-       answer: row 3, column 4. Pieces can be moved at any time. On
-       solving, the blocks are counted.
+       go…"); after 3.5 s the dark lifts and the highlighter glows until
+       it's tapped. The answer: row 3, column 4. Pieces can be moved at
+       any time. After 90 s without the answer, a hint (phones: a popup
+       over the grid with "Got it", then a small Hint button brings it
+       back). On solving, the blocks are counted.
        ** CHECK IN WITH THE USER: nothing confirms a correct highlight, so
        players may be unsure they did it right (user's own worry). **
     7  Make every row and column even (the parity puzzle). If they place
        every piece but the rows/columns aren't all even, a glowing Hint
        button appears: it darkens the page, spotlights the dotted area
        and explains. (This puzzle has no dotted squares.) On solving, the
-       blocks are counted. Last button says "Finish"
+       blocks are counted. Last button says "Finish". Phones: the "Make
+       sure…" note is a popup closed with "Got it", so the slide is clean.
+  Phones, on solving (user, 2026-11-06): nothing on the slide moves; the
+  solved note floats just above the grid (the last slide: below it, the
+  grid moving up first on small phones if needed). See planPhoneWin.
   (2026-10-27: the old empty-space slides and the red X squares were
   removed; X squares became dotted squares. Slide 5 was then added back
   in a new form at the user's request, and on 2026-11-05 replaced by the
@@ -108,7 +114,18 @@
   .close-x:hover { filter: brightness(0.94); }
 
   /* ── Slide area ── */
-  .tut-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px 20px 12px; }
+  /* (A scrolling area cuts off anything poking out past its edges, like a
+     glow (user, 2026-11-06: the highlighter's glow was cut off at the top).
+     So the slide area reaches --edge-room further up behind the header and
+     down behind the Back / Next bar, padded by the same amount: nothing
+     moves, but glows have room. The header and bar stay on top so their
+     buttons still work. tests/browser/glow_clip_test.js checks every glow.) */
+  /* (never sideways: the grid's invisible drawing layers are wider than
+     the grid and could make an iPhone SE's slide wobble sideways) */
+  .tut-body { --edge-room: 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+              margin: calc(-1 * var(--edge-room)) 0;
+              padding: calc(4px + var(--edge-room)) 20px calc(12px + var(--edge-room)); }
+  .tut-head, .tut-foot { position: relative; z-index: 2; }
   .note { font-size: 1.1rem; line-height: 1.45; color: var(--color-text); }
   .note b { color: var(--color-accent); font-weight: 400; }
 
@@ -282,6 +299,10 @@
     background: var(--color-accent); color: #fff;
   }
   .hint-btn.lit { animation: hintGlow 1.2s ease-in-out infinite alternate; }
+  /* (an invisible strip under it: when it's the last thing on a slide that
+     scrolls, there's room under it for its glow at the bottom) */
+  .hint-btn { position: relative; }
+  .hint-btn::after { content: ''; position: absolute; left: 0; top: 100%; width: 1px; height: var(--edge-room, 24px); pointer-events: none; }
   @keyframes hintGlow { from { box-shadow: 0 0 0 3px rgba(var(--glow),0.5), 0 0 10px rgba(var(--glow),0.35); }
                         to   { box-shadow: 0 0 0 5px rgba(var(--glow),0.9), 0 0 28px rgba(var(--glow),0.7); } }
   @media (max-width: 760px) { .hint-btn { margin-left: auto; margin-right: auto; } }
@@ -353,7 +374,7 @@
     .tut-head h1 { font-size: 1.6rem; }
     .dots { margin-top: 6px; }
     .close-x { top: 8px; width: 36px; height: 36px; font-size: 1.15rem; }
-    .tut-body { padding-top: 2px; padding-bottom: 6px; }
+    .tut-body { padding-top: calc(2px + var(--edge-room)); padding-bottom: calc(6px + var(--edge-room)); }
     .tut-foot { padding: 6px 14px 10px; }
     .foot-btn { height: 44px; min-width: 116px; font-size: 1.25rem; }
   }
@@ -419,7 +440,32 @@
     .intro h2 { margin-bottom: 4px; }
     .intro ol { margin-bottom: 8px; }
     .intro p { margin-bottom: 10px; }
+    /* slides 2 and 4 (user, 2026-11-06): shorter step boxes, closer
+       together, a little further from the dots, with a tighter glow */
+    .tut-body { padding-top: calc(6px + var(--edge-room)); }
+    .play .step.callout { padding: 3px 10px; line-height: 1.35; }
+    .play .step.callout.lit { box-shadow: 0 0 0 2px rgba(var(--glow), 0.7), 0 0 10px rgba(var(--glow), 0.3); }
+    .steps { gap: 1px; }
+    /* slide 6: a little tighter, so the whole grid shows on small phones */
+    .play.hl-lesson .empty-card { margin: 0; padding: 8px 12px; }
+    .play.hl-lesson .empty-card p { margin-bottom: 4px; }
+    .play.hl-lesson .empty-card p:last-child { margin-bottom: 0; }
+    /* slide 6: room for its Hint button at the left end of the pieces' row */
+    .play.hl-lesson.with-hl .tray { padding-left: 76px; }
   }
+  /* Phones: the solved note floats just above the grid (or below it, on
+     the last slide), on its own background, over the faded text */
+  .win-float { position: absolute; left: 0; right: 0; z-index: 60; display: flex; justify-content: center; pointer-events: none; }
+  .win-float .win-badge { margin: 0; max-width: calc(100% - 8px);
+    background: linear-gradient(rgba(111, 174, 90, 0.12), rgba(111, 174, 90, 0.12)), var(--color-panel); }
+  #board-wrap { transition: transform 0.5s ease; }   /* (last slide, small phones: moves up for the solved note) */
+  .hl-tool.fading { pointer-events: none; }
+  /* Phones, slide 6: the small Hint button that brings the hint back */
+  .hint-btn.lesson-hint { position: absolute; z-index: 50; margin: 0; height: 36px; padding: 0 12px; font-size: 1.1rem;
+                          animation: fadeIn 0.6s ease both; }
+  html.large-text .hint-btn.lesson-hint { font-size: 1.1rem; height: 36px; }
+  /* A popup's text in the big orange style (the last slide's "Make sure…" on phones) */
+  .spot-card .big-note { border-left: none; padding-left: 0; margin-bottom: 12px; }
 
   [hidden] { display: none !important; }
 </style>
@@ -472,6 +518,11 @@
       <div class="note n-boardl" id="n-boardl"></div>
       <div class="n-below" id="n-below"></div>
       <p class="hint-caption" id="hint-caption" hidden></p>
+      <!-- Phones: the solved note, floating just above (or below) the grid,
+           so nothing moves when it comes (placed by planPhoneWin) -->
+      <div class="win-float" id="win-float" hidden></div>
+      <!-- Phones, slide 6: brings its hint back (left end of the pieces' row) -->
+      <button type="button" class="hint-btn lesson-hint" id="hl-hint-btn" hidden>Hint</button>
     </section>
   </main>
 
@@ -825,8 +876,13 @@ function showSlide(i){
   setMarkColor(0);
   showColorMenu(false);
   hideHint();
+  hintOnClose = null;
+  $('win-float').hidden = true;
+  $('win-float').innerHTML = '';
+  $('board-wrap').style.transform = '';
+  $('hl-hint-btn').hidden = true;
   $('tut-overlay').innerHTML = '';
-  ['tut-overlay', 'n-boardr'].forEach(id=>$(id).classList.remove('fading'));
+  ['tut-overlay', 'n-boardr', 'hl-tool'].forEach(id=>$(id).classList.remove('fading'));
   try { sessionStorage.setItem(SLIDE_KEY, String(i)); } catch(e){}   // so a refresh comes back here
   if(s.kind === 'intro') renderIntro();
   if(s.kind === 'dont') showDontSlide();
@@ -840,10 +896,16 @@ function showSlide(i){
     $('n-boardr').innerHTML = s.boardRight || '';
     $('n-boardl').innerHTML = '';
     $('n-below').innerHTML = '';
-    if(s.bigNoteGlow){ $('big-note').classList.add('callout', 'strong'); later(BIG_GLOW_DELAY_MS, glowBigNote); }
+    // Phones: the last slide's "Make sure…" is a popup they close with
+    // "Got it", so the slide itself is just the pieces and the grid (and
+    // there's room under the grid for the hint): user, 2026-11-06
+    const notePopup = s.bigNoteGlow && PHONE_LAYOUT.matches;
+    if(notePopup) $('big-note').hidden = true;
+    else if(s.bigNoteGlow){ $('big-note').classList.add('callout', 'strong'); later(BIG_GLOW_DELAY_MS, glowBigNote); }
     setGameMode('play');
     loadPuzzle(s.puzzle);
     lightSteps();             // (now that it's in play mode, the first step glows)
+    if(notePopup) later(BIG_GLOW_DELAY_MS, ()=>showHint([{ over: true, html: `<div class="big-note">${$('big-note').innerHTML}</div>` }]));
   }
   if(s.highlighterIntro) showHighlighterIntro();
   if(s.highlighterLesson) showHighlighterLesson();
@@ -884,7 +946,8 @@ function glowBigNote(){
   if(bigNoteGlowed || gameMode === 'view') return;
   bigNoteGlowed = true;
   $('big-note').classList.add('lit');
-  later(BIG_GLOW_MS, ()=>$('big-note').classList.remove('lit'));
+  // (it's gone if the puzzle was solved meanwhile)
+  later(BIG_GLOW_MS, ()=>{ if($('big-note')) $('big-note').classList.remove('lit'); });
 }
 
 /* ── Final slide: the Hint ──
@@ -903,15 +966,21 @@ function offerHint(){
   hintOffered = true;
   $('hint-btn').classList.add('shown', 'lit');
 }
-/* The hint comes in steps (the slide's hintSteps), one "Got it" each:
+/* A popup comes in steps, one "Got it" each (the final slide's Hint: its
+   hintSteps). Each step is
    { lit: 'area' (the dotted squares, or else the dotted area) or a list
-     of squares, mark: a square to highlight for good, text } */
-let hintStep = 0;
-function showHint(step){
+     of squares (none: everything dark), mark: a square to highlight for
+     good, text (or html), over: true to sit over the middle of the grid }
+   Phones also use it for slide 6's hint and the last slide's "Make sure…"
+   note. onClose runs after the last "Got it". */
+let hintStep = 0, hintList = [], hintOnClose = null;
+function showHint(steps, step, onClose){
+  hintList = steps;
   hintStep = step || 0;
-  const s = SLIDES[current].hintSteps[hintStep];
-  $('hint-btn').classList.remove('lit');
-  $('spot-text').innerHTML = `<p>${s.text}</p>`;
+  if(!step) hintOnClose = onClose || null;
+  const s = hintList[hintStep];
+  if($('hint-btn')) $('hint-btn').classList.remove('lit');
+  $('spot-text').innerHTML = s.html || `<p>${s.text}</p>`;
   $('spot').hidden = false;
   const W = innerWidth, H = innerHeight, pad = 5;
   // A square this step highlights (in the highlighter's first color) and
@@ -922,7 +991,7 @@ function showHint(step){
     setLockedMarks([k]);
   }
   // The squares left lit
-  const lit = s.lit === 'area' ? (puzzle.blocked.length ? puzzle.blocked : (puzzle.hintOutline || [])) : s.lit;
+  const lit = s.lit === 'area' ? (puzzle.blocked.length ? puzzle.blocked : (puzzle.hintOutline || [])) : (s.lit || []);
   const cellAt = ([r,c])=>boardEl.querySelector(`.board-cell[data-r="${r}"][data-c="${c}"]`);
   const holes = lit.map(cellAt).filter(Boolean).map(el=>el.getBoundingClientRect());
   const box = (b, extra)=>`x="${b.left - pad}" y="${b.top - pad}" width="${b.width + 2*pad}" height="${b.height + 2*pad}" rx="8" ${extra}`;
@@ -941,23 +1010,36 @@ function showHint(step){
   const card = $('spot-card'), gapPx = 16;
   const boardBox = $('board-outer').getBoundingClientRect();
   const top = boardBox.top, bottom = boardBox.bottom;
-  const below = H - bottom > top;      // more room under the squares than above them?
-  card.style.top    = below ? (bottom + gapPx) + 'px' : '';
-  card.style.bottom = below ? '' : (H - top + gapPx) + 'px';
-  card.style.maxHeight = ((below ? H - bottom : top) - 2*gapPx) + 'px';
   card.style.overflowY = 'auto';
+  if(s.over){
+    // Over the middle of the grid (never off the screen)
+    card.style.bottom = '';
+    card.style.maxHeight = (H - 2*gapPx) + 'px';
+    const h = card.offsetHeight;
+    card.style.top = Math.max(gapPx, Math.min(H - gapPx - h, top + (boardBox.height - h)/2)) + 'px';
+  } else {
+    const below = H - bottom > top;      // more room under the squares than above them?
+    card.style.top    = below ? (bottom + gapPx) + 'px' : '';
+    card.style.bottom = below ? '' : (H - top + gapPx) + 'px';
+    card.style.maxHeight = ((below ? H - bottom : top) - 2*gapPx) + 'px';
+  }
   card.scrollTop = 0;                               // start at the first sentence
   $('spot-ok').focus({ preventScroll: true });
 }
 function hideHint(){ $('spot').hidden = true; }
-// "Got it": the next part of the hint, or (after the last) close it.
+// "Got it": the next part of the popup, or (after the last) close it.
 // Tapping the dark area does the same.
 function nextHint(){
-  const steps = SLIDES[current].hintSteps || [];
-  if(hintStep + 1 < steps.length) showHint(hintStep + 1); else hideHint();
+  if(hintStep + 1 < hintList.length) showHint(hintList, hintStep + 1); else closeHint();
+}
+function closeHint(){
+  hideHint();
+  const then = hintOnClose;
+  hintOnClose = null;
+  if(then) then();
 }
 // (The Hint button is created with its slide, so listen on the page)
-document.addEventListener('click', e=>{ if(e.target.closest('#hint-btn')) showHint(0); });
+document.addEventListener('click', e=>{ if(e.target.closest('#hint-btn')) showHint(SLIDES[current].hintSteps, 0); });
 $('spot-ok').onclick = nextHint;
 $('spot').onclick = e=>{ if(!$('spot-card').contains(e.target)) nextHint(); };
 
@@ -973,15 +1055,24 @@ gameHooks.onSolved = ()=>{
   lightSteps();                                         // (no step glows once it's solved)
   if($('big-note')) $('big-note').classList.remove('lit');
   if($('hint-btn')) $('hint-btn').hidden = true;     // (gives its space to the solved note)
+  $('hl-hint-btn').hidden = true;
   hideHint();
+  hintOnClose = null;
   // (The solved note waits until any counting is done)
   if(s.countAnimation){
     // All the other text fades first. (It keeps its space, so the board
-    // doesn't move; the note beside the board is then cleared, making room
-    // for the solved badge.)
+    // doesn't move.)
     $('play').classList.add('counting');
     $('n-boardr').classList.add('fading');
-    later(TEXT_FADE_MS, ()=>{ $('n-boardr').innerHTML = ''; $('n-boardr').classList.remove('fading'); });
+    if(PHONE_LAYOUT.matches){
+      // Phones: nothing is cleared, so nothing above the grid shrinks and
+      // the grid stays exactly where it was while it's counted (user,
+      // 2026-11-06); the solved note will float just above it
+      $('hl-tool').classList.add('fading');
+      planPhoneWin();
+    }
+    // (Laptops: the note beside the board is cleared, making room for the solved badge)
+    else later(TEXT_FADE_MS, ()=>{ $('n-boardr').innerHTML = ''; $('n-boardr').classList.remove('fading'); });
     drawCounts(true);
   }
   else { addSolvedNote(); markDone(); }
@@ -990,7 +1081,49 @@ const TEXT_FADE_MS = 500;      // how long text takes to fade out (see .fading)
 function addSolvedNote(){
   const s = SLIDES[current];
   if(!s.solvedTitle) return;
-  $('n-boardr').appendChild(solvedBadge(s.solvedTitle, s.solvedNote, { animate: true }));   // (no sound in the tutorial)
+  const badge = solvedBadge(s.solvedTitle, s.solvedNote, { animate: true });   // (no sound in the tutorial)
+  if(!$('win-float').hidden) $('win-float').appendChild(badge);   // (phones: planPhoneWin chose its spot)
+  else $('n-boardr').appendChild(badge);
+}
+/* Phones: where the solved note goes, worked out as soon as it's solved
+   (before the counting), so it's fully on screen with no scrolling:
+     - just above the column counts, if it fits on screen there (slides
+       2, 4 and 6: over the faded text and pieces)
+     - otherwise just under the grid (the last slide)
+     - and if that would run off the bottom (small phones), the grid
+       moves up into the empty pieces' row first, just enough */
+const COUNT_ROOM = 30;    // px above the grid for the column counts
+// The part of the screen between the header and the Back / Next bar (the
+// slide area itself reaches a little behind both: see --edge-room)
+function visibleArea(){
+  return { top: document.querySelector('.tut-head').getBoundingClientRect().bottom,
+           bottom: document.querySelector('.tut-foot').getBoundingClientRect().top };
+}
+function planPhoneWin(){
+  const s = SLIDES[current], float = $('win-float');
+  if(!s.solvedTitle) return;
+  // (measure the note at its real width, unseen)
+  float.style.visibility = 'hidden';
+  float.hidden = false;
+  float.appendChild(solvedBadge(s.solvedTitle, s.solvedNote));
+  const h = float.offsetHeight;
+  float.innerHTML = '';
+  float.style.visibility = '';
+  const view = visibleArea(), play = $('play').getBoundingClientRect();
+  const board = $('board-outer').getBoundingClientRect();
+  const visTop = view.top + 4, visBottom = view.bottom - 6;
+  let top = board.top - COUNT_ROOM - h;
+  if(top < visTop){
+    top = board.bottom + 10;
+    const over = top + h - visBottom;
+    const room = Math.max(0, board.top - COUNT_ROOM - visTop);   // how far the grid can go up
+    const shift = Math.min(Math.max(0, over), room);
+    if(shift){ $('board-wrap').style.transform = `translateY(${-shift}px)`; top -= shift; }
+    // (still too tall, e.g. Large text on an iPhone SE: it covers the
+    // bottom of the grid rather than go off the screen)
+    top = Math.min(top, visBottom - h);
+  }
+  float.style.top = (top - play.top) + 'px';
 }
 
 /* ── Slide 5: meet the highlighter ──
@@ -1063,6 +1196,7 @@ function placeBubble(){
 window.addEventListener('resize', ()=>setTimeout(placeBubble, 150));   // (after game.js re-fits the board)
 // Turned on → the color message (turned off again before that → back to the first)
 gameHooks.onHighlighter = on=>{
+  if(on && SLIDES[current].highlighterLesson) $('hl-tool').classList.remove('glowing');   // (slide 6: tapped, so it stops glowing)
   if(!SLIDES[current].highlighterIntro) return;
   if(on && introStage === 'enable') setIntroStage('color');
   else if(!on && introStage === 'color') setIntroStage('enable');
@@ -1119,27 +1253,46 @@ function showHighlighterLesson(){
   later(HL_DARK_MS, ()=>{
     dim.classList.remove('on');
     later(800, ()=>$('n-boardr').classList.remove('raised'));
-    $('hl-tool').classList.add('glow-twice');
+    // it glows until they tap it (user, 2026-11-06; was twice)
+    if(!highlighting) $('hl-tool').classList.add('glowing');
     // Phones: scroll gently until the whole board shows, keeping the
     // highlighter on screen (the note above it has been read by now)
-    const body = $('play').parentElement, bodyBox = body.getBoundingClientRect();
+    const body = $('play').parentElement, bodyBox = visibleArea();
     const over = $('board-outer').getBoundingClientRect().bottom - bodyBox.bottom + 8;
     const room = $('hl-tool').getBoundingClientRect().top - bodyBox.top - 4;
     if(over > 0 && room > 0) body.scrollBy({ top: Math.min(over, room), behavior: 'smooth' });
   });
 }
-// The hint, unless they've found the square (or solved it) by now
+// The hint, unless they've found the square (or solved it) by now.
+// Phones: it pops up over the grid and they close it with "Got it"; then
+// a small Hint button at the left end of the pieces' row brings it back.
+// The page doesn't scroll, so the whole grid stays in view (user, 2026-11-06).
 function showHighlightHint(){
   if(solved || getMarks()[HL_GOAL] !== undefined) return;
+  if(PHONE_LAYOUT.matches){ showLessonHint(); return; }
   const hint = $('hl-hint');
   if(!hint) return;
   hint.hidden = false;
   requestAnimationFrame(()=>hint.classList.add('shown'));
   placeHighlighterTool();          // (on phones the note grew, moving the pieces down)
   // make sure it's in view (on phones the note is at the top and may be scrolled away)
-  const body = $('play').parentElement, top = hint.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+  const body = $('play').parentElement, top = hint.getBoundingClientRect().top - visibleArea().top - 8;
   if(top < 0) body.scrollBy({ top, behavior: 'smooth' });
 }
+function showLessonHint(){
+  if(solved || !SLIDES[current].highlighterLesson) return;
+  $('hl-hint-btn').hidden = true;
+  showHint([{ over: true, text: HL_HINT }], 0, showLessonHintButton);
+}
+function showLessonHintButton(){
+  if(solved || !SLIDES[current].highlighterLesson) return;
+  const btn = $('hl-hint-btn'), play = $('play').getBoundingClientRect();
+  const tray = $('tray').getBoundingClientRect(), tool = $('hl-tool').getBoundingClientRect();
+  btn.hidden = false;
+  btn.style.left = Math.max(0, tray.left - play.left) + 'px';
+  btn.style.top = (tool.top + tool.height/2 - play.top - btn.offsetHeight/2) + 'px';   // (level with the highlighter)
+}
+$('hl-hint-btn').onclick = showLessonHint;
 
 /* ── "Don't place a piece over" slide ──
    Plays each picture's animation in turn with a highlighted square behind
@@ -1260,7 +1413,7 @@ $('back-btn').onclick = ()=>{ if(current > 0) showSlide(current - 1); };
 $('close-x').onclick = ()=>closeTutorial(false);
 document.addEventListener('keydown', e=>{
   if(e.key !== 'Escape') return;
-  if(!$('spot').hidden) hideHint();      // Esc closes the hint first
+  if(!$('spot').hidden) closeHint();     // Esc closes the hint first
   else closeTutorial(false);
 });
 
