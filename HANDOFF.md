@@ -94,6 +94,19 @@ beside the board) behave on real Safari; whether slide 6 needs a
   square for good (locked), new text "The highlighted square is one of
   six empty spaces…" (old two-point text gone). User wrote "(use the
   highlighting tool)"; Claude wrote "(Use the highlighter tool.)".
+- **Phones (later still):** `scroll-hint.js` = a bobbing ▾ at the bottom
+  of the tutorial / rules while there's more below (tap = scroll; phones
+  only; `scroll_hint_test.js`). Highlighter 10px clear of the pieces
+  (iPhone mini). **Tutorial redone for phones** ("Phones: less scrolling"
+  block at the END of tutorial.html's styles, so it wins): message line
+  hidden, one-row header (moon, Large text, title, ✕; dots below),
+  slimmer Back/Next (the old phone footer sizes were ignored: they came
+  before the base rules), highlighter at the right end of the pieces' row
+  (`gameSettings.hlBeside`, phones only; tray `padding-right: 76px`),
+  slide 1's 12 pieces in 2 rows of 6 (11px squares). `phone_layout_check.js`
+  now also measures Safari-sized screens: 0px scrolling on every slide on
+  iPhone 14 / mini; iPhone SE in Safari (375 × 553): slides 3, 6, 7 scroll
+  12–39px (was 175–199px on the worst).
 - Still failing, unrelated (same before these changes): `next_level_test`
   (Hard: "room between the time and the buttons"), `share_test` (times
   out on #solved-share).

@@ -1100,11 +1100,24 @@ function placeHighlighterTool(){
     right = boardOuterEl.getBoundingClientRect().right - w;
     highest = trayEl.getBoundingClientRect().top + hlToolEl.offsetHeight;
   }
+  const holder = hlToolEl.offsetParent.getBoundingClientRect();
+  const w = hlToolEl.offsetWidth, h = hlToolEl.offsetHeight;
+  // gameSettings.hlBeside: at the right end of the pieces' row instead of
+  // above it, centred on the top row (the tutorial on phones, to save a
+  // row of screen; the pieces' row leaves room for it on its right)
+  if(gameSettings.hlBeside){
+    const tray = trayEl.getBoundingClientRect();
+    const rowMid = slots.length
+      ? (()=>{ const r = slots.map(s=>s.getBoundingClientRect()), end = Math.min(...r.map(q=>q.bottom));
+               const top = r.filter(q=>q.top < end); return (Math.min(...top.map(q=>q.top)) + Math.max(...top.map(q=>q.bottom))) / 2; })()
+      : tray.top + h/2 + 4;           // (no pieces: at the top of their row, which may grow under it)
+    hlToolEl.style.left = Math.max(0, Math.min(tray.right - holder.left - w, holder.width - w)) + 'px';
+    hlToolEl.style.top = Math.max(0, rowMid - holder.top - h/2) + 'px';
+    return;
+  }
   // gameSettings.hlOffset nudges it (px; the tutorial puts it a little
   // higher and further right, user 2026-11-05)
   const nudge = gameSettings.hlOffset || { x: 0, y: 0 };
-  const holder = hlToolEl.offsetParent.getBoundingClientRect();
-  const w = hlToolEl.offsetWidth, h = hlToolEl.offsetHeight;
   const left = Math.max(0, Math.min(right - holder.left + 2 + nudge.x, holder.width - w));
   hlToolEl.style.left = left + 'px';
   // (10px clear of the tallest piece: at 4px it looked like it was touching
