@@ -3,7 +3,20 @@
 ## START HERE (updated 2026-11-06)
 
 **Status: everything is committed AND pushed** (2026-11-06, with the
-user's OK), including the tutorial work below.
+user's OK), including the tutorial work below. Session ended cleanly.
+
+**Ask the user next time (2026-11-06):**
+- How the new phone tutorial behaves on their real iPhone: slide 6's
+  popup hint + Hint button, the solved note by the grid, the last slide's
+  "Make sure…" popup, glows no longer cut off.
+- Do they want our own always-visible thin scroll bar on phones (offered;
+  iOS only shows its own while scrolling)?
+- Still not perfect: iPhone SE slide 6 starts scrolled ~11px (top of the
+  note slightly hidden); Large text on small phones: slide 2 scrolls a
+  little, and the last slide's solved note covers the grid's bottom on an SE.
+- Still open from before: the iPhone fixes (stuck piece copy, marks beside
+  the board) on real Safari; a "that's right" moment on slide 6; Medium's
+  gold text on white; pre-existing `next_level_test` / `share_test` failures.
 
 **2026-11-06: tutorial on phones, glows never cut off** (tutorial.html)
 - Phones, on solving (slides 2, 4, 6, 7): nothing on the slide is cleared
