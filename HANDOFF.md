@@ -2,8 +2,8 @@
 
 ## START HERE (updated 2026-11-06)
 
-**Status:** the 2026-11-06 tutorial work below is committed, NOT pushed
-(push only with the user's OK). Everything before it is pushed.
+**Status: everything is committed AND pushed** (2026-11-06, with the
+user's OK), including the tutorial work below.
 
 **2026-11-06: tutorial on phones, glows never cut off** (tutorial.html)
 - Phones, on solving (slides 2, 4, 6, 7): nothing on the slide is cleared
