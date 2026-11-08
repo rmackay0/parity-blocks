@@ -339,6 +339,15 @@ body {
 /* [COLORS] A finished board whose rows/columns aren't all even glows red */
 #board-outer.uneven { box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.85), 0 0 22px rgba(214, 40, 40, 0.45); }
 #board { display: grid; }
+/* Live counts beside the board (sandbox's Counts button; game.js LIVE COUNTS) */
+#live-counts { position: absolute; left: 0; top: 0; pointer-events: none; }
+.live-count {
+  position: absolute; transform: translate(-50%, -50%);
+  font-weight: 700; line-height: 1; white-space: nowrap;
+}
+.live-count.even { color: var(--color-valid); }
+.live-count.odd  { color: var(--color-status); }
+.live-count.zero { color: var(--color-text-dim); opacity: 0.6; }
 .board-cell {
   background: var(--color-cell);
   border: 1px solid var(--color-cell-line);

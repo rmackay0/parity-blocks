@@ -49,8 +49,12 @@ const gameHooks = {
                       it off to keep its hand-picked colors.
      showCaption      show the puzzle's caption (hintText) under the board.
                       The puzzle page turns it off (the user removed "No
-                      piece crosses the dotted line."; the rules say it). */
-const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true, showCaption: true };
+                      piece crosses the dotted line."; the rules say it).
+     liveCounts       show how many blocks are in every row and column,
+                      beside the board, updated after every move (the
+                      sandbox's Counts button, 2026-11-08). Call
+                      setLiveCounts(on) to change it. */
+const gameSettings = { explain: true, lockWhenSolved: false, distinctColors: true, showCaption: true, liveCounts: false };
 
 /* [COLORS] Piece colors, given out in the order the puzzle lists its
    pieces, so no two pieces in a puzzle look alike. They're the Woodblock
@@ -223,8 +227,10 @@ function pxPos(i){ return i*(CELL+GAP); }
 function fitBoard(){
   GAP = cssPx('--board-gap');
   const pad = cssPx('--board-pad');
-  const availW = Math.min(boardWrapEl.clientWidth, window.innerWidth - 32) - 2*pad;
-  const availH = boardWrapEl.clientHeight - 2*pad;
+  // (live counts need room on both sides, so the board stays centred)
+  const countRoom = gameSettings.liveCounts ? 2*LIVE_COUNT_ROOM : 0;
+  const availW = Math.min(boardWrapEl.clientWidth, window.innerWidth - 32) - 2*pad - countRoom;
+  const availH = boardWrapEl.clientHeight - 2*pad - countRoom;
   const byW = (availW - (puzzle.cols-1)*GAP) / puzzle.cols;
   const byH = (availH - (puzzle.rows-1)*GAP) / puzzle.rows;
   // (never below 10px; 20 was the floor until boards could be 16 × 16, which
@@ -361,7 +367,7 @@ function renderBoardPieces(){
 
 function renderAll(){
   if(!puzzle) return;
-  if(gameMode === 'view'){ renderView(); return; }
+  if(gameMode === 'view'){ renderView(); renderLiveCounts(); return; }
   statusEl.classList.remove('good');
   // A lifted copy with no piece being held must never stay on the board
   if(!press || !press.ghost) piecesLayerEl.querySelectorAll('.ghost').forEach(g=>g.remove());
@@ -371,7 +377,53 @@ function renderAll(){
   if(gameMode === 'play') checkSolved();
   else { markOverlayEl.innerHTML = ''; cancelExplain(); statusEl.textContent = ''; boardOuterEl.classList.remove('uneven'); }
   playPendingFeel();       // (the landing / turning animation, on the freshly drawn piece)
+  renderLiveCounts();
   if(gameHooks.onChange) gameHooks.onChange();
+}
+
+/* LIVE COUNTS (sandbox, 2026-11-08): the number of blocks in each row
+   (right of the board) and each column (below it). Odd numbers are red,
+   even ones green; a row or column with no blocks shows a faint 0.
+   [COLORS] --color-status (odd) and --color-valid (even), game.css. */
+const LIVE_COUNT_ROOM = 30;    // px kept free beside the board for the numbers
+function blockCounts(pieces){
+  const filled = new Set();      // (overlapping squares count once)
+  pieces.forEach(p=>p.cells.forEach(([r,c])=>{
+    if(inBounds(p.row+r, p.col+c)) filled.add((p.row+r)+','+(p.col+c));
+  }));
+  const rows = new Array(puzzle.rows).fill(0), cols = new Array(puzzle.cols).fill(0);
+  filled.forEach(k=>{ const [r,c] = k.split(',').map(Number); rows[r]++; cols[c]++; });
+  return { rows, cols };
+}
+function renderLiveCounts(){
+  let box = document.getElementById('live-counts');
+  if(!gameSettings.liveCounts || !puzzle){ if(box) box.remove(); return; }
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'live-counts';
+    box.setAttribute('aria-hidden', 'true');
+    boardOuterEl.appendChild(box);
+  }
+  const pieces = gameMode === 'view' ? ((viewTiling && viewTiling.pieces) || []) : placedPieces;
+  const { rows, cols } = blockCounts(pieces);
+  const pad = cssPx('--board-pad');
+  const w = puzzle.cols*CELL + (puzzle.cols-1)*GAP, h = puzzle.rows*CELL + (puzzle.rows-1)*GAP;
+  box.style.fontSize = Math.max(11, Math.min(20, Math.round(CELL*0.5))) + 'px';
+  box.innerHTML = '';
+  const add = (n, x, y)=>{
+    const s = document.createElement('span');
+    s.className = 'live-count ' + (n === 0 ? 'zero' : n % 2 ? 'odd' : 'even');
+    s.textContent = n;
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
+    box.appendChild(s);
+  };
+  rows.forEach((n, r)=>add(n, 2*pad + w + LIVE_COUNT_ROOM/2, pad + pxPos(r) + CELL/2));
+  cols.forEach((n, c)=>add(n, pad + pxPos(c) + CELL/2, 2*pad + h + LIVE_COUNT_ROOM/2));
+}
+function setLiveCounts(on){
+  gameSettings.liveCounts = !!on;
+  if(puzzle){ setupBoard(); renderAll(); }
 }
 
 // View mode: draw viewTiling's pieces (not the player's), mark odd
@@ -949,22 +1001,11 @@ function checkSolved(){
   // practice, is never "solved")
   if(!boardFull() || !puzzle.pieces.length){ explainLater(''); return; }
 
-  // Count filled squares on the board (overlapping squares count once)
-  const filled = new Set();
-  placedPieces.forEach(p=>p.cells.forEach(([r,c])=>{
-    if(inBounds(p.row+r, p.col+c)) filled.add((p.row+r)+','+(p.col+c));
-  }));
+  // Count the blocks in each row and column (see blockCounts)
+  const counts = blockCounts(placedPieces);
   const oddRows = [], oddCols = [];
-  for(let r=0; r<puzzle.rows; r++){
-    let n = 0;
-    for(let c=0; c<puzzle.cols; c++) if(filled.has(r+','+c)) n++;
-    if(n % 2) oddRows.push(r);
-  }
-  for(let c=0; c<puzzle.cols; c++){
-    let n = 0;
-    for(let r=0; r<puzzle.rows; r++) if(filled.has(r+','+c)) n++;
-    if(n % 2) oddCols.push(c);
-  }
+  counts.rows.forEach((n, r)=>{ if(n % 2) oddRows.push(r); });
+  counts.cols.forEach((n, c)=>{ if(n % 2) oddCols.push(c); });
 
   const problems = [...new Set(placedPieces.map(pieceProblem).filter(Boolean))];
 

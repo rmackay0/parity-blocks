@@ -18,6 +18,24 @@ user's OK), including the tutorial work below. Session ended cleanly.
   the board) on real Safari; a "that's right" moment on slide 6; Medium's
   gold text on white; pre-existing `next_level_test` / `share_test` failures.
 
+**2026-11-08: sandbox colors + live counts** (not pushed yet)
+- Panel piece icons now use the game's colors (`pieceColors(draft)`, in
+  puzzle order), the same as the tray and board; pieces not in the
+  puzzle are grey (`PICKER_GREY`). They used solver.js's old colors.
+- **Counts** button (top right of the sandbox, remembered in
+  `pb_sandboxCounts`): block count beside every row (right) and column
+  (below), red = odd, green = even, faint 0; updates after every move and
+  also shows the solution being viewed. game.js `gameSettings.liveCounts`
+  / `setLiveCounts(on)` / `renderLiveCounts` / `blockCounts` (checkSolved
+  uses it too); the board shrinks by `LIVE_COUNT_ROOM` on each side.
+  Test: `sandbox_counts_test.js`.
+- User asked for a faster parity analysis for puzzles with hundreds of
+  thousands of tilings. Measured 6 × 6 F L N P T U: 355,344 tilings, 456
+  pass parity; Analyze 3.7 s (+0.5 s sending results), counting only
+  1.7 s. Proposed: skip storing failing tilings, and a parity-aware
+  search (fill in reading order, check each row as it's finished,
+  memoize). Waiting on the user.
+
 **2026-11-06: tutorial on phones, glows never cut off** (tutorial.html)
 - Phones, on solving (slides 2, 4, 6, 7): nothing on the slide is cleared
   or moves while it counts. The solved note floats in `#win-float`

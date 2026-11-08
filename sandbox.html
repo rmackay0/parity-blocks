@@ -174,6 +174,9 @@
   .solution-board { display: flex; justify-content: center; margin: 4px 0 10px; min-height: 40px; }
   .solution-board svg { max-width: 100%; height: auto; }
 
+  /* Counts button (top right) while the live counts are showing */
+  #counts-btn[aria-pressed="true"] { background: var(--color-text); color: var(--color-bg); }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -297,6 +300,7 @@
   <div class="top-row">
     <a class="back-btn" href="index.html" aria-label="Back to menu"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M13 4 L7 10 L13 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <div class="top-right">
+      <button type="button" class="reset-btn" id="counts-btn" aria-pressed="false" title="Show the number of blocks in every row and column">Counts</button>
       <button type="button" class="reset-btn" id="clear-btn" title="Clear pieces or the board">Clear</button>
       <button type="button" class="rules-btn" data-open-rules>Rules</button>
     </div>
@@ -545,7 +549,17 @@ gameHooks.onCellClick = (r, c)=>{
 };
 $('hint-text').oninput = ()=>{ draft.hintText = $('hint-text').value; saveDraft(); loadPuzzle(draft, { keep:true }); };
 
+/* ── Live counts (Counts button, top right; remembered in this browser) ── */
+const COUNTS_KEY = 'pb_sandboxCounts';
+function showCounts(on){
+  $('counts-btn').setAttribute('aria-pressed', on ? 'true' : 'false');
+  try { localStorage.setItem(COUNTS_KEY, on ? '1' : '0'); } catch(e){}
+  setLiveCounts(on);
+}
+$('counts-btn').onclick = ()=>showCounts(!gameSettings.liveCounts);
+
 /* ── Piece picker ── */
+const PICKER_GREY = '#9A9EA8';   // [COLORS] pieces not in the puzzle
 function pickerIcon(cells, color){
   const size = 9, gap = 1, b = bounds(cells);
   const w = b.cols*size + (b.cols-1)*gap, h = b.rows*size + (b.rows-1)*gap;
@@ -557,12 +571,15 @@ function renderPicker(){
   const box = $('picker');
   box.innerHTML = '';
   const chosen = new Set(draft.pieces.map(d=>d.name));
+  // (The same colors as the pieces at the top and on the board: game.js
+  // gives them out in puzzle order. A piece not in the puzzle is grey.)
+  const colors = pieceColors(draft);
   ParitySolver.PENTOMINOES.forEach(p=>{
     const d = pieceMemory[p.name] || catalogPiece(p.name);
     const el = document.createElement('div');
     el.className = 'pick' + (chosen.has(p.name) ? ' on' : '');
     el.title = chosen.has(p.name) ? 'Remove ' + p.name : 'Add ' + p.name;
-    el.appendChild(pickerIcon(p.cells, d.color));
+    el.appendChild(pickerIcon(p.cells, chosen.has(p.name) ? colors[p.name] : PICKER_GREY));
     el.appendChild(document.createTextNode(p.name));
     el.onclick = ()=>{
       if(chosen.has(p.name)) draft.pieces = draft.pieces.filter(q=>q.name !== p.name);
@@ -1281,6 +1298,8 @@ renderArchive();
 if(ghSettings().token) refreshCloud();   // (the cloud list, if publishing is set up)
 $('save-name').value = draft.title || '';
 renderStartSelect();
+try { gameSettings.liveCounts = localStorage.getItem(COUNTS_KEY) === '1'; } catch(e){}
+$('counts-btn').setAttribute('aria-pressed', gameSettings.liveCounts ? 'true' : 'false');
 setMode('play');
 loadPuzzle(draft);
 renderPanel();
