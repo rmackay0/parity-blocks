@@ -18,7 +18,7 @@ user's OK), including the tutorial work below. Session ended cleanly.
   the board) on real Safari; a "that's right" moment on slide 6; Medium's
   gold text on white; pre-existing `next_level_test` / `share_test` failures.
 
-**2026-11-08: sandbox colors + live counts** (not pushed yet)
+**2026-11-08: sandbox colors + live counts + faster Analyze** (all pushed, with the user's OK)
 - Panel piece icons now use the game's colors (`pieceColors(draft)`, in
   puzzle order), the same as the tray and board; pieces not in the
   puzzle are grey (`PICKER_GREY`). They used solver.js's old colors.
