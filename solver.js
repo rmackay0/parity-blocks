@@ -23,8 +23,10 @@
    "Use every piece once, never use a cell twice" is an exact cover problem,
    which Donald Knuth's Algorithm X solves; Dancing Links (DLX) is the data
    structure that makes Algorithm X fast. Both are explained at the DLX
-   section below. We enumerate EVERY tiling, then run the parity check on
-   each one.
+   section below. analyzePuzzle enumerates EVERY tiling, then runs the
+   parity check on each one. analyzeFast (section 7c) does that only when
+   there are at most 1,000 tilings; past that it uses a search that checks
+   parity as it goes (section 7b) and skips most failing tilings.
 
    The whole module lives inside one function, ParitySolverModule, so that
    createWorker() can turn that function's source code into a worker
@@ -391,7 +393,7 @@ function analyzePuzzle(config, opts){
       });
     }
     total++;
-    return false;
+    return !!opts.stopAfter && total >= opts.stopAfter;   // (analyzeFast stops at 1,001)
   }, opts);
 
   const result = {
@@ -407,6 +409,315 @@ function analyzePuzzle(config, opts){
   if(config.prefilled && config.prefilled.length) result.prefilled = config.prefilled.map(rc=>rc.slice());
   if(config.dotted && config.dotted.length) result.dotted = config.dotted.map(rc=>rc.slice());
   if(total > tilings.length) result.tilingsTruncated = true;
+  return result;
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   7b. PARITY-FIRST SEARCHES (2026-11-08)
+   For puzzles with hundreds of thousands of tilings but only a few that
+   pass parity. analyzePuzzle builds every tiling and only then checks
+   it; these never build most of the failing ones. Two ways, each much
+   faster on a different kind of puzzle (parityTilings picks one):
+     parityTilingsGaps   chooses the EMPTY squares first. Best with few
+                         empty squares (every published puzzle so far:
+                         1 to 6). Published Hard: 0.13 s (analyzePuzzle
+                         1.6 s); a 6 × 7 board with 7 pieces: 5 ms (24 s).
+     parityTilingsScan   fills the board in reading order. Best with many
+                         empty squares: a 6 × 6 board with 4 pieces (16
+                         empty) takes 0.4 s, where the other takes 4 min.
+   Both return { count, tilings, steps }: every parity-passing tiling (up
+   to opts.maxStored), in analyzePuzzle's format.
+
+   parityTilingsScan fills the board in reading order (left to right, top to bottom).
+   At each open square that isn't covered yet, there are two choices:
+   leave it empty (if the puzzle has empty squares to spare), or put an
+   unused piece there, in any position whose first square (in reading
+   order) is this one. Squares already passed are never touched again, so:
+     • once the search passes the last square of a row, that row's count
+       is final, and if it's odd, nothing built on it can pass parity:
+       the search drops it on the spot;
+     • two different ways of filling the top part that leave the same
+       situation behind (same pieces used, same squares covered ahead,
+       same odd/even rows and columns so far) have exactly the same
+       futures, so the number of ways to finish is remembered (`memo`)
+       and reused instead of searched again.
+   Only odd/even matters, never the exact counts, which is what makes
+   so many situations the same.
+   A second walk then lists the actual solutions, going only down paths
+   the first walk counted as having at least one.
+   ─────────────────────────────────────────────────────────────────────── */
+function parityTilingsScan(config, opts){
+  opts = opts || {};
+  const maxStored = opts.maxStored || 200000;
+  const board = makeBoard(config);
+  const pieces = config.pieces.map(p=>({ name: p.name, cells: p.cells || pentomino(p.name).cells }));
+  const P = pieces.length, N = board.openCells.length, R = board.rows, C = board.cols;
+  const FULL = (1 << P) - 1;
+
+  // Placements grouped by their first square in reading order (open-cell
+  // indices are already in reading order: makeBoard goes row by row)
+  const byFirst = Array.from({ length: N }, ()=>[]);
+  let span = 0;                      // furthest any placement reaches past its first square
+  pieces.forEach((piece, pi)=>{
+    for(const idx of placementsFor(board, piece.cells)){
+      const cells = idx.slice().sort((a,b)=>a - b);
+      byFirst[cells[0]].push({ piece: pi, bit: 1 << pi, cells });
+      span = Math.max(span, cells[cells.length-1] - cells[0]);
+    }
+  });
+  const cellRow = board.openCells.map(rc=>rc[0]), cellCol = board.openCells.map(rc=>rc[1]);
+  const rowLast = new Array(R).fill(-1);          // last open square of each row
+  board.openCells.forEach(([r], i)=>{ rowLast[r] = i; });
+
+  // The search's state (changed as pieces go down, undone on the way back)
+  const occ = new Uint8Array(N);
+  const rowPar = new Uint8Array(R), colPar = new Uint8Array(C);
+  board.prefilled.forEach(([r,c])=>{ rowPar[r] ^= 1; colPar[c] ^= 1; });
+  let used = 0;
+  const stack = [];                  // placements down so far (for listing solutions)
+  const memo = new Map();
+  const MEMO_LIMIT = 3000000;        // (forget everything past this, to save memory)
+  const found = [];
+  let steps = 0, lastReport = Date.now();
+  const branchIdx = [0, 0], branchLen = [1, 1];   // (progress: where the first two choices are)
+
+  function place(pl, on){
+    for(const k of pl.cells){ occ[k] = on; rowPar[cellRow[k]] ^= 1; colPar[cellCol[k]] ^= 1; }
+    used ^= pl.bit;
+    if(on) stack.push(pl); else stack.pop();
+  }
+  // Everything that decides the future, packed into a short string
+  function stateKey(i, r0, gapsLeft){
+    let rowBits = 0, colBits = 0;
+    for(let r=r0; r<R; r++) if(rowPar[r]) rowBits |= 1 << (r - r0);
+    for(let c=0; c<C; c++) if(colPar[c]) colBits |= 1 << c;
+    let s = String.fromCharCode(i, used, gapsLeft, rowBits, colBits);
+    const end = Math.min(N, i + span + 1);
+    for(let k=i; k<end; k+=15){
+      let chunk = 0;
+      for(let b=0; b<15 && k+b<end; b++) if(occ[k+b]) chunk |= 1 << b;
+      s += String.fromCharCode(chunk);
+    }
+    return s;
+  }
+  function tick(){
+    if((++steps & 4095) !== 0) return;
+    if(opts.shouldCancel && opts.shouldCancel()){ const e = new Error('Cancelled'); e.name = 'Cancelled'; throw e; }
+    if(opts.onProgress && Date.now() - lastReport >= (opts.progressMs || 100)){
+      lastReport = Date.now();
+      opts.onProgress({ phase: 'parity', steps, fraction: Math.min(1, branchIdx[0]/branchLen[0] + branchIdx[1]/(branchLen[0]*branchLen[1])) });
+    }
+  }
+
+  // How many parity-passing ways to finish from here (listing = also record them)
+  function walk(i, r0, gapsLeft, listing, depth){
+    while(i < N && occ[i]) i++;
+    while(r0 < R && rowLast[r0] < i){ if(rowPar[r0]) return 0; r0++; }   // a finished row is odd
+    if(i === N){
+      if(used !== FULL) return 0;
+      for(let c=0; c<C; c++) if(colPar[c]) return 0;
+      if(listing && found.length < maxStored) found.push(stack.slice());
+      return 1;
+    }
+    const key = listing ? null : stateKey(i, r0, gapsLeft);
+    if(!listing){ const m = memo.get(key); if(m !== undefined) return m; }
+    tick();
+    const options = byFirst[i];
+    // (progress counts only the listing walk's top two levels: it visits everything once, in order)
+    const track = listing && depth < 2;
+    if(track){ branchLen[depth] = options.length + 1; branchIdx[depth] = 0; if(depth === 0) branchIdx[1] = 0; }
+    let total = 0;
+    // (listing: only go where counting found something)
+    const go = (next, gaps)=>{
+      const n = walk(next, r0, gaps, false, depth + 1);
+      if(listing && n > 0 && found.length < maxStored) walk(next, r0, gaps, true, depth + 1);
+      total += n;
+    };
+    if(gapsLeft > 0) go(i + 1, gapsLeft - 1);          // leave square i empty
+    for(const pl of options){
+      if(track){ branchIdx[depth]++; if(depth === 0) branchIdx[1] = 0; }
+      if(used & pl.bit) continue;
+      let free = true;
+      for(const k of pl.cells) if(occ[k]){ free = false; break; }
+      if(!free) continue;
+      place(pl, 1);
+      go(i + 1, gapsLeft);
+      place(pl, 0);
+    }
+    if(!listing){
+      if(memo.size >= MEMO_LIMIT) memo.clear();
+      memo.set(key, total);
+    }
+    return total;
+  }
+
+  const gaps = N - 5*P;
+  let count = 0;
+  if(gaps >= 0 && pieces.every(p=>p.cells.length === 5)){
+    count = walk(0, 0, gaps, true, 0);
+  }
+
+  // Same tiling format as analyzePuzzle
+  const tilings = found.map((pls, index)=>{
+    const usedCells = new Set();
+    pls.forEach(pl=>pl.cells.forEach(k=>usedCells.add(k)));
+    return {
+      index, parity: true,
+      gaps: board.openCells.filter((_, k)=>!usedCells.has(k)).map(rc=>rc.slice()),
+      failingRows: [], failingCols: [],
+      placements: pls.slice().sort((a,b)=>a.piece - b.piece).map(pl=>({
+        piece: pieces[pl.piece].name,
+        cells: pl.cells.map(k=>board.openCells[k].slice()).sort((a,b)=>a[0]-b[0] || a[1]-b[1]),
+      })),
+    };
+  });
+  return { count, tilings, steps };
+}
+
+/* EMPTY SQUARES FIRST (parityTilingsGaps). A tiling passes parity exactly when its
+   empty squares leave every row and column even. So: list only the sets
+   of empty squares that do that, and for each one ask whether the pieces
+   can fill all the other open squares exactly (an ordinary tiling with no
+   empty squares left to choose, which is a quick question).
+   The sets are listed square by square in reading order, and a set is
+   abandoned as soon as it can't work: a finished row is uneven, or the
+   empty squares left to place can't fix every uneven row and column (each
+   one needs at least one more, and the count has to come out odd/even
+   the right way). Best when the puzzle has few empty squares. */
+function parityTilingsGaps(config, opts){
+  opts = opts || {};
+  const maxStored = opts.maxStored || 200000;
+  const board = makeBoard(config);
+  const pieces = config.pieces.map(p=>({ name: p.name, cells: p.cells || pentomino(p.name).cells }));
+  const P = pieces.length, N = board.openCells.length, R = board.rows, C = board.cols;
+  const G = N - 5*P;                                 // how many empty squares every tiling has
+  const empty = { count: 0, tilings: [], steps: 0 };
+  if(G < 0 || pieces.some(p=>p.cells.length !== 5)) return empty;
+
+  // One matrix where every open square must be covered; making a square
+  // empty = covering its column first (that also removes every placement
+  // that uses it)
+  const dlx = new DLX(P + N, 0);
+  const info = [];
+  pieces.forEach((piece, pi)=>{
+    for(const idx of placementsFor(board, piece.cells)){
+      dlx.addRow(info.length, [pi, ...idx.map(i=>P + i)]);
+      info.push({ piece: pi, cells: idx });
+    }
+  });
+
+  // Which rows / columns need an odd number of empty squares
+  const cellRow = board.openCells.map(rc=>rc[0]), cellCol = board.openCells.map(rc=>rc[1]);
+  const needRow = new Uint8Array(R), needCol = new Uint8Array(C);
+  board.openCells.forEach(([r,c])=>{ needRow[r] ^= 1; needCol[c] ^= 1; });
+  board.prefilled.forEach(([r,c])=>{ needRow[r] ^= 1; needCol[c] ^= 1; });
+  const rowLast = new Array(R).fill(-1);
+  board.openCells.forEach(([r], i)=>{ rowLast[r] = i; });
+  const gapRow = new Uint8Array(R), gapCol = new Uint8Array(C);
+
+  const chosen = [], found = [];
+  let count = 0, steps = 0, lastReport = Date.now(), cancelled = false;
+  const branchIdx = [0, 0], branchLen = [1, 1];
+  function tick(){
+    if((++steps & 1023) !== 0) return;
+    if(opts.shouldCancel && opts.shouldCancel()){ const e = new Error('Cancelled'); e.name = 'Cancelled'; throw e; }
+    if(opts.onProgress && Date.now() - lastReport >= (opts.progressMs || 100)){
+      lastReport = Date.now();
+      opts.onProgress({ phase: 'parity', steps, fraction: Math.min(1, branchIdx[0]/branchLen[0] + branchIdx[1]/(branchLen[0]*branchLen[1])) });
+    }
+  }
+  // These empty squares work for parity: can the pieces fill the rest exactly?
+  function tryTiling(){
+    for(const k of chosen) dlx.cover(P + k + 1);
+    dlx.search(ids=>{
+      count++;
+      if(found.length < maxStored) found.push(ids);
+      return false;
+    }, { shouldCancel: opts.shouldCancel });
+    for(let j=chosen.length-1; j>=0; j--) dlx.uncover(P + chosen[j] + 1);
+  }
+  function pick(k, left, r0, depth){
+    tick();
+    while(r0 < R && rowLast[r0] < k){ if(gapRow[r0] !== needRow[r0]) return; r0++; }   // a finished row is uneven
+    let rowsOff = 0, colsOff = 0;
+    for(let r=r0; r<R; r++) if(gapRow[r] !== needRow[r]) rowsOff++;
+    for(let c=0; c<C; c++) if(gapCol[c] !== needCol[c]) colsOff++;
+    if(rowsOff > left || colsOff > left || (left - rowsOff) % 2 || (left - colsOff) % 2) return;
+    if(left === 0){ tryTiling(); return; }
+    const last = N - left;
+    if(depth < 2){ branchLen[depth] = last - k + 1; branchIdx[depth] = 0; }
+    for(let x=k; x<=last; x++){
+      if(depth < 2) branchIdx[depth] = x - k;
+      // (skipping past the end of an uneven row can't work)
+      if(r0 < R && x > rowLast[r0] && gapRow[r0] !== needRow[r0]) break;
+      gapRow[cellRow[x]] ^= 1; gapCol[cellCol[x]] ^= 1; chosen.push(x);
+      pick(x + 1, left - 1, r0, depth + 1);
+      gapRow[cellRow[x]] ^= 1; gapCol[cellCol[x]] ^= 1; chosen.pop();
+    }
+  }
+  pick(0, G, 0, 0);
+
+  const tilings = found.map((ids, index)=>{
+    const usedCells = new Set();
+    ids.forEach(id=>info[id].cells.forEach(k=>usedCells.add(k)));
+    return {
+      index, parity: true,
+      gaps: board.openCells.filter((_, k)=>!usedCells.has(k)).map(rc=>rc.slice()),
+      failingRows: [], failingCols: [],
+      placements: ids.map(id=>info[id]).sort((a,b)=>a.piece - b.piece).map(pl=>({
+        piece: pieces[pl.piece].name,
+        cells: pl.cells.map(k=>board.openCells[k].slice()).sort((a,b)=>a[0]-b[0] || a[1]-b[1]),
+      })),
+    };
+  });
+  return { count, tilings, steps };
+}
+
+/* Which search to use. "Empty squares first" looks at about
+   C(open squares, empty squares) / 2^(rows + columns − 1) sets of empty
+   squares, so it's used while that's at most about 260,000 (2^18);
+   otherwise the reading-order search. (Measured: 6 × 6 with 6 pieces
+   = 2^10 sets → empty squares first, 0.4 s; 6 × 6 with 4 pieces = 2^22
+   sets → reading order, 0.4 s instead of 4 min.)
+   An odd number of blocks in all can never make every row even, so then
+   there's nothing to search. Result: { count, tilings, steps, method }. */
+function parityTilings(config, opts){
+  const board = makeBoard(config);
+  const P = config.pieces.length, N = board.openCells.length, G = N - 5*P;
+  if(G < 0 || (5*P + board.prefilled.length) % 2) return { count: 0, tilings: [], steps: 0, method: 'odd' };
+  let log2Sets = 1 - board.rows - board.cols;
+  for(let k=0; k<G; k++) log2Sets += Math.log2((N - k) / (k + 1));
+  const method = log2Sets <= 18 ? 'gaps' : 'scan';
+  const result = (method === 'gaps' ? parityTilingsGaps : parityTilingsScan)(config, opts);
+  result.method = method;
+  return result;
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   7c. ANALYZE, FAST (the sandbox uses this; user, 2026-11-08: "when there
+   are more than 1000 tilings, i don't need to know the exact number")
+   First looks for up to 1,001 tilings the ordinary way. With 1,000 or
+   fewer, that IS the full answer (every tiling, exactly as analyzePuzzle).
+   With more, totalTilings is null, tilingsMoreThan is 1000, and tilings
+   lists only the parity-passing ones, found by parityTilings.
+   ─────────────────────────────────────────────────────────────────────── */
+function analyzeFast(config, opts){
+  opts = opts || {};
+  const limit = opts.exactUpTo || 1000;
+  const t0 = Date.now();
+  const first = analyzePuzzle(config, Object.assign({}, opts, { stopAfter: limit + 1 }));
+  if(first.totalTilings <= limit){ first.solveTimeMs = Date.now() - t0; return first; }
+  const par = parityTilings(config, opts);
+  const result = Object.assign({}, first, {
+    totalTilings: null,
+    tilingsMoreThan: limit,
+    paritySolutions: par.count,
+    solveTimeMs: Date.now() - t0,
+    tilings: par.tilings,
+    searchMethod: par.method,        // 'gaps', 'scan' or 'odd' (see parityTilings)
+  });
+  delete result.tilingsTruncated;
+  if(par.count > par.tilings.length) result.tilingsTruncated = true;
   return result;
 }
 
@@ -491,6 +802,8 @@ function findPuzzles(boardConfig, n, opts){
    In the WORKER: the module notices it's inside a worker (importScripts
    exists, document doesn't) and listens for jobs:
      → { type:'analyze', config }        ← progress… then { type:'result', result }
+     → { type:'analyzeFast', config }    ← the same, from analyzeFast (progress
+                                           has phase:'parity' once it switches)
      → { type:'find', board, n }         ← progress… then { type:'result', result }
      ← { type:'error', message } if something throws
    ─────────────────────────────────────────────────────────────────────── */
@@ -511,6 +824,7 @@ if(insideWorker){
     try {
       let result;
       if(msg.type === 'analyze') result = analyzePuzzle(msg.config, { onProgress, maxStored: msg.maxStored });
+      else if(msg.type === 'analyzeFast') result = analyzeFast(msg.config, { onProgress, maxStored: msg.maxStored });
       else if(msg.type === 'find') result = findPuzzles(msg.board, msg.n, { onProgress });
       else throw new Error('Unknown job type: ' + msg.type);
       root.postMessage({ type:'result', result });
@@ -522,7 +836,7 @@ if(insideWorker){
 
 return {
   PENTOMINOES, pentomino, normalize, orientations, makeBoard, placementsFor,
-  DLX, checkParity, analyzePuzzle, combinations, findPuzzles, createWorker,
+  DLX, checkParity, analyzePuzzle, parityTilings, parityTilingsScan, parityTilingsGaps, analyzeFast, combinations, findPuzzles, createWorker,
 };
 }
 

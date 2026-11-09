@@ -29,12 +29,24 @@ user's OK), including the tutorial work below. Session ended cleanly.
   / `setLiveCounts(on)` / `renderLiveCounts` / `blockCounts` (checkSolved
   uses it too); the board shrinks by `LIVE_COUNT_ROOM` on each side.
   Test: `sandbox_counts_test.js`.
-- User asked for a faster parity analysis for puzzles with hundreds of
-  thousands of tilings. Measured 6 × 6 F L N P T U: 355,344 tilings, 456
-  pass parity; Analyze 3.7 s (+0.5 s sending results), counting only
-  1.7 s. Proposed: skip storing failing tilings, and a parity-aware
-  search (fill in reading order, check each row as it's finished,
-  memoize). Waiting on the user.
+- **Faster Analyze** (user: "when there are more than 1000 tilings, i
+  don't need to know the exact number"). solver.js `analyzeFast`: finds
+  up to 1,001 tilings the old way; ≤ 1,000 = the full old answer (flip
+  through every tiling). More = `totalTilings: null`,
+  `tilingsMoreThan: 1000`, only parity-passing tilings listed (sandbox
+  shows "1,000+", the "Parity-passing only" box locked with a note).
+  `parityTilings` picks one of two searches: `parityTilingsGaps` (choose
+  the empty squares first, then exact-fill the rest; best with few empty
+  squares, every published puzzle has 1–6) or `parityTilingsScan`
+  (reading order, drops a row as soon as it's finished odd; best with
+  many empty squares). Odd total of blocks = no search at all.
+  Timings: 6 × 6 FLNPTU 4.8 s → 0.4 s; published Hard 1.6 s → 0.13 s;
+  6 × 7 FLNPTUV 24 s → 5 ms; 6 × 6 FLNP (16 empty) 0.4 s with scan (4 min
+  with gaps). Extremes stay slow: 7 × 7 FLNPTUWY 2.7 min (92,680
+  solutions), 8 × 8 with all 12 pieces ~2 h. The sandbox's Analyze, 👁
+  reveal and publish check use it; analyzer.html still uses analyzePuzzle.
+  Tests: `tests/parity_fast_check.js` (both searches vs analyzePuzzle on
+  40 random puzzles + timing), `tests/browser/sandbox_analyze_test.js`.
 
 **2026-11-06: tutorial on phones, glows never cut off** (tutorial.html)
 - Phones, on solving (slides 2, 4, 6, 7): nothing on the slide is cleared
@@ -219,7 +231,7 @@ previous project; don't push there.
 | `puzzles.js` | `PUZZLES` registry (test puzzles; analyzer/sandbox read it) |
 | `shapes.js` | Shared geometry + SVG drawing (`miniBoard`, `drawPiece`, `drawNoMark`, highlighter, `drawDottedLines` + `groupSquares` for every dotted line) |
 | `rules.js` / `rules.css` | Rules popup (Rules button); "Play the tutorial" button on puzzle pages |
-| `solver.js` | DLX exact-cover solver + parity check + puzzle finder (pure JS; Node + browser + Worker) |
+| `solver.js` | DLX exact-cover solver + parity check + puzzle finder (pure JS; Node + browser + Worker); `analyzeFast` + the two parity-first searches (2026-11-08) |
 | `sandbox.html` | Admin puzzle builder: archive (localStorage), notes, publish, analyze & flip through solutions, Shape/Dotted area editing (no Dotted square mode since 2026-11-03), dark-mode button by the title |
 | `analyzer.html` | Admin analyzer + puzzle finder |
 | `sandbox-classic.html` | The original free-form sandbox (old, mostly described further down) |

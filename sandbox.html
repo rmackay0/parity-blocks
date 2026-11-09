@@ -272,6 +272,7 @@
       <p class="note" id="analyzed-pieces" style="margin-top:4px;"></p>
       <h2 style="margin-top:14px;">Solutions on the board</h2>
       <label><input type="checkbox" id="parity-only"> Parity-passing only</label>
+      <p class="note" id="parity-only-note" hidden>Over 1,000 tilings, so only the ones that pass parity were kept.</p>
       <div class="stepper" style="margin-top:6px;">
         <button class="btn" id="prev-btn">&larr;</button>
         <span id="step-label"></span>
@@ -661,7 +662,9 @@ $('analyze-btn').onclick = ()=>{
     const m = e.data;
     if(m.type === 'progress'){
       $('progress').firstElementChild.style.width = Math.round(m.fraction*100) + '%';
-      $('progress-text').textContent = `${m.solutions.toLocaleString()} tilings found · ${Math.round(m.fraction*100)}%`;
+      $('progress-text').textContent = m.phase === 'parity'
+        ? `Over 1,000 tilings, so looking only for ones that pass parity · ${Math.round(m.fraction*100)}%`
+        : `${m.solutions.toLocaleString()} tilings found · ${Math.round(m.fraction*100)}%`;
     } else if(m.type === 'result'){
       worker.terminate(); worker = null; endProgress('');
       analysis = m.result;
@@ -670,27 +673,39 @@ $('analyze-btn').onclick = ()=>{
       worker.terminate(); worker = null; endProgress('Error: ' + m.message);
     }
   };
-  worker.postMessage({ type:'analyze', config });
+  worker.postMessage({ type:'analyzeFast', config });
 };
+
+/* Analysis uses solver.js analyzeFast (2026-11-08): up to 1,000 tilings
+   it lists them all, as before; past that totalTilings is null (only
+   "more than 1,000" is known) and only the parity-passing tilings are
+   listed. How many ways the pieces fit, for sentences: */
+function waysText(r){
+  return r.totalTilings === null ? `more than ${r.tilingsMoreThan.toLocaleString()}` : r.totalTilings.toLocaleString();
+}
 $('cancel-btn').onclick = ()=>{ if(worker){ worker.terminate(); worker = null; } endProgress('Cancelled.'); };
 
 function showResults(){
   $('results').hidden = false;
   $('download-btn').disabled = false;
-  $('stat-total').textContent = analysis.totalTilings.toLocaleString();
+  const allKnown = analysis.totalTilings !== null;
+  $('stat-total').textContent = allKnown ? analysis.totalTilings.toLocaleString() : analysis.tilingsMoreThan.toLocaleString() + '+';
   $('stat-pass').textContent = analysis.paritySolutions.toLocaleString();
   $('stat-time').textContent = analysis.solveTimeMs < 1000 ? analysis.solveTimeMs + ' ms' : (analysis.solveTimeMs/1000).toFixed(1) + ' s';
   const n = analysis.paritySolutions;
   const v = $('verdict');
   v.className = 'verdict ' + (n === 1 ? 'good' : 'bad');
   v.textContent = n === 1 ? 'Good puzzle: exactly one tiling passes parity.'
-    : n === 0 ? (analysis.totalTilings ? 'Not solvable: no tiling passes parity.' : 'Not solvable: the pieces can’t all fit.')
+    : n === 0 ? (analysis.totalTilings === 0 ? 'Not solvable: the pieces can’t all fit.' : 'Not solvable: no tiling passes parity.')
     : `Not unique: ${n.toLocaleString()} tilings pass parity.`;
-  if(analysis.totalTilings && analysis.paritySolutions === 1 && analysis.totalTilings === 1)
+  if(analysis.paritySolutions === 1 && analysis.totalTilings === 1)
     v.textContent += ' (But it’s the only way the pieces fit at all, so parity never decides anything.)';
-  $('parity-only').checked = n > 0;
+  // Past 1,000 tilings only the parity-passing ones were kept, so that's all there is to show
+  $('parity-only').disabled = !allKnown;
+  $('parity-only-note').hidden = allKnown;
+  $('parity-only').checked = n > 0 || !allKnown;
   rebuildView();
-  if(analysis.totalTilings) showOnBoard();
+  if(analysis.tilings.length) showOnBoard();
 }
 
 function rebuildView(){
@@ -981,14 +996,14 @@ function openSolution(entry){
     const n = r.paritySolutions;
     $('solution-status').className = 'modal-note ' + (n === 1 ? 'ok-text' : 'warn-text');
     $('solution-status').textContent =
-      n === 1 ? `The only solution (out of ${r.totalTilings.toLocaleString()} ways to fit the pieces).`
+      n === 1 ? `The only solution (out of ${waysText(r)} ways to fit the pieces).`
       : n === 0 ? (r.totalTilings === 1 ? 'No solution: the only way to fit the pieces leaves some row or column uneven.'
-                 : r.totalTilings ? `No solution: none of the ${r.totalTilings.toLocaleString()} ways to fit the pieces has every row and column even.`
-                                  : 'No solution: the pieces can\u2019t all fit on this board.')
+                 : r.totalTilings !== 0 ? `No solution: none of the ${waysText(r)} ways to fit the pieces has every row and column even.`
+                                        : 'No solution: the pieces can\u2019t all fit on this board.')
       : `${n.toLocaleString()} different solutions (so this puzzle isn\u2019t unique). Use the arrows to see them all.`;
     showSolution();
   };
-  solutionWorker.postMessage({ type:'analyze', config: {
+  solutionWorker.postMessage({ type:'analyzeFast', config: {
     rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed || [], dotted:p.hintOutline || [],
     pieces:p.pieces.map(d=>({ name:d.name, cells:d.cells })) } });
 }
@@ -1119,11 +1134,11 @@ function openPublish(entry){
     if(e.data.type !== 'result'){ check.textContent = 'Solver check failed: ' + e.data.message; return; }
     const r = e.data.result, n = r.paritySolutions;
     check.className = 'modal-note ' + (n === 1 ? 'ok-text' : 'warn-text');
-    check.textContent = n === 1 ? `✓ Good puzzle: exactly one solution (${r.totalTilings.toLocaleString()} ways to fit the pieces).`
+    check.textContent = n === 1 ? `✓ Good puzzle: exactly one solution (${waysText(r)} ways to fit the pieces).`
       : n === 0 ? '⚠ This puzzle has NO solution. You can still publish it, but players can’t win.'
       : `⚠ This puzzle has ${n} solutions, so it isn’t unique. You can still publish it.`;
   };
-  checkWorker.postMessage({ type:'analyze', maxStored: 1, config: {
+  checkWorker.postMessage({ type:'analyzeFast', maxStored: 1, config: {
     rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed || [], dotted:p.hintOutline || [], pieces:p.pieces.map(d=>({name:d.name, cells:d.cells})) } });
 }
 function updatePublishButton(){
