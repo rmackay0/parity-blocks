@@ -34,7 +34,8 @@ user's OK). Session ended cleanly.
   in beside the board (`HL_NOTE`: "Rule: Every row and column has an even
   number of empty spaces." / "1st: Highlight the 2 missing empty
   spaces." / "2nd: Fit the pieces."), the highlighter glows, and the 90 s
-  hint clock starts. The old 5 s dark (`tut-dim`, `HL_DARK_MS`, `.raised`)
+  hint clock starts. "(0 counts as an even number.)" moved from popup 1
+  to the end of the hint (`HL_HINT`), user's request. The old 5 s dark (`tut-dim`, `HL_DARK_MS`, `.raised`)
   is gone. Reminder wording is Claude's: confirm with the user.
 - Phones: slide 6 now needs no scrolling except on an SE (47px, was 98px;
   390×664 was 31px, now 0). Tests updated: tutorial_test, hl_hint_test,

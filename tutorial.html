@@ -1239,7 +1239,7 @@ gameHooks.onMark = ()=>{
    If they still aren't both highlighted HL_HINT_MS after the popup closes
    (and the puzzle isn't solved), HL_HINT pops into the note (user, 2026-11-05). */
 const HL_POPUP = [  // [CONTENT] (one "Got it" each)
-  '<p><b>Find the empty spaces first.</b> On a 6&times;6 grid like this, every row and column needs an even number of empty spaces (0 counts as an even number).</p>',
+  '<p><b>Find the empty spaces first.</b> On a 6&times;6 grid like this, every row and column needs an even number of empty spaces.</p>',
   '<p><b>1st:</b> Highlight the two missing empty spaces.</p><p><b>2nd:</b> Fit the pieces onto the grid.</p>',
 ];
 const HL_NOTE = [   // [CONTENT] the reminder beside the board (the 1st step must stay 2nd: it gets the check)
@@ -1248,7 +1248,7 @@ const HL_NOTE = [   // [CONTENT] the reminder beside the board (the 1st step mus
   '<b>2nd:</b> Fit the pieces.',
 ];
 const HL_HINT =    // [CONTENT]
-  '<b>Hint:</b> Find a row with only one highlighted square. It needs one more.';
+  '<b>Hint:</b> Find a row with only one highlighted square. It needs one more. (0 counts as an even number.)';
 const HL_NOTE_STAGGER_MS = 250;  // the reminder's lines fade in one after another
 const HL_HINT_MS = 90000;    // a minute and a half of not finding them
 let emptySpacesFound = false;
