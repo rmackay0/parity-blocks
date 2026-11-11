@@ -18,8 +18,10 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
     const slides = await page.evaluate(() => SLIDES.length);
     for (let i = 0; i < slides; i++) {
       await page.evaluate(n => showSlide(n), i);
-      // let the animations finish (slide 3's pictures ~7.3 s, slide 6's dark 3.5 s)
-      await page.waitForTimeout({ 2: 7500, 5: 4000 }[i] || 500);
+      // let the animations finish (slide 3's pictures ~7.3 s; slide 6: close its two-part popup)
+      await page.waitForTimeout({ 2: 7500 }[i] || 500);
+      if (i === 5) for (let k = 0; k < 2; k++) { await page.click('#spot-ok'); await page.waitForTimeout(300); }
+      if (i === 5) await page.waitForTimeout(1000);
       const r = await page.evaluate(() => {
         const W = document.documentElement.clientWidth;
         const box = el => el.getBoundingClientRect();

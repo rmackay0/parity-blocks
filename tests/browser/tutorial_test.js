@@ -168,18 +168,24 @@ async function placePiece(page, frame, name, target, touch){
     await page.screenshot({ path:`tut-${label}-5-done.png` });
     await frame.click('#next-btn');
 
-    // Slide 6: use it. Dark except the note for 5 s, then the highlighter glows until it's tapped
+    // Slide 6: use it. A two-part popup (one "Got it" each), then the short
+    // reminder beside the board and the highlighter glows until it's tapped
     await page.waitForTimeout(300);
-    const lesson = ()=>frame.evaluate(()=>({ dark: document.getElementById('tut-dim').classList.contains('on'),
-      noteAbove: getComputedStyle(document.getElementById('n-boardr')).zIndex,
+    const lesson = ()=>frame.evaluate(()=>({ popup: document.getElementById('spot').hidden ? '' : document.getElementById('spot-text').innerText.trim().slice(0, 30),
+      noteShown: document.querySelectorAll('#n-boardr .empty-card p.shown').length,
       glowing: document.getElementById('hl-tool').classList.contains('glowing'),
       marked: document.querySelectorAll('#board .board-cell.marked').length }));
-    console.log(`[${label}] slide 6 at 0.3 s:`, JSON.stringify(await lesson()), '(expected dark, note above it (86), no glow yet, 4 marked)');
-    await page.screenshot({ path:`tut-${label}-6-dark.png` });
-    await page.waitForTimeout(4200);
-    console.log(`[${label}] slide 6 at 4.5 s: still dark ${(await lesson()).dark} (expected true: the note holds 5 s)`);
-    await page.waitForTimeout(1100);
-    console.log(`[${label}] slide 6 at 5.6 s:`, JSON.stringify(await lesson()), `(expected not dark, glowing) | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
+    console.log(`[${label}] slide 6 at 0.3 s:`, JSON.stringify(await lesson()), '(expected popup "Find the empty spaces first…", note 0 shown, no glow, 4 marked)');
+    await page.screenshot({ path:`tut-${label}-6-popup1.png` });
+    await page.waitForTimeout(3000);
+    console.log(`[${label}] slide 6 at 3.3 s: popup still there ${!!(await lesson()).popup} (expected true: it waits for Got it)`);
+    await tapF('#spot-ok');
+    await page.waitForTimeout(200);
+    console.log(`[${label}] slide 6 after 1st Got it:`, JSON.stringify(await lesson()), '(expected popup "1st: Highlight…", note 0 shown, no glow)');
+    await page.screenshot({ path:`tut-${label}-6-popup2.png` });
+    await tapF('#spot-ok');
+    await page.waitForTimeout(1200);
+    console.log(`[${label}] slide 6 after 2nd Got it:`, JSON.stringify(await lesson()), `(expected no popup, note 3 shown, glowing) | clear ${await toolClear()} | scroll needed ${await needsScroll()}px`);
     await page.screenshot({ path:`tut-${label}-6-lit.png` });
     await page.waitForTimeout(3000);
     console.log(`[${label}] slide 6 at 7 s: still glowing ${(await lesson()).glowing} (expected true: until it's tapped)`);
@@ -256,7 +262,9 @@ async function placePiece(page, frame, name, target, touch){
     else await frame.evaluate(()=>{ const c = document.querySelector('.board-cell[data-r="3"][data-c="4"]'); c.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, button:0, clientX:1, clientY:1 })); window.dispatchEvent(new PointerEvent('pointerup', {})); });
     console.log(`[${label}] tapping the hint's square: still highlighted ${await frame.evaluate(()=>getMarks()['3,4'] === 0)} (expected true)`);
     await tapF('.hl-pencil');
-    await frame.click('#back-btn'); await page.waitForTimeout(250); await frame.click('#next-btn'); await page.waitForTimeout(650);
+    await frame.click('#back-btn'); await page.waitForTimeout(250);
+    for(let k = 0; k < 2; k++){ await frame.click('#spot-ok'); await page.waitForTimeout(200); }   // (slide 6's popup again)
+    await frame.click('#next-btn'); await page.waitForTimeout(650);
     if(PHONE) await notePopup();
     for(const [name, target] of Object.entries(TARGETS[4])) await placePiece(page, frame, name, target, touch);
     await page.waitForTimeout(1500);

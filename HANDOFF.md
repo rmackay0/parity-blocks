@@ -1,11 +1,18 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-06)
+## START HERE (updated 2026-11-11)
 
-**Status: everything is committed AND pushed** (2026-11-06, with the
-user's OK), including the tutorial work below. Session ended cleanly.
+**Status: everything is committed AND pushed** (2026-11-11, with the
+user's OK). Session ended cleanly.
 
-**Ask the user next time (2026-11-06):**
+**Ask the user next time (2026-11-11):**
+- How the rewritten highlighter slides (5 and 6) play for testers.
+- Which of the three side notes to do next (see "User's notes for later"
+  under "Still open"): sandbox Analyze using only pieces on the board, the
+  red glow on the red piece, dotted line strands (offer a mock-up page of
+  ways to draw them).
+
+**Older questions (2026-11-06):**
 - How the new phone tutorial behaves on their real iPhone: slide 6's
   popup hint + Hint button, the solved note by the grid, the last slide's
   "Make sure…" popup, glows no longer cut off.
@@ -17,6 +24,21 @@ user's OK), including the tutorial work below. Session ended cleanly.
 - Still open from before: the iPhone fixes (stuck piece copy, marks beside
   the board) on real Safari; a "that's right" moment on slide 6; Medium's
   gold text on white; pre-existing `next_level_test` / `share_test` failures.
+
+**2026-11-11 (later): slide 6 split into a two-part popup** (NOT pushed yet)
+- User: "too many instructions in one block". Slide 6 now opens dark
+  with a "Got it" popup in two parts (`HL_POPUP`, shown with `showHint`,
+  the grid lit, over the grid on phones; `.spot.instant` = no fade-in):
+  1) "Find the empty spaces first. On a 6×6 grid…", 2) "1st: … 2nd: …".
+  After the last Got it (`afterHighlighterPopup`) a short reminder fades
+  in beside the board (`HL_NOTE`: "Rule: Every row and column has an even
+  number of empty spaces." / "1st: Highlight the 2 missing empty
+  spaces." / "2nd: Fit the pieces."), the highlighter glows, and the 90 s
+  hint clock starts. The old 5 s dark (`tut-dim`, `HL_DARK_MS`, `.raised`)
+  is gone. Reminder wording is Claude's: confirm with the user.
+- Phones: slide 6 now needs no scrolling except on an SE (47px, was 98px;
+  390×664 was 31px, now 0). Tests updated: tutorial_test, hl_hint_test,
+  phone_layout_check, glow_clip_test (all pass).
 
 **2026-11-11: highlighter slides rewritten** (pushed, with the user's OK)
 - Testers found the highlighter explainer confusing ("omit needless

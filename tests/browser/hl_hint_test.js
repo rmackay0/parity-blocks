@@ -23,7 +23,9 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     page.on('pageerror', e=>errors.push(e.message));
     await page.clock.install();
     await page.goto(BASE + 'tutorial.html');
-    await page.clock.runFor(5500);                     // (past the dark, 5 s)
+    await page.clock.runFor(500);
+    for(let k = 0; k < 2; k++){ await page.click('#spot-ok'); await page.clock.runFor(300); }   // (the opening popup's two parts; the hint's clock starts now)
+    await page.clock.runFor(1000);
     const text = await page.innerText('#n-boardr');     // (only the text you can see)
     check(!/only one highlighted/.test(text), 'at first the note has no hint sentence');
     check(await page.isHidden('#hl-hint'), 'hint hidden');

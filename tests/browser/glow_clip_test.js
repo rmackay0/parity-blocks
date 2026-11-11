@@ -31,7 +31,9 @@ const GLOWS = [
       await page.goto(BASE + 'tutorial.html');
       for (const [slide, sel, reach, setup] of GLOWS) {
         await page.evaluate(n => showSlide(n), slide);
-        await page.waitForTimeout(slide === 5 ? 4200 : 400);
+        await page.waitForTimeout(400);
+        // (slide 6 opens with a two-part popup: close it)
+        if (slide === 5) { for (let k = 0; k < 2; k++) { await page.click('#spot-ok'); await page.waitForTimeout(300); } await page.waitForTimeout(800); }
         if (setup) { await page.evaluate(setup); await page.waitForTimeout(400); }
         const r = await page.evaluate(([sel, reach]) => {
           const el = document.querySelector(sel);
