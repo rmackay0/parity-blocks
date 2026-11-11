@@ -1,8 +1,8 @@
-// Tutorial slide 6's hint (user, 2026-11-05): "In this particular puzzle
-// there needs to be either 2 or 0 empty spaces…" pops into the note after
-// a minute and a half, unless the last empty space (row 3, column 4) has
-// been highlighted. Phones (2026-11-06): it's a popup over the grid instead,
-// with "Got it", then a Hint button that brings it back.
+// Tutorial slide 6's hint (2026-11-11): "Find a row with only one
+// highlighted square…" pops into the note after a minute and a half, unless
+// both missing empty spaces ((3,5) and (5,5)) have been highlighted. Phones
+// (2026-11-06): it's a popup over the grid instead, with "Got it", then a
+// Hint button that brings it back.
 // Uses Playwright's fake clock to skip the wait.
 // Laptop + phone.   Run:  node hl_hint_test.js   (pictures: hl-hint-*.png)
 const { chromium } = require('playwright');
@@ -23,11 +23,11 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     page.on('pageerror', e=>errors.push(e.message));
     await page.clock.install();
     await page.goto(BASE + 'tutorial.html');
-    await page.clock.runFor(4000);                     // (past the dark, 3.5 s)
+    await page.clock.runFor(5500);                     // (past the dark, 5 s)
     const text = await page.innerText('#n-boardr');     // (only the text you can see)
-    check(!/there needs? to be/.test(text), 'at first the note has no hint sentence');
+    check(!/only one highlighted/.test(text), 'at first the note has no hint sentence');
     check(await page.isHidden('#hl-hint'), 'hint hidden');
-    if(found) await page.evaluate(()=>{ const m = getMarks(); m['2,3'] = 2; setMarks(m); });
+    if(found) await page.evaluate(()=>{ const m = getMarks(); m['3,5'] = 2; m['5,5'] = 2; setMarks(m); });
     await page.clock.runFor(80000);
     check(await page.isHidden('#hl-hint'), 'still hidden after 83 s');
     await page.clock.runFor(10000);
@@ -40,7 +40,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
       const before = await scrollTop();
       check(await popupOpen(), 'not found: the hint pops up at 93 s');
       const hint = await page.innerText('#spot-text');
-      check(hint.includes('there needs to be either 2 or 0 empty spaces'), 'wording: "' + hint.trim() + '"');
+      check(hint.includes('Find a row with only one highlighted square'), 'wording: "' + hint.trim() + '"');
       const over = await page.evaluate(()=>{ const c = document.getElementById('spot-card').getBoundingClientRect(), b = document.getElementById('board-outer').getBoundingClientRect();
         return c.top < b.bottom && c.bottom > b.top && c.top >= 0 && c.bottom <= innerHeight; });
       check(over, 'it sits over the grid, on screen');
@@ -65,7 +65,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     else {
       check(await page.isVisible('#hl-hint'), 'not found: the hint is there at 93 s');
       const hint = await page.textContent('#hl-hint');
-      check(hint.includes('there needs to be either 2 or 0 empty spaces'), 'wording: "' + hint.trim() + '"');
+      check(hint.includes('Find a row with only one highlighted square'), 'wording: "' + hint.trim() + '"');
       const inView = await page.evaluate(()=>{ const r = document.getElementById('hl-hint').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
       check(inView, 'hint on screen');
       const clear = await page.evaluate(()=>{ const t = document.getElementById('hl-tool').getBoundingClientRect(), c = document.querySelector('#n-boardr .empty-card').getBoundingClientRect();

@@ -18,6 +18,26 @@ user's OK), including the tutorial work below. Session ended cleanly.
   the board) on real Safari; a "that's right" moment on slide 6; Medium's
   gold text on white; pre-existing `next_level_test` / `share_test` failures.
 
+**2026-11-11: highlighter slides rewritten** (pushed, with the user's OK)
+- Testers found the highlighter explainer confusing ("omit needless
+  words"; show it's crucial, not an extra). Slide 5: one message ("Use the
+  highlighter to mark empty spaces. Tap it to turn it on."), no color
+  step, grid visible from the start; "Tap a highlighted square again to
+  clear it." Slide 6: the user's new board (I Z T Y fixed, N P to place in
+  the user's chosen orientations, neither the solution's), 4 empty spaces
+  given, the player finds 2 ((3,5), (5,5)). Note: "Find the empty spaces
+  first. On a 6×6 grid like this, every row and column needs an even
+  number of empty spaces (0 counts as an even number)." / "1st: Highlight
+  the two missing empty spaces." / "2nd: Fit the pieces onto the grid."
+  Dark 5 s. Payoff: both found → ✓ on 1st, the pieces' squares glow twice
+  (this answers the old "nothing confirms a correct highlight" question).
+  Hint: "Find a row with only one highlighted square. It needs one more."
+  Slide 7 hint part 2 shortened. Tests updated: tutorial_test,
+  hl_hint_test, glow_clip_test (all pass).
+- Side notes from the user for later: see "User's notes for later" under
+  "Still open" (sandbox Analyze uses only pieces on the board; red glow on
+  red piece; dotted line strands).
+
 **2026-11-08: sandbox colors + live counts + faster Analyze** (all pushed, with the user's OK)
 - Panel piece icons now use the game's colors (`pieceColors(draft)`, in
   puzzle order), the same as the tray and board; pieces not in the
@@ -1566,6 +1586,24 @@ bright/too dim" feedback. Known values, in chronological order:
   already gone before the second press. Fixed to only blur on success.
 
 ## Still open — not yet diagnosed
+
+**User's notes for later (2026-11-11, "no need to fix now"):**
+1. **Analyze said "no parity solutions" with 4 pieces on the board and 2
+   in the tray, but dragging the 2 in solved it.** Diagnosed: not a solver
+   bug. sandbox.html `piecesToAnalyze` analyzes only the pieces ON the
+   board (by design since early on), so it solved I Z T Y alone. The solver
+   with all six (I Z T Y N P, empty 6×6) finds 328 parity solutions, fast
+   and slow agree. Fix to discuss: analyze every selected piece, or treat
+   placed pieces as fixed (prefilled) and ask "how do the rest fit?"
+2. **The red wrong-placement glow is hard to see on the red piece**
+   (vermilion / the game palette's red). game.css `.placed-piece.invalid
+   .piece-svg` is a red drop-shadow only. Idea: a thin white (dark mode:
+   dark) ring first, then the red glow, so it shows on any color.
+3. **New sandbox feature: dotted line strands** (lines along square edges
+   that don't have to close into a loop). Same rule for players: no piece
+   crosses a dotted line. Needs: puzzle data (list of edges), game.js
+   drawing + the crossing check, solver.js (skip placements that cross an
+   edge), sandbox drawing tool, puzzles.js/playtest pass-through.
 
 **"The app is running less smoothly" (reported early on, not re-confirmed
 since the rendering/selection work below).** Not profiled yet. Likely

@@ -17,22 +17,22 @@
        (a dotted line, the edge of the grid, another piece)
     4  Reflect (double-click / tap twice, or E), then drag: same two-step
        note. On solving, the blocks are counted
-    5  Meet the highlighter (user, 2026-11-05): short messages one at a
-       time under the highlighter: "Tap this button to enable…", then "Tap
-       this dropdown to choose a highlighter color"; once a color is
-       picked they go away and an empty grid (no pieces) comes in; after
-       the first highlight, "Tap a highlighted square to un-highlight it";
-       Next lights up once they un-highlight one.
-    6  Use it (user, 2026-11-05): a board with four pieces fixed and five of
+    5  Meet the highlighter (shortened 2026-11-11): one message under it,
+       "Use the highlighter to mark empty spaces. Tap it to turn it on.";
+       the empty grid (no pieces) shows from the start; once it's on, the
+       message goes and the grid glows once; after the first highlight, "Tap a highlighted square again to
+       clear it."; Next lights up once they clear one.
+    6  Use it (the user's board, 2026-11-11): four pieces fixed and four of
        its six empty spaces highlighted (those can't be cleared). The page
-       is dark except a note ("…highlight where the last empty space has to
-       go…"); after 3.5 s the dark lifts and the highlighter glows until
-       it's tapped. The answer: row 3, column 4. Pieces can be moved at
-       any time. After 90 s without the answer, a hint (phones: a popup
-       over the grid with "Got it", then a small Hint button brings it
-       back). On solving, the blocks are counted.
-       ** CHECK IN WITH THE USER: nothing confirms a correct highlight, so
-       players may be unsure they did it right (user's own worry). **
+       is dark except a note ("Find the empty spaces first." and the even
+       rule for empty spaces on a 6×6 grid, then "1st: Highlight the two missing empty spaces. 2nd: Fit
+       the pieces onto the grid."); after 5 s the dark lifts and the
+       highlighter glows until it's tapped. The answers: (3,5) and (5,5).
+       Once both are highlighted, the 1st step gets a ✓ and the squares
+       left for the pieces glow twice. Pieces can be moved at any time.
+       After 90 s without both, a hint (phones: a popup over the grid
+       with "Got it", then a small Hint button brings it back). On
+       solving, the blocks are counted.
     7  Make every row and column even (the parity puzzle). If they place
        every piece but the rows/columns aren't all even, a glowing Hint
        button appears: it darkens the page, spotlights the dotted area
@@ -266,6 +266,13 @@
                       100% { box-shadow: 0 0 0 0 rgba(var(--glow), 0); } }
   .empty-card p.hl-hint { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(var(--glow), 0.1); }
   .empty-card p.hl-hint.shown { animation: hintIn 2.4s ease-out 2; }
+  /* [COLORS] Slide 6: once both empty spaces are found, the squares left
+     for the pieces glow twice (the payoff: the pieces' spots stand out) */
+  @keyframes openFlash { 0%, 100% { box-shadow: none; }
+                         50% { box-shadow: inset 0 0 0 3px rgba(var(--glow), 0.9), 0 0 12px rgba(var(--glow), 0.6); } }
+  #board .board-cell.open-flash { animation: openFlash 0.9s ease-in-out 2; }
+  /* the first step gets a check once it's done */
+  .empty-card p.step-done b::after { content: ' \2713'; }
   .raised .empty-card { background: var(--color-panel); }
   /* Phones: on slide 6 the note comes first (it's read before anything
      else), then the pieces and the board */
@@ -605,29 +612,36 @@ const PUZZLE_3 = {
   ],
   pieces: [ trayPiece('F', [[0,1],[0,2],[1,0],[1,1],[2,1]]), trayPiece('N', [[0,0],[1,0],[2,0],[2,1],[3,1]]) ],
 };
-// Slide 6, using the highlighter (the user's board, 2026-11-05). W, Z, N and I
-// are fixed; the player places F and Y. (Colors: none of them looks like a
+// Slide 6, using the highlighter (the user's board, 2026-11-11). I, Z, T and Y
+// are fixed; the player places N and P. (Colors: none of them looks like a
 // highlighter color, so the highlights never read as pieces; the user's
-// picture had a yellow I and a light blue Z, too close to those.) solver.js: one way to fit, and it passes parity.
-// Its six empty spaces: the five cut off from the rest of the board are
-// highlighted for the player (HL_GIVEN); the sixth is HL_GOAL (row 3,
-// column 4), the only square that makes row 3 and column 4 even. F then
-// goes at (3,4)(4,3)(4,4)(4,5)(5,5) and Y at (0,5)(1,5)(2,4)(2,5)(3,5).
+// picture had a yellow N and a pink Y, too close to the yellow and pink
+// highlights, so N is wisteria and Y is plum.)
+// solver.js: two ways to fit N and P, only one passes parity.
+// Its six empty spaces: the four boxed in by pieces are highlighted for the
+// player (HL_GIVEN); the other two are HL_GOALS. Row 4 (3,·) has one given
+// empty space, so it needs another: (3,5) is its only open square. That
+// makes column 6 odd, and row 6 (one given) needs one more too: (5,5).
+// N then goes at (4,4)(4,5)(5,2)(5,3)(5,4) and P at (0,5)(1,4)(1,5)(2,4)(2,5).
 const PUZZLE_HL = {
   title: 'Tutorial highlighter', rows: 6, cols: 6, blocked: [],
   fixedPieces: [
-    fixedPiece('W', [[0,1],[0,2],[1,0],[1,1],[2,0]], INKS.persimmon),
-    fixedPiece('Z', [[0,4],[1,2],[1,3],[1,4],[2,2]], INKS.asagi),
-    fixedPiece('N', [[3,2],[3,3],[4,0],[4,1],[4,2]], INKS.moss),
-    fixedPiece('I', [[5,0],[5,1],[5,2],[5,3],[5,4]], INKS.indigo),
+    fixedPiece('I', [[0,0],[0,1],[0,2],[0,3],[0,4]], INKS.indigo),
+    fixedPiece('Z', [[1,2],[2,0],[2,1],[2,2],[3,0]], INKS.asagi),
+    fixedPiece('T', [[1,3],[2,3],[3,2],[3,3],[3,4]], INKS.moss),
+    fixedPiece('Y', [[4,0],[4,1],[4,2],[4,3],[5,1]], INKS.plum),
   ],
+  // (2026-11-11: the orientations from the user's picture, neither one the
+  // way it goes in the solution)
   pieces: [
-    { name:'F', color: INKS.vermilion, cells: [[0,1],[0,2],[1,0],[1,1],[2,1]] },
-    { name:'Y', color: INKS.wisteria,  cells: [[0,1],[1,0],[1,1],[2,1],[3,1]] },
+    { name:'N', color: INKS.wisteria,  cells: [[0,0],[1,0],[1,1],[2,1],[3,1]] },
+    { name:'P', color: INKS.vermilion, cells: [[0,1],[0,2],[1,0],[1,1],[1,2]] },
   ],
 };
-const HL_GIVEN = [[0,0],[0,3],[2,1],[3,0],[3,1]];   // (given highlights: they can't be cleared)
-const HL_GOAL = '2,3';     // (the answer; nothing checks it, see the note at the top)
+const HL_GIVEN = [[1,0],[1,1],[3,1],[5,0]];   // (given highlights: they can't be cleared)
+const HL_GOALS = ['3,5', '5,5'];              // (the two empty spaces the player finds)
+// The squares left for N and P once the empty spaces are found (they glow then)
+const HL_OPEN = [[0,5],[1,4],[1,5],[2,4],[2,5],[4,4],[4,5],[5,2],[5,3],[5,4]];
 // Slide 5: a totally empty grid to try the highlighter on (no pieces, so
 // it's never "solved")
 const PUZZLE_EMPTY = { title: 'Tutorial highlighter practice', rows: 6, cols: 6, blocked: [], pieces: [] };
@@ -790,7 +804,7 @@ const SLIDES = [
     hintSteps: [
       { lit: 'area', text: 'The dotted area must be completely filled by two pieces.' },
       { lit: [[3, 4]], mark: [3, 4],
-        text: 'The highlighted square is one of six empty spaces. Look at the row and column that the highlighted square is in. Where do two empty spaces have to go? (Use the highlighter tool.)' },
+        text: 'This square stays empty. Its row and column each need one more empty space. Highlight where they go.' },
     ],
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column is even. You&rsquo;re ready to play!' },
@@ -1129,20 +1143,23 @@ function planPhoneWin(){
 /* ── Slide 5: meet the highlighter ──
    Short messages, one at a time, in a popup under the highlighter (user,
    2026-11-05), each pointing at what to tap, which glows:
-     'enable'  "Tap this button to enable the highlighter tool."
-     'color'   (once it's on) "Tap this dropdown to choose a highlighter color."
-     'grid'    (once a color is picked) the messages go away and the empty
-               grid comes in
-     'unmark'  (after the first highlight) "Tap a highlighted square to
-               un-highlight it." Next lights up once they do.
+     'enable'  "Use the highlighter to mark empty spaces. Tap it to turn it on."
+     'grid'    (once it's on) the message goes away and the empty grid
+               comes in
+     'unmark'  (after the first highlight) "Tap a highlighted square again
+               to clear it." Next lights up once they do.
    The word "pencil" is never used to players. */
 const TAP = TOUCH ? 'Tap' : 'Click';
-const HL_MSG = {    // [CONTENT] (the user's wording, 2026-11-05)
-  enable: { text: `${TAP} this button to enable the highlighter tool.`, point: '.hl-pencil', glow: 'glowing' },
-  color:  { text: `${TAP} this dropdown to choose a highlighter color.`, point: '.hl-color', glow: 'glow-color' },
-  unmark: { text: `${TAP} a highlighted square to un-highlight it.` },
+// (2026-11-11, user: "omit needless words". The color step is gone: a
+// color is already chosen, and the dropdown is easy to find later.)
+const HL_MSG = {    // [CONTENT]
+  enable: { text: `Use the highlighter to mark empty spaces. ${TAP} it to turn it on.`, point: '.hl-pencil', glow: 'glowing' },
+  unmark: { text: `${TAP} a highlighted square again to clear it.` },
 };
-const LATER_IN = ['board-wrap', 'tray'];     // (hidden until a color is picked)
+// (Things hidden until the highlighter is on. Empty since 2026-11-11: the
+// user wants the grid visible from the start. It still glows once as the
+// highlighter turns on, to say "now tap a square".)
+const LATER_IN = [];
 const GRID_GLOW_MS = 450;          // the grid glows as it comes in…
 const GRID_GLOW_AGAIN_MS = 4000;   // …and again this much later if no square has been tapped
 let introStage = null;
@@ -1194,19 +1211,17 @@ function placeBubble(){
   $('tray').style.minHeight = Math.max(60, need) + 'px';
 }
 window.addEventListener('resize', ()=>setTimeout(placeBubble, 150));   // (after game.js re-fits the board)
-// Turned on → the color message (turned off again before that → back to the first)
+// Turned on → the message goes and the grid comes in
 gameHooks.onHighlighter = on=>{
   if(on && SLIDES[current].highlighterLesson) $('hl-tool').classList.remove('glowing');   // (slide 6: tapped, so it stops glowing)
   if(!SLIDES[current].highlighterIntro) return;
-  if(on && introStage === 'enable') setIntroStage('color');
-  else if(!on && introStage === 'color') setIntroStage('enable');
+  if(on && introStage === 'enable') setIntroStage('grid');
 };
-// A color picked → the messages go and the grid comes in
-gameHooks.onColor = ()=>{ if(SLIDES[current].highlighterIntro && introStage === 'color') setIntroStage('grid'); };
 // The first highlight → the last message; then un-highlighting a square
 // lights up Next (user, 2026-11-05)
 let introMarks = 0;      // how many squares were highlighted after the last change
 gameHooks.onMark = ()=>{
+  if(SLIDES[current].highlighterLesson){ checkEmptySpacesFound(); return; }
   if(!SLIDES[current].highlighterIntro) return;
   const n = Object.keys(getMarks()).length, fewer = n < introMarks;
   introMarks = n;
@@ -1215,22 +1230,43 @@ gameHooks.onMark = ()=>{
 };
 
 /* ── Slide 6: use the highlighter ──
-   The board with five of its six empty spaces highlighted (HL_GIVEN; they
+   The board with four of its six empty spaces highlighted (HL_GIVEN; they
    can't be cleared). Everything is dark except the note for HL_DARK_MS;
-   then the dark lifts and the highlighter glows twice. Pieces can be
-   moved at any time (user's choice). The answer is HL_GOAL, but nothing
-   checks it: see "CHECK IN WITH THE USER" at the top of this file.
-   If HL_GOAL still isn't highlighted after HL_HINT_MS (and the puzzle
+   then the dark lifts and the highlighter glows until it's tapped. Pieces
+   can be moved at any time (user's choice). Once both HL_GOALS are
+   highlighted, the squares left for the pieces (HL_OPEN) glow twice and
+   the 1st step gets a check: the payoff (2026-11-11).
+   If they still aren't both highlighted after HL_HINT_MS (and the puzzle
    isn't solved), HL_HINT pops into the note (user, 2026-11-05). */
-const HL_NOTE = [  // [CONTENT] (the user's wording, 2026-11-05: two steps, one line each)
-  '<b>1st:</b> Highlight the square where the remaining empty space has to go.',
-  '<b>2nd:</b> Drag the remaining pieces into their spots.',
+const HL_NOTE = [  // [CONTENT] (2026-11-11: the rule first, then two steps)
+  '<b>Find the empty spaces first.</b> On a 6&times;6 grid like this, every row and column needs an even number of empty spaces (0 counts as an even number).',
+  '<b>1st:</b> Highlight the two missing empty spaces.',
+  '<b>2nd:</b> Fit the pieces onto the grid.',
 ];
-const HL_HINT =    // [CONTENT] (was the note's last sentence; user, 2026-11-05)
-  '<b>Hint:</b> In this particular puzzle there needs to be either 2 or 0 empty spaces in every row and column.';
-const HL_DARK_MS = 3500;     // (was 2 s; user, 2026-11-05: 1.5 s longer to read it)
-const HL_HINT_MS = 90000;    // a minute and a half of not finding it
+const HL_HINT =    // [CONTENT]
+  '<b>Hint:</b> Find a row with only one highlighted square. It needs one more.';
+const HL_DARK_MS = 5000;     // (was 3.5 s; 2026-11-11: the note has one more line to read)
+const HL_HINT_MS = 90000;    // a minute and a half of not finding them
+let emptySpacesFound = false;
+const goalsFound = ()=>{ const m = getMarks(); return HL_GOALS.every(k=>m[k] !== undefined); };
+// Both found → the 1st step gets a check, and the squares the pieces go in
+// (the ones no piece covers yet) glow twice
+function checkEmptySpacesFound(){
+  if(emptySpacesFound || !goalsFound()) return;
+  emptySpacesFound = true;
+  const first = $('n-boardr').querySelectorAll('.empty-card p')[1];
+  if(first) first.classList.add('step-done');
+  const covered = new Set(placedPieces.flatMap(p=>p.cells.map(([r,c])=>(p.row+r) + ',' + (p.col+c))));
+  HL_OPEN.forEach(([r,c])=>{
+    if(covered.has(r + ',' + c)) return;
+    const cell = document.querySelector(`#board .board-cell[data-r="${r}"][data-c="${c}"]`);
+    if(!cell) return;
+    cell.classList.remove('open-flash'); void cell.offsetWidth; cell.classList.add('open-flash');
+    cell.addEventListener('animationend', ()=>cell.classList.remove('open-flash'), { once: true });
+  });
+}
 function showHighlighterLesson(){
+  emptySpacesFound = false;
   const given = HL_GIVEN.map(([r,c])=>r + ',' + c);
   const m = {};
   given.forEach(k=>{ m[k] = 0; });
@@ -1268,7 +1304,7 @@ function showHighlighterLesson(){
 // a small Hint button at the left end of the pieces' row brings it back.
 // The page doesn't scroll, so the whole grid stays in view (user, 2026-11-06).
 function showHighlightHint(){
-  if(solved || getMarks()[HL_GOAL] !== undefined) return;
+  if(solved || goalsFound()) return;
   if(PHONE_LAYOUT.matches){ showLessonHint(); return; }
   const hint = $('hl-hint');
   if(!hint) return;

@@ -14,7 +14,6 @@ const GLOWS = [
   [3, '#step0', 14, null],
   [2, '.dont-slide h2', 14, null],
   [4, '.hl-pencil', 21, null],
-  [4, '.hl-color', 21, ()=>{ setHighlighting(true); setIntroStage('color'); }],
   [4, '#board-outer', 20, ()=>{ setHighlighting(true); setIntroStage('grid'); }],
   [5, '.hl-pencil', 21, null],
   [6, '#big-note', 18, null],
