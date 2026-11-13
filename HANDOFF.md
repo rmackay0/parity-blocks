@@ -1,9 +1,9 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-11)
+## START HERE (updated 2026-11-12)
 
-**Status: everything is committed AND pushed** (2026-11-11, with the
-user's OK). Session ended cleanly.
+**Status: everything is committed AND pushed** (2026-11-12, with the
+user's OK), including the slide 6 popup split below.
 
 **Ask the user next time (2026-11-11):**
 - How the rewritten highlighter slides (5 and 6) play for testers.
@@ -25,7 +25,7 @@ user's OK). Session ended cleanly.
   the board) on real Safari; a "that's right" moment on slide 6; Medium's
   gold text on white; pre-existing `next_level_test` / `share_test` failures.
 
-**2026-11-11 (later): slide 6 split into a two-part popup** (NOT pushed yet)
+**2026-11-11/12: slide 6 split into a two-part popup** (pushed 2026-11-12, with the user's OK)
 - User: "too many instructions in one block". Slide 6 now opens dark
   with a "Got it" popup in two parts (`HL_POPUP`, shown with `showHint`,
   the grid lit, over the grid on phones; `.spot.instant` = no fade-in):
@@ -40,6 +40,10 @@ user's OK). Session ended cleanly.
 - Phones: slide 6 now needs no scrolling except on an SE (47px, was 98px;
   390×664 was 31px, now 0). Tests updated: tutorial_test, hl_hint_test,
   phone_layout_check, glow_clip_test (all pass).
+- Tried and dropped (user, 2026-11-12): a glowing picture of the
+  highlighter button beside popup 2's "1st" line. Don't re-add it.
+- Still open: with Large text, slide 6 scrolls 35–108px on phones
+  (the same or worse before this change, so not new).
 
 **2026-11-11: highlighter slides rewritten** (pushed, with the user's OK)
 - Testers found the highlighter explainer confusing ("omit needless
