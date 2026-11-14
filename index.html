@@ -449,7 +449,7 @@ document.querySelectorAll('.difficulty-btn[data-difficulty]').forEach(btn => {
     const level = btn.dataset.difficulty;
     const url = DIFFICULTY_LINKS[level];
     if (url) {
-      window.location.href = url;
+      window.location.href = ParityTheme.withTheme(url);   // (carries light / dark: theme.js)
     } else {
       showToast(btn.textContent.trim() + ' puzzles are coming soon');
     }

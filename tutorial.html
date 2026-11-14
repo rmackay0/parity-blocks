@@ -160,6 +160,8 @@
   .intro ol { padding-left: 26px; margin-bottom: 14px; }
   .intro li .twelve { margin: 6px 0 12px; }
   .intro li { font-size: 1.15rem; line-height: 1.45; margin-bottom: 4px; }
+  /* the list's 1 and 2 in the same color as "two" (user, 2026-11-13) */
+  .intro li::marker { color: var(--color-accent); font-weight: 700; }
   .intro p { font-size: 1.05rem; line-height: 1.5; color: var(--color-text); margin-bottom: 14px; }
   .intro .fun { color: var(--color-text-dim); }
   /* (2026-11-12) the two defined terms are always underlined; "two" in color */
@@ -964,7 +966,8 @@ const FIND_GOOD = {
   ],
   // (user, 2026-11-13: once all are highlighted, a glowing popup, then Next
   // lights up; the explaining happens on the next two slides, which look identical)
-  popups: [ { glow: true, ok: 'Got it', html: '<p class="ex-big">Next, we&rsquo;ll examine this grid further.</p>' } ],
+  // (its button moves on to the next slide: no second click on Next, user 2026-11-13)
+  popups: [ { glow: true, ok: 'Next →', goNext: true, html: '<p class="ex-big">Next, we&rsquo;ll examine this grid further.</p>' } ],
 };
 // Slide 3b: identical, but the text on the left fades and the sum plays
 // (runExplainer); Next once the six empty squares are numbered
@@ -1050,12 +1053,12 @@ function renderIntro(){
   box.innerHTML = `
     <p>There are <span class="two">two</span> objectives in Parity Blocks:</p>
     <ol>
-      <li>Fit the pieces onto the grid. This will be referred to as <u>Tiling</u>.
+      <li>Fit the pieces onto the grid. This is referred to as <u>Tiling</u>.
         <p class="sub">Below are the pieces used in the game. They are called <b style="color:var(--color-accent)">pentominoes</b> because they are each made up of five blocks.
           <span class="ominoes">Domino = two blocks &middot; Triomino = three &middot; Tetromino = four (the reason for the name Tetris) &middot; Pentomino = five</span></p>
         <div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>
       </li>
-      <li>Make every row and every column have an even number of blocks. This will be referred to as <u>Solving for Parity</u>.</li>
+      <li>Make every row and every column have an even number of blocks. This is referred to as <u>Solving for Parity</u>.</li>
     </ol>`;
   // (smaller on phones, so all twelve fit in two rows of six)
   const size = window.matchMedia('(max-width: 760px)').matches ? 11 : 15;
@@ -2070,6 +2073,11 @@ function runFindPopups(list, i){
     }));
     return;
   }
+  if(p.goNext){
+    later(300, ()=>showHint([{ lit: 'board', ok: p.ok, glow: p.glow, keepDark: false, html: p.html }], 0,
+      ()=>{ markDone(); showSlide(current + 1); }));
+    return;
+  }
   const show = ()=>showHint([{ lit: 'board', ok: p.ok || 'OK', glow: p.glow, html: p.html }], 0, ()=>later(250, ()=>runFindPopups(list, i + 1)));
   if(p.countBefore) drawCounts(true, ()=>later(400, show), { squares: emptyNow(), step: 650 });
   else later(300, show);
@@ -2169,7 +2177,7 @@ function closeTutorial(finished){
     // Opened as its own page (the splash screen's Tutorial button): remember
     // it's been seen, so it won't pop up again on the first puzzle, then go back
     try { localStorage.setItem('pb_tutorialSeen', '1'); } catch(e){}
-    location.href = 'index.html';
+    location.href = ParityTheme.withTheme('index.html');   // (carries light / dark: theme.js)
   }
 }
 

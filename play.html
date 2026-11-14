@@ -158,7 +158,7 @@ const TUTORIAL_SEEN_KEY = 'pb_tutorialSeen';
 const tutorialOverlay = document.getElementById('tutorial-overlay');
 const tutorialFrame = document.getElementById('tutorial-frame');
 window.openTutorial = ()=>{
-  tutorialFrame.src = 'tutorial.html';
+  tutorialFrame.src = ParityTheme.withTheme('tutorial.html');   // (carries light / dark: theme.js)
   tutorialOverlay.hidden = false;
   timerTick();                       // (the timer pauses while it's open)
   tutorialFrame.focus();

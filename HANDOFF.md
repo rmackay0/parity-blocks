@@ -1,18 +1,41 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-12)
+## START HERE (updated 2026-11-13)
 
-**Status: everything is committed AND pushed** (2026-11-12, with the
-user's OK), including the slide 6 popup split below.
+**Status: everything is committed AND pushed** (2026-11-13, with the
+user's OK): the tutorial revamp, the Firefox light / dark fix, slide 1
+and slide 3 tweaks.
 
-**2026-11-12 (later): TUTORIAL REVAMP IN PROGRESS: not committed, not
-tested** (user: "the goal is to visualize them… ignore running tests until
-I give the go ahead"). Parity is now taught first; see the comment at the
-top of tutorial.html for the new 9 slides (pick the grid, highlight every
-empty space twice, the old slide 6 board auto-solving, then the old
-rotate / don't place / reflect / final slides). Tests (tutorial_test,
-hl_hint_test, phone_layout_check, glow_clip_test…) still expect the old
-7 slides and WILL fail until updated. Wording is mostly the user's, with
+**Ask the user next time (2026-11-13):**
+- Does dark mode now carry into the tutorial in their Firefox? (Couldn't
+  reproduce the bug; fixed by carrying `?theme=` in page links.) Do they
+  mind the `?theme=dark` in the address?
+- How the new tutorial plays on a real iPhone, especially slide 7 (the
+  last two pieces turn and drop in by themselves), Large text on the new
+  slides (not checked), and slides 8–11 (unchanged; may now repeat things).
+- Claude's trimming ideas (not done): merge slides 4 and 5 (3b / 3c);
+  maybe drop the final slide's orange "Make sure…" note; one slide for
+  rotate + reflect.
+- Then: rewrite tutorial_test, hl_hint_test, glow_clip_test,
+  phone_layout_check for the new slides (once the slides settle); the
+  sandbox notes (new "any of the 12 pentominoes" Analyze button with a
+  "how many pentominoes?" popup; straight dotted lines): see "User's notes
+  for later".
+
+**The tutorial now (11 slides; the full list is the comment at the top of
+tutorial.html):** 1 two objectives · 2 pick the grid (count blocks) ·
+3 highlight every empty square → glowing "Next, we'll examine this grid
+further." whose "Next →" goes to 4 · 4 (3b) the animated sum: pieces
+dragged up, measuring lines "6", 36 squares, 30 blocks, retile,
+36 − 30 = 6 numbered · 5 (3c) "Since this grid is 6 × 6 squares…" →
+empty squares counted · 6 pick the grid again, counting EMPTY squares ·
+7 the highlighter board: find all six, pieces drop in · 8 rotate ·
+9 don't place over · 10 reflect · 11 the final puzzle.
+Rule saved in memory: before a popup or Next appears, the previous step's
+labels fade (`clearLeftovers`, `CLEAR_MS`).
+
+**History of the revamp (2026-11-12/13):** Parity is now taught first
+(user: players new to puzzles don't grasp it). Wording is mostly the user's, with
 small edits by Claude. **Vocabulary (user, 2026-11-13): "squares", not
 "spaces"**: grid, square (a spot on the grid: "36 squares"), block (part
 of a piece), empty square, piece / pentomino, <u>Tiling</u>, <u>Solving
@@ -55,12 +78,19 @@ pressed, every page follows the DEVICE's setting (prefers-color-scheme,
 live); once pressed, that choice wins everywhere (as before). Checked in
 Chromium + WebKit on index, tutorial, play, sandbox. (analyzer.html and
 sandbox-classic.html have no dark mode at all.)
+**Pushed 2026-11-13 (8e2db59, user's OK).** Then (also pushed, same day):
+slide 1's list numbers in the accent color, "is referred to as"; slide 3's
+popup button is "Next →" and goes straight to slide 4 (`goNext`); theme.js
+also carries the chosen mode in page links (`?theme=dark`, `withTheme`)
+because the user's Firefox opened the tutorial light after a dark start
+screen (not reproducible in Playwright's Firefox; tested by wiping each
+page's storage).
 **Piece moves on 3b:** `glidePiece` moves a copy of the GRID's drawing
 (identical at the grid end) instead of stretching the small drawing from
 the row above; the old `flyFrom` is gone. Slide 2's intro is now one line:
 "Here are two different Tilings using the same pieces."
 
-**Ask the user next time (2026-11-11):**
+**Ask the user next time (2026-11-11; partly overtaken by the revamp):**
 - How the rewritten highlighter slides (5 and 6) play for testers.
 - Which of the three side notes to do next (see "User's notes for later"
   under "Still open"): sandbox Analyze using only pieces on the board, the
@@ -325,7 +355,7 @@ previous project; don't push there.
 | `theme.js` | Light / dark mode (2026-11-02). Light is the default; `html.dark` = dark. Loaded first in each page's `<head>`. Any `[data-theme-toggle]` button (the moon / sun) switches it; `ParityTheme.makeButton()` = the "Dark mode" text button next to Large text (rules popup, tutorial). Saved in `localStorage.pb_theme` |
 | `celebrate.js` | `solvedCelebration()` = the win animation in the Solved popup (2026-11-02). Also the solved badge (green check + title + text) used for every success message; `solvedBadge(title, text, {animate, sound, stack})`. play.html calls `enableSolvedSound()` → jingle `assets/solved.mp3` (new one 2026-10-24, big note at 1.46 s), animation timed to it; tutorial = no sound, quicker. Sound unlocks on the first real tap (touchend/pointerup/click/keydown) |
 | `assets/` | `logo.svg` (logo + favicon), `solved.mp3` (the user's jingle) |
-| `tutorial.html` | Interactive 6-slide tutorial (real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (slide 5 = highlighter, its note in `HL_LINES`) |
+| `tutorial.html` | Interactive 11-slide tutorial (2026-11-13 revamp: parity first; real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (+ `FIND_GOOD`/`FIND_SUM`/`FIND_EVEN`, `HL_POPUP`/`HL_NOTE`, the two grid pairs `PAIR_*` / `EMPTY_*`) |
 | `playtest.html` / `playtest.json` | Unlinked playtest page + the cloud puzzles the sandbox uploads (2026-11-05) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
 | `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 6 slides, `next_level_test.js` the Solved popup, `look_screens.js` screenshots of every page (laptop/phone × light/dark; `ONLY=phone-dark` for one), `feel_test.js` the piece animations, `share_test.js`, `theme_toggle_test.js` |

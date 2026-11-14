@@ -24,12 +24,42 @@
   // device's own light / dark setting; once pressed, that choice wins on
   // every page.
   const SYSTEM = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-  function isDark(){
+  // (2026-11-13, user: in Firefox the start screen was dark but the tutorial
+  // opened light. Firefox can keep each page's saved settings apart (e.g.
+  // files opened from the computer), so the choice also rides along in the
+  // address of every page link: "?theme=dark". A page opened that way
+  // saves it and uses it.)
+  let chosen = null;
+  try { const t = new URLSearchParams(location.search).get('theme'); if(t === 'dark' || t === 'light') chosen = t; } catch(e){}
+  if(chosen){ try { localStorage.setItem(KEY, chosen); } catch(e){} }
+  function savedChoice(){
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch(e){}
-    if(saved === 'dark' || saved === 'light') return saved === 'dark';
+    return (saved === 'dark' || saved === 'light') ? saved : chosen;
+  }
+  function isDark(){
+    const saved = savedChoice();
+    if(saved) return saved === 'dark';
     return !!(SYSTEM && SYSTEM.matches);
   }
+  // A link to another of our pages, with the chosen mode added (nothing
+  // added if the button was never pressed: then every page follows the device)
+  function withTheme(url){
+    const saved = savedChoice();
+    if(!saved) return url;
+    try {
+      const u = new URL(url, location.href);
+      if(!/\.html$/.test(u.pathname) && !u.pathname.endsWith('/')) return url;
+      u.searchParams.set('theme', saved);
+      return u.href;
+    } catch(e){ return url; }
+  }
+  // Every plain link to one of our pages picks up the mode as it's clicked
+  document.addEventListener('click', e=>{
+    const a = e.target.closest && e.target.closest('a[href]');
+    if(!a || a.target || /^(https?:|mailto:|#)/.test(a.getAttribute('href'))) return;
+    a.href = withTheme(a.getAttribute('href'));
+  }, true);
 
   // The round icon buttons at the top left of the start screen and the
   // puzzle page ([data-theme-toggle]): a moon in light mode, a sun in dark
@@ -53,7 +83,8 @@
   }
 
   function setDark(on){
-    try { localStorage.setItem(KEY, on ? 'dark' : 'light'); } catch(e){}
+    chosen = on ? 'dark' : 'light';
+    try { localStorage.setItem(KEY, chosen); } catch(e){}
     apply();
     // Tell the page around this one (the puzzle page round the tutorial)
     // and any page inside it (the tutorial in the puzzle page) straight
@@ -93,5 +124,5 @@
 
   apply();
   document.addEventListener('DOMContentLoaded', apply);   // (label any buttons in the page's HTML)
-  window.ParityTheme = { isDark, setDark, makeButton, apply };
+  window.ParityTheme = { isDark, setDark, makeButton, apply, withTheme };
 })();
