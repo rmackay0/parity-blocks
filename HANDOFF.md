@@ -5,6 +5,61 @@
 **Status: everything is committed AND pushed** (2026-11-12, with the
 user's OK), including the slide 6 popup split below.
 
+**2026-11-12 (later): TUTORIAL REVAMP IN PROGRESS: not committed, not
+tested** (user: "the goal is to visualize them… ignore running tests until
+I give the go ahead"). Parity is now taught first; see the comment at the
+top of tutorial.html for the new 9 slides (pick the grid, highlight every
+empty space twice, the old slide 6 board auto-solving, then the old
+rotate / don't place / reflect / final slides). Tests (tutorial_test,
+hl_hint_test, phone_layout_check, glow_clip_test…) still expect the old
+7 slides and WILL fail until updated. Wording is mostly the user's, with
+small edits by Claude. **Vocabulary (user, 2026-11-13): "squares", not
+"spaces"**: grid, square (a spot on the grid: "36 squares"), block (part
+of a piece), empty square, piece / pentomino, <u>Tiling</u>, <u>Solving
+for Parity</u> (both underlined). Never "cell" or "space" to players.
+2026-11-13: slide 3's sum popup became an animation (runExplainer:
+highlights clear, pieces slide up, 6s counted, "36 squares", pieces lit
+"30 blocks", retile, "36 − 30 = 6 empty squares", each numbered 1–6).
+2026-11-13 PDF "nowte_for_cloaude_11:13": slide 3 split into 3 / 3b / 3c
+(identical-looking slides; 3b plays the sum, 3c "Since this grid is 6 × 6
+squares…" OK → empty squares counted). Pieces leave one by one, quickly;
+"Counting the squares" label while counting. Removed: "You may recognize
+this grid…", slide 4's "Whether the grid is 6 × 6, 8 × 8… Counting empty
+squares is faster", slide 5's "The first four will be easy…". 11 slides.
+Claude's reading of the PDF (3c as its own slide): confirm with the user.
+Later 2026-11-13: slide 3 ends with a glowing "Next, we'll examine this
+grid further." popup; pieces now visibly dragged up (the pieces' row is in
+front of the grid on 3b, z-index); measuring lines on the bottom and left;
+the "highlight the wrong grid" slide (FIND_BAD, unused now) is replaced
+by a second pick-the-grid slide counting EMPTY squares (EMPTY_BAD /
+EMPTY_GOOD, F L N P V W). User's aim: teach each idea when it's most
+intuitive, with fewer words and slides.
+Later still: underlines unbroken (`text-decoration-skip-ink: none`).
+"Stutters and flashes": a frame-by-frame check (Claude's scratch script,
+plays slides 1–7 headless, laptop + phone) found and fixed: (a) phones,
+slides 3/3b/3c: the grid ran under the Back / Next bar (the pieces' row
+room) → smaller pieces there (`html.compact-tray`) and grid (34vh), 0
+scroll now; (b) the dark backdrop lifting between the "36 squares" and
+"30 blocks" popups → popup option `keepDark`; (c) the highlighter showing
+for 0.4 s at the start of 3c → `.gone-now`. Headless shows no slow frames;
+real-phone jank not measured.
+**Full test run (2026-11-13):** 21 of 28 pass. Fail, expected (still walk
+the OLD 7-slide tutorial; need rewriting for the new slides): tutorial_test,
+hl_hint_test, glow_clip_test, phone_layout_check. Fail, already failing on
+the last commit (checked with git stash): play_test (old Medium),
+progress_test (Archive hidden), share_test. board_still_test failed only
+because it opened slide 2 by number; it now finds the rotate slide by
+`ROTATE_STEPS` and passes. next_level_test passes now.
+**Light / dark (theme.js, 2026-11-13):** until the moon / sun button is
+pressed, every page follows the DEVICE's setting (prefers-color-scheme,
+live); once pressed, that choice wins everywhere (as before). Checked in
+Chromium + WebKit on index, tutorial, play, sandbox. (analyzer.html and
+sandbox-classic.html have no dark mode at all.)
+**Piece moves on 3b:** `glidePiece` moves a copy of the GRID's drawing
+(identical at the grid end) instead of stretching the small drawing from
+the row above; the old `flyFrom` is gone. Slide 2's intro is now one line:
+"Here are two different Tilings using the same pieces."
+
 **Ask the user next time (2026-11-11):**
 - How the rewritten highlighter slides (5 and 6) play for testers.
 - Which of the three side notes to do next (see "User's notes for later"
@@ -1631,6 +1686,18 @@ bright/too dim" feedback. Known values, in chronological order:
    crosses a dotted line. Needs: puzzle data (list of edges), game.js
    drawing + the crossing check, solver.js (skip placements that cross an
    edge), sandbox drawing tool, puzzles.js/playtest pass-through.
+   (Asked for again 2026-11-12: "dotted lines that are just a straight
+   line, not a loop".)
+4. **(2026-11-12) New sandbox Analyze button: "any of the 12 pentominoes".**
+   Runs the analysis on the grid as drawn, choosing pieces from all 12
+   (not just the selected / placed ones). Clicking it opens a popup: "How
+   many pentominoes do you want to tile this grid with?" with two
+   choices: "Doesn't matter to me" or a box to type a specific number.
+   Notes: "doesn't matter" = try every count that fits (open squares ÷ 5,
+   rounded down, and fewer); solver.js `findPuzzles(boardConfig, n, opts)`
+   already searches piece sets of size n, so this builds on it. Big grids
+   with many pieces can be slow (8 × 8 with all 12 took ~2 h): needs a
+   progress note / Stop button, and probably a Worker (`createWorker`).
 
 **"The app is running less smoothly" (reported early on, not re-confirmed
 since the rendering/selection work below).** Not profiled yet. Likely

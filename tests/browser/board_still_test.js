@@ -26,9 +26,10 @@ function dumpAll(){
       const rect = () => page.evaluate(() => { const r = document.getElementById('board-outer').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width)]; });
       const status = () => page.evaluate(() => { const s = document.getElementById('status'); return { text: s.textContent, lines: Math.round(s.scrollHeight / parseFloat(getComputedStyle(s).lineHeight)) }; });
 
-      // 1. Tutorial slide 2: put both pieces in the middle (wrong) with the letter keys
+      // 1. The tutorial's rotate slide: put both pieces in the middle (wrong).
+      // (found by what it is, not its number: the 2026-11-12 revamp moved it)
       await page.goto(BASE + 'tutorial.html');
-      await page.evaluate(() => showSlide(1));
+      await page.evaluate(() => showSlide(SLIDES.findIndex(s => s.steps === ROTATE_STEPS)));
       await page.waitForTimeout(300);
       const t0 = await rect();
       await page.evaluate(dumpAll);

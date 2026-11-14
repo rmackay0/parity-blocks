@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    PARITY BLOCKS: LIGHT / DARK MODE
    ═══════════════════════════════════════════════════════════════════
-   Light is the default. It switches with the round moon / sun button,
+   The default is the device's own light / dark setting (2026-11-13; was
+   always light). It switches with the round moon / sun button,
    the same on every page (any button with data-theme-toggle): top left of
    the start screen, the puzzle page, the sandbox, and (far left, Large
    text to its right) the rules popup and the tutorial.
@@ -18,7 +19,17 @@
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
   const KEY = 'pb_theme';
-  function isDark(){ try { return localStorage.getItem(KEY) === 'dark'; } catch(e){ return false; } }
+  // (2026-11-13, user: their phone was in dark mode but the tutorial was
+  // light.) Until the moon / sun button is pressed, every page follows the
+  // device's own light / dark setting; once pressed, that choice wins on
+  // every page.
+  const SYSTEM = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function isDark(){
+    let saved = null;
+    try { saved = localStorage.getItem(KEY); } catch(e){}
+    if(saved === 'dark' || saved === 'light') return saved === 'dark';
+    return !!(SYSTEM && SYSTEM.matches);
+  }
 
   // The round icon buttons at the top left of the start screen and the
   // puzzle page ([data-theme-toggle]): a moon in light mode, a sun in dark
@@ -70,6 +81,8 @@
   window.addEventListener('storage', e=>{ if(e.key === KEY) apply(); });
   window.addEventListener('message', e=>{ if(e.data && e.data.type === 'pb-theme') apply(); });
   window.addEventListener('pageshow', apply);
+  // (the device switching light / dark, e.g. at sunset: followed until the button is pressed)
+  if(SYSTEM){ if(SYSTEM.addEventListener) SYSTEM.addEventListener('change', apply); else if(SYSTEM.addListener) SYSTEM.addListener(apply); }
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) apply(); });
 
   // Any [data-theme-toggle] button switches the mode (set up once the page is read)
