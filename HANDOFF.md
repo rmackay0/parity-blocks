@@ -56,7 +56,12 @@ in Safari (375 × 553): every slide fits now (short-screen block at the end
 of tutorial.html's styles). Still failing, as before this session:
 next_level_test, play_test, progress_test, share_test.
 
-**Later 2026-11-16 (committed, NOT pushed yet: ask):** slide 7 has the
+**Later 2026-11-16 (all pushed, with the user's OK):** `tutorial.html?slide=N`
+opens straight onto slide N (for testing; the user is fine with players
+using it). Slide 7's note is two messages, split before "Use the
+highlighter" (laptops: two paragraphs; phones: popup parts 2 and 3); its
+text is the user's shorter version ("…2 ways to place the empty squares…
+This turns 17 different ways into only 1 way"). Slide 7 has the
 user's new board (N F Z V fixed, L and P to place; solver.js: 17 tilings,
 one passes parity; `PUZZLE_HL`, `HL_TILINGS`, `HL_EMPTY`, `HL_SOLUTION`).
 The note beside the board is the user's "There are 17 different ways to
