@@ -138,6 +138,13 @@ async function placePiece(page, frame, name, target, touch){
     await page.waitForTimeout(500);
     check(label, 'slide 7: the popup says why ("To narrow down where the pieces can go")', /To narrow down where the pieces can go/.test(await popupText()));
     await frame.click('#spot-ok');
+    await page.waitForTimeout(400);
+    // (2026-11-16) the "17 ways to tile this grid" text: beside the board on
+    // a laptop; on phones a second popup part
+    if(touch){
+      check(label, 'slide 7: phones: the "17 ways" text is the popup\'s second part', /There are 17 different ways to tile this grid/.test(await popupText()));
+      await frame.click('#spot-ok');
+    } else check(label, 'slide 7: laptops: the "17 ways" text is beside the board', /There are 17 different ways to tile this grid/.test(await F(()=>document.getElementById('n-boardr').innerText)));
     await page.waitForTimeout(1200);
     check(label, 'slide 7: the highlighter glows until tapped', await F(()=>document.getElementById('hl-tool').classList.contains('glowing')));
     await tap('.hl-pencil');

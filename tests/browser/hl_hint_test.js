@@ -24,7 +24,9 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     await page.clock.install();
     await page.goto(BASE + 'tutorial.html');
     await page.clock.runFor(500);
-    await page.click('#spot-ok'); await page.clock.runFor(300);   // (the opening popup, one part now; the hint's clock starts now)
+    // (the opening popup: one part on a laptop, two on phones, the second
+    // being the "17 ways" text; the hint's clock starts once it's closed)
+    for(let k = 0; k < 3 && await page.evaluate(()=>!document.getElementById('spot').hidden); k++){ await page.click('#spot-ok'); await page.clock.runFor(300); }
     await page.clock.runFor(1000);
     const text = await page.innerText('#n-boardr');     // (only the text you can see)
     check(!/only one highlighted/.test(text), 'at first the note has no hint sentence');
@@ -43,7 +45,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
       const before = await scrollTop();
       check(await popupOpen(), 'not found: the hint pops up at 93 s');
       const hint = await page.innerText('#spot-text');
-      check(/find a row with only one highlighted square/i.test(hint), 'wording: "' + hint.trim() + '"');
+      check(/find a row or column with only one highlighted square/i.test(hint), 'wording: "' + hint.trim() + '"');
       const over = await page.evaluate(()=>{ const c = document.getElementById('spot-card').getBoundingClientRect(), b = document.getElementById('board-outer').getBoundingClientRect();
         return c.top < b.bottom && c.bottom > b.top && c.top >= 0 && c.bottom <= innerHeight; });
       check(over, 'it sits over the grid, on screen');
@@ -68,7 +70,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     else {
       check(await page.isVisible('#hl-hint'), 'not found: the hint is there at 93 s');
       const hint = await page.textContent('#hl-hint');
-      check(/find a row with only one highlighted square/i.test(hint), 'wording: "' + hint.trim() + '"');
+      check(/find a row or column with only one highlighted square/i.test(hint), 'wording: "' + hint.trim() + '"');
       const inView = await page.evaluate(()=>{ const r = document.getElementById('hl-hint').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
       check(inView, 'hint on screen');
       const clear = await page.evaluate(()=>{ const t = document.getElementById('hl-tool').getBoundingClientRect(), c = document.querySelector('#n-boardr .empty-card').getBoundingClientRect();

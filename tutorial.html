@@ -879,25 +879,25 @@ const PUZZLE_3 = {
 // empty square, so it needs another: (3,5) is its only open square. That
 // makes column 6 odd, and row 6 (one given) needs one more too: (5,5).
 // N then goes at (4,4)(4,5)(5,2)(5,3)(5,4) and P at (0,5)(1,4)(1,5)(2,4)(2,5).
+// (2026-11-16, the user's new board: many more ways to tile it, so it's
+// clear why finding the empty squares first is worth it.) N F Z V fixed,
+// L and P to place. solver.js: 17 ways to fit L and P, only one passes
+// parity. Its empty squares (HL_EMPTY): (0,0), (5,0) and (5,1) are empty in
+// every tiling (no piece fits there); then column 2 needs one more, its only
+// open square (2,1); and so on. (The pieces drop in by themselves.)
 const PUZZLE_HL = {
   title: 'Tutorial highlighter', rows: 6, cols: 6, blocked: [],
   fixedPieces: [
-    fixedPiece('I', [[0,0],[0,1],[0,2],[0,3],[0,4]], INKS.indigo),
-    fixedPiece('Z', [[1,2],[2,0],[2,1],[2,2],[3,0]], INKS.asagi),
-    fixedPiece('T', [[1,3],[2,3],[3,2],[3,3],[3,4]], INKS.moss),
-    fixedPiece('Y', [[4,0],[4,1],[4,2],[4,3],[5,1]], INKS.plum),
+    fixedPiece('N', [[0,1],[1,0],[1,1],[2,0],[3,0]]),
+    fixedPiece('F', [[3,1],[4,0],[4,1],[4,2],[5,2]]),
+    fixedPiece('Z', [[2,4],[2,5],[3,4],[4,3],[4,4]]),
+    fixedPiece('V', [[3,5],[4,5],[5,3],[5,4],[5,5]]),
   ],
-  // (2026-11-11: the orientations from the user's picture, neither one the
-  // way it goes in the solution)
-  pieces: [
-    { name:'N', color: INKS.wisteria,  cells: [[0,0],[1,0],[1,1],[2,1],[3,1]] },
-    { name:'P', color: INKS.vermilion, cells: [[0,1],[0,2],[1,0],[1,1],[1,2]] },
-  ],
+  // (the orientations from the user's picture)
+  pieces: [ trayPiece('L', [[0,0],[1,0],[2,0],[3,0],[3,1]]), trayPiece('P', [[0,1],[0,2],[1,0],[1,1],[1,2]]) ],
 };
-const HL_GIVEN = [[1,0],[1,1],[3,1],[5,0]];   // (given highlights: they can't be cleared)
-const HL_GOALS = ['3,5', '5,5'];              // (the two empty squares the player finds)
-// The squares left for N and P once the empty squares are found (they glow then)
-const HL_OPEN = [[0,5],[1,4],[1,5],[2,4],[2,5],[4,4],[4,5],[5,2],[5,3],[5,4]];
+const HL_TILINGS = 17;      // (solver.js: the ways to fit L and P on PUZZLE_HL; keep in step with it)
+const HL_EMPTY = [[0,0],[0,3],[2,1],[2,3],[5,0],[5,1]];   // the six empty squares of the one parity answer
 // Slide 5: a totally empty grid to try the highlighter on (no pieces, so
 // it's never "solved")
 const PUZZLE_EMPTY = { title: 'Tutorial highlighter practice', rows: 6, cols: 6, blocked: [], pieces: [] };
@@ -1950,13 +1950,14 @@ const HL_POPUP = [  // [CONTENT] (one "Got it" each; "The first four will be eas
   // (user, 2026-11-15: say WHY they're highlighting)
   '<p>This is a partially solved puzzle. To narrow down where the pieces can go, highlight where the six empty squares have to go.</p>',
 ];
-const HL_NOTE = [   // [CONTENT] the reminder beside the board (the step must stay 2nd: it gets the check)
-  '<b>Rule:</b> Every row and column has an even number of empty squares.',
+const HL_NOTE = [   // [CONTENT] the note beside the board (the step must stay 2nd: it becomes "✓ All 6 empty squares found!")
+  // (user, 2026-11-16: say why, with the number of tilings)
+  `There are ${HL_TILINGS} different ways to tile this grid. Instead of trying to tile this up to ${HL_TILINGS} different times, use the highlighter to highlight where the empty squares have to go. This way you can see the only way this grid has to be tiled.`,
   '<b>Highlight</b> the 6 empty squares.',
 ];
-const HL_HINT =    // [CONTENT]
-  '<b>Hint:</b> Four empty squares are boxed in by pieces. Then find a row with only one highlighted square: it needs one more. (0 counts as an even number.)';
-const HL_SIX = HL_GIVEN.map(([r,c])=>r + ',' + c).concat(HL_GOALS);   // all six empty squares
+const HL_HINT =    // [CONTENT] (2026-11-16, for the new board)
+  '<b>Hint:</b> Three empty squares are in spots where no piece fits. Then find a row or column with only one highlighted square: it needs one more. (0 counts as an even number.)';
+const HL_SIX = HL_EMPTY.map(([r,c])=>r + ',' + c);   // all six empty squares
 const PLACE_GAP_MS = 600;     // between the two pieces dropping in
 const FLY_MS = 800;           // a piece flying from the top onto the grid (was 650; slower: user 2026-11-13)
 const HL_NOTE_STAGGER_MS = 250;  // the reminder's lines fade in one after another
@@ -1973,7 +1974,7 @@ function checkEmptySpacesFound(){
   // (2026-11-13, user: the old check + faint flash wasn't clear) the step's
   // line becomes "✓ All 6 empty squares found!" in green, and the six pop
   // one at a time, each keeping a green ring
-  const step = $('n-boardr').querySelectorAll('.empty-card p')[1];
+  const step = $('n-boardr').querySelector('.empty-card p.hl-step');
   if(step){ step.innerHTML = HL_FOUND; step.classList.add('found-line'); }
   setHighlighting(false);
   $('hl-tool').classList.remove('glowing');
@@ -1987,10 +1988,10 @@ const HL_FOUND = '&#10003; All 6 empty squares found!';   // [CONTENT]
 const FOUND_POP_MS = 180;     // between the six squares popping
 const FOUND_HOLD_MS = 1100;   // then a moment to look before the pieces move
 const cellEl = k=>{ const [r,c] = String(k).split(','); return document.querySelector(`#board .board-cell[data-r="${r}"][data-c="${c}"]`); };
-// Where N and P go (absolute squares), in the order they drop in
+// Where L and P go (absolute squares), in the order they drop in (solver.js)
 const HL_SOLUTION = [
-  { name: 'P', at: [[0,5],[1,4],[1,5],[2,4],[2,5]] },
-  { name: 'N', at: [[4,4],[4,5],[5,2],[5,3],[5,4]] },
+  { name: 'L', at: [[0,2],[1,2],[2,2],[3,2],[3,3]] },
+  { name: 'P', at: [[0,4],[0,5],[1,3],[1,4],[1,5]] },
 ];
 // The fewest turns (rotate / reflect) from one shape to another
 const shapeKey = cells => normalize(cells).map(c=>c.join(',')).sort().join(';');
@@ -2060,7 +2061,11 @@ function showHighlighterLesson(){
   const card = document.createElement('div');
   card.className = 'empty-card waiting';
   // (the reminder's lines keep their space while hidden, so nothing moves when they appear)
-  card.innerHTML = HL_NOTE.map(t=>`<p class="note">${t}</p>`).join('')
+  // (phones, 2026-11-16: the long "17 ways" line is a second popup part
+  // instead, so the slide fits without scrolling; the note keeps the step.
+  // The step is .hl-step: it becomes "✓ All 6 empty squares found!")
+  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(1) : HL_NOTE;
+  card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' : ''}">${t}</p>`).join('')
     + `<p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
   $('n-boardr').appendChild(card);
   placeHighlighterTool();          // (on phones the note sits above the pieces and just moved them down)
@@ -2071,7 +2076,8 @@ function showHighlighterLesson(){
     const lit = [...boardEl.querySelectorAll('.board-cell')].map(el=>[+el.dataset.r, +el.dataset.c]);
     const over = PHONE_LAYOUT.matches;     // (phones: over the grid, like their other popups)
     $('spot').classList.add('instant');
-    showHint(HL_POPUP.map(p=>({ lit, over, html: `<div class="hl-pop">${p}</div>` })), 0, afterHighlighterPopup);
+    const parts = over ? HL_POPUP.concat([`<p>${HL_NOTE[0]}</p>`]) : HL_POPUP;
+    showHint(parts.map(p=>({ lit, over, html: `<div class="hl-pop">${p}</div>` })), 0, afterHighlighterPopup);
   });
 }
 // After the last "Got it": the reminder fades in, the highlighter glows,

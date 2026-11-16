@@ -56,6 +56,17 @@ in Safari (375 × 553): every slide fits now (short-screen block at the end
 of tutorial.html's styles). Still failing, as before this session:
 next_level_test, play_test, progress_test, share_test.
 
+**Later 2026-11-16 (committed, NOT pushed yet: ask):** slide 7 has the
+user's new board (N F Z V fixed, L and P to place; solver.js: 17 tilings,
+one passes parity; `PUZZLE_HL`, `HL_TILINGS`, `HL_EMPTY`, `HL_SOLUTION`).
+The note beside the board is the user's "There are 17 different ways to
+tile this grid…" (HL_NOTE[0]; their "empty spaces" → "empty squares");
+phones show it as the popup's second part (no scrolling). New hint: "Three
+empty squares are in spots where no piece fits…". Tests updated for the
+two-part phone popup; all tutorial tests pass, 60 phone screens 0 scroll.
+If the board changes again, re-count the tilings (the scratch script is
+easy to redo: solver.js analyzePuzzle with the fixed pieces as prefilled).
+
 **Ask the user next time (2026-11-16):**
 - How slides 1 and 2 feel on a real phone (speed, "Show me").
 - Slide 2 still plays by itself: "Show me" there too?
