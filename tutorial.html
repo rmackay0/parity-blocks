@@ -7,8 +7,28 @@
   and from "Play the tutorial" in the Rules popup. It can also be opened
   on its own: tutorial.html.
 
+  2026-11-14: TEN slides. The old slide 1 is now two slides that play by
+  themselves (mock-up "F", the user's pick; renderGoals / renderWords):
+    1 the two goals: Tiling (pieces drop onto a grid), Solving for Parity
+      (the rules' check rows / check columns / all even pictures, numbers
+      only). 2026-11-15: each goal opens with "Show me" and plays then;
+      phones keep one open at a time, laptops both; Next once both seen
+    2 "Words we use": a block, 5 blocks make a piece, pieces go on the
+      grid, the empty squares (highlighted, numbered 1–6)
+  then the nine below, each one number later (the welcome popup is on 3).
+  2026-11-13 TRIM (user): NINE slides then:
+    1 two objectives · 2 pick the grid (opens with a welcome popup:
+    Continue, or Rules = close the tutorial and open the rules popup on
+    the page underneath) · 3 highlight every empty square · 4 (was 3b)
+    the animated sum, then "Since this grid is 6 × 6…" (OK) and the
+    empty squares counted (3c merged into it) · 5 pick the grid, counting
+    empty squares · 6 the highlighter board · 7 rotate AND reflect, one
+    slide (PUZZLE_3, TURN_FLIP_STEPS; PUZZLE_2 unused) · 8 don't place
+    over · 9 the final puzzle (no "Make sure…" note any more; the Hint
+    button stays). The lists below are older.
+
   2026-11-12 REVAMP (user: players new to puzzles don't grasp parity, so
-  drill it in BEFORE rotating, reflecting or tiling). Nine slides now:
+  drill it in BEFORE rotating, reflecting or tiling). Nine slides then:
     1  Two objectives: Tiling (+ the 12 pentominoes), Solving for Parity
     2  Pick the grid (PAIR_BAD / PAIR_GOOD, two tilings of the same six
        pieces): tap the one where every row and column is even. A slow
@@ -152,7 +172,10 @@
               padding: calc(4px + var(--edge-room)) 20px calc(12px + var(--edge-room)); }
   .tut-head, .tut-foot { position: relative; z-index: 2; }
   .note { font-size: 1.1rem; line-height: 1.45; color: var(--color-text); }
-  .note b { color: var(--color-accent); font-weight: 400; }
+  /* (2026-11-15, user: ONE text color with one job: teal = the official
+     terms only. Emphasis is bold in the normal text color; indigo stays
+     only on controls: buttons, step boxes, glows, the pointer arrow) */
+  .note b { color: inherit; font-weight: 700; }
 
   /* Slide 1 */
   .intro { max-width: 640px; margin: 0 auto; padding-top: 6px; }
@@ -168,9 +191,77 @@
   /* (one unbroken line: by default the line skips round letters that dip
      below it, like the g in "Tiling": user, 2026-11-13) */
   .tut u { text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; }
-  .intro .two { color: var(--color-accent); font-weight: 700; }
+  .intro .two { font-weight: 700; }
   .intro li .sub { font-size: 1rem; color: var(--color-text-dim); margin: 4px 0 8px; }
-  .intro .ominoes { display: block; margin-top: 4px; }
+  /* ── Slides 1 and 2 (2026-11-14, mock-up F: renderGoals / renderWords) ── */
+  .intro.goals, .intro.words { display: flex; flex-direction: column; gap: 16px; max-width: 700px; }
+  .intro.goals p, .intro.words p { margin: 0; }
+  .intro-lead { font-size: 1.1rem; }
+  .goal { display: flex; flex-direction: column; gap: 4px; transition: opacity 0.6s; }
+  /* (2026-11-15) "Show me": each goal's pictures slide open under it */
+  .showme { align-self: flex-start; margin-top: 8px; font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0.03em; cursor: pointer;
+            background: none; border: 1.5px solid var(--color-accent); color: var(--color-accent); border-radius: 999px; padding: 4px 16px; }
+  .showme:hover { background: rgba(var(--glow), 0.08); }
+  .showme:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .showme .chev { display: inline-block; margin-left: 6px; transition: transform 0.3s; }
+  .goal.open .showme .chev { transform: rotate(180deg); }
+  .goal-region { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.45s ease; }
+  .goal-region > div { overflow: hidden; }
+  .goal.open .goal-region { grid-template-rows: 1fr; }
+  .goals-left { color: var(--color-text-dim); font-size: 0.95rem !important; }
+  @media (prefers-reduced-motion: reduce) { .goal-region, .showme .chev { transition: none; } }
+  .goal p { font-size: 1.1rem; }
+  .intro .goal h2, .intro h2.words-title { font-family: var(--rules-title-font); font-weight: 400; font-size: 1.9rem; line-height: 1.1;
+                           color: var(--color-term); margin: 0; text-wrap: balance; }
+  .intro h2.words-title { color: var(--color-text); }
+  .gnum { display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; margin-right: 10px; border-radius: 50%;
+          font-family: var(--font-display); font-size: 0.62em; vertical-align: 0.25em; background: var(--color-accent); color: var(--color-panel); }
+  .goal-pics { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 8px; }
+  .goal-pics.checks { align-items: flex-start; gap: 22px; }
+  .goal-pics figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .goal-pics figcaption { font-size: 0.9rem; color: var(--color-text-dim); }
+  .goal-arrow { font-size: 1.6rem; color: var(--color-text-dim); }
+  .intro .twelve { margin: 0; gap: 8px 10px; padding: 10px 12px; }
+  .twelve svg { transition: opacity 0.5s; }
+  .twelve svg.used { opacity: 0.22; }        /* (a piece that has gone onto the grid) */
+  .words-stage { display: flex; align-items: center; justify-content: center; gap: 32px; }
+  .words-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 1.2rem; line-height: 1.35; max-width: 15em; }
+  .words-list li.now { font-weight: 700; }
+  /* while it plays, the captions before the current one are greyed out, so
+     "This is a block." isn't read together with the piece (user, 2026-11-15) */
+  .words-list li { transition: opacity 0.5s, transform 0.55s; }
+  .words-list.playing li.ia-on:not(.now) { opacity: 0.3; }
+  /* counting on slide 2: a brighter green than the rows' (it sits on one
+     square of a dark piece), and the white numbers outlined so they read on it */
+  .words-stage .row-glow.on, .goal-pics .row-glow.on { opacity: 0.85; }
+  /* "The grid is made of squares": each square lit softly in the term color */
+  .square-glow { fill: var(--color-term); opacity: 0; transition: opacity 0.3s; }
+  .square-glow.on { opacity: 0.45; }
+  .words-stage .term-num.on-piece { paint-order: stroke; stroke: rgba(0, 0, 0, 0.45); stroke-width: 2px; }
+  .replay-btn { align-self: center; background: none; border: 1.5px solid var(--color-cell-border); border-radius: 8px; padding: 4px 14px;
+                font-family: var(--font-display); font-size: 0.95rem; color: var(--color-text-dim); cursor: pointer; }
+  .replay-btn:hover { color: var(--color-text); }
+  /* things that appear one at a time: hidden (.ia) until shown (.ia-on) */
+  .ia { opacity: 0; transition: opacity 0.55s ease, transform 0.55s cubic-bezier(.3,1.4,.5,1); transform-box: fill-box; transform-origin: center; }
+  .ia.ia-on { opacity: 1; transform: none; }
+  .ia.ia-out { opacity: 0; }
+  svg .ia:not(.ia-on) { transform: scale(0.6); }
+  svg .mb-piece.ia:not(.ia-on) { transform: translateY(-16px); }                 /* (dropping onto the grid) */
+  svg .rb-frame.ia:not(.ia-on), svg .rb-cell.ia:not(.ia-on), svg .rb-hl.ia:not(.ia-on) { transform: none; }
+  .words-list li.ia:not(.ia-on) { transform: translateY(8px); }
+  @media (max-width: 760px) {
+    .intro.goals, .intro.words { gap: 10px; }
+    .intro-lead, .goal p { font-size: 1rem; }
+    .intro .goal h2, .intro h2.words-title { font-size: 1.5rem; }
+    .goal-pics { gap: 8px; margin-top: 4px; }
+    .goal-pics.checks { gap: 6px; }
+    /* (the counts sized to the small grids, so they don't overlap) */
+    .goal-pics svg .rb-count { font-size: 11px; }
+    .goal-pics figcaption { font-size: 0.78rem; }
+    .intro .twelve { gap: 5px 4px; padding: 6px; }
+    .words-stage { flex-direction: column; gap: 14px; }
+    .words-list { font-size: 1.05rem; gap: 6px; max-width: none; }
+  }
 
   /* ── Slide 2: pick the grid with parity (2026-11-12) ── */
   .pick { max-width: 760px; margin: 0 auto; text-align: center; }
@@ -322,10 +413,11 @@
     transform: rotate(45deg);
   }
   .hl-bubble p { margin: 0; }
-  .hl-bubble b { color: var(--color-accent); font-weight: 700; }
+  .hl-bubble b { font-weight: 700; }
   /* Slide 6 opens with a popup that's dark straight away (no fade in) */
   .spot.instant { animation: none; }
-  .spot-card .hl-pop b { color: var(--color-accent); font-weight: 700; }
+  .spot.quick { animation-duration: 0.12s; }   /* (slide 2's welcome) */
+  .spot-card .hl-pop b { font-weight: 700; }
   .scroll-hint { z-index: 80; }   /* (the ▾ for more below: under the dark screens and the hint) */
   /* [COLORS] Slide 6's hint, when it pops in: a soft glow for a few seconds */
   @keyframes hintIn { 0% { box-shadow: 0 0 0 0 rgba(var(--glow), 0); } 30% { box-shadow: 0 0 0 4px rgba(var(--glow), 0.6), 0 0 18px rgba(var(--glow), 0.5); }
@@ -341,6 +433,17 @@
   @keyframes foundFlash { 0%, 100% { box-shadow: none; }
                           50% { box-shadow: inset 0 0 0 3px var(--color-valid), 0 0 14px var(--color-valid); } }
   #board .board-cell.found-flash { animation: foundFlash 0.7s ease-in-out 2; }
+  /* (2026-11-13, user: "not very clear") slide 6, all six found: each pops
+     in turn and keeps a bold green ring; then each piece's five squares
+     glow just before it moves there */
+  @keyframes foundPop { 0% { transform: scale(1); box-shadow: none; }
+                        40% { transform: scale(1.22); box-shadow: 0 0 0 4px var(--color-valid), 0 0 18px var(--color-valid); }
+                        100% { transform: scale(1); box-shadow: 0 0 0 3px var(--color-valid); } }
+  #board .board-cell.found-pop { position: relative; z-index: 2; animation: foundPop 0.5s cubic-bezier(.3,1.5,.5,1) both; }
+  @keyframes targetGlow { from { box-shadow: inset 0 0 0 3px rgba(var(--glow), 0.5), 0 0 6px rgba(var(--glow), 0.3); }
+                          to   { box-shadow: inset 0 0 0 3px rgba(var(--glow), 1), 0 0 16px rgba(var(--glow), 0.8); } }
+  #board .board-cell.target-glow { animation: targetGlow 0.55s ease-in-out infinite alternate; }
+  .empty-card p.found-line { color: var(--color-valid); font-weight: 700; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; transform-origin: left center; }
   /* a plain line above a slide's steps (slides 3, 4, 6) */
   .lead { margin: 0 0 6px; }
   .n-trayl.has-lead { flex-direction: column; align-items: stretch; }
@@ -362,10 +465,12 @@
   .spot-card p.ex-big { font-size: 1.3rem; margin-bottom: 10px; }
   /* a popup that glows (slide 3's "Next, we'll examine this grid further.") */
   .spot-card.glow { animation: hintGlow 1.2s ease-in-out infinite alternate; }
-  .spot-card p.ex-big b { color: var(--color-accent); }
+  .spot-card p.ex-big b { font-weight: 800; }
   html.large-text .spot-card p.ex-big { font-size: 1.7rem; }
   /* each empty square's number, 1 to 6 */
-  .sq-num { font-family: var(--font-display); fill: var(--color-text); transform-box: fill-box; transform-origin: center;
+  /* (always on a yellow highlight, so dark ink in both modes: in dark mode
+     the page's light text was hard to read, user 2026-11-13) */
+  .sq-num { font-family: var(--font-display); fill: #1F2330; transform-box: fill-box; transform-origin: center;
             animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; }
   /* "36 − 30 = 6 empty squares" */
   .eq-banner { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; z-index: 40; white-space: nowrap;
@@ -373,7 +478,7 @@
                color: var(--color-text); background: var(--color-panel);
                border: 2px solid rgba(var(--glow), 0.7); box-shadow: 0 0 20px rgba(var(--glow), 0.3);
                animation: popIn 0.45s cubic-bezier(.3,1.4,.5,1) both; transition: opacity 0.5s; }
-  .eq-banner b { color: var(--color-accent); font-weight: 400; }
+  .eq-banner b { font-weight: 400; }
   /* (its pop-in animation holds it visible, so going away is an animation
      too: a plain opacity change was overridden and the label stayed) */
   @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -405,7 +510,7 @@
   .empty-card p { margin: 0 0 10px; opacity: 0; transform: translateY(6px); transition: opacity 0.6s, transform 0.6s; }
   .empty-card p:last-child { margin-bottom: 0; }
   .empty-card p.shown { opacity: 1; transform: none; }
-  .empty-card b { color: var(--color-accent); font-weight: 700; }
+  .empty-card b { font-weight: 700; }
   @media (min-width: 761px) { .n-boardr .empty-card { margin-left: 16px; } }   /* clear of the row counts */
   @media (max-width: 760px) { .empty-card { margin-top: 6px; padding: 10px 12px; max-width: none; } }
   /* While a solved board's rows and columns are counted, the other text fades */
@@ -449,10 +554,14 @@
     transition: background 0.3s, color 0.3s, box-shadow 0.3s;
   }
   .ok-btn.ready { background: var(--color-next-ready); color: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(123, 160, 91, 0.25); }
+  /* (two buttons side by side when a popup offers a choice) */
+  .spot-btns { display: flex; gap: 12px; }
+  .spot-btns .ok-btn { flex: 1; }
+  .ok-btn.plain { background: var(--color-panel); color: var(--color-text); border: 2px solid var(--color-cell-border); cursor: pointer; }
 
   /* ── "Don't place a piece over" slide ── */
   .dont-slide { max-width: 820px; margin: 0 auto; text-align: center; padding-top: 10px; }
-  .dont-slide h2 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 400; color: var(--color-accent); margin-bottom: 18px; }
+  .dont-slide h2 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 400; color: var(--color-text); margin-bottom: 18px; }
   .dont-slide .dont { display: grid; grid-template-columns: repeat(3, auto); justify-content: center; gap: 18px 28px; }   /* one row of 3 */
   .dont-slide figure {
     padding: 14px 16px 10px; border-radius: 14px;
@@ -525,12 +634,12 @@
   html.large-text .n-boardl { font-size: 1.65rem; max-width: 400px; }
   html.large-text .big-note { font-size: 2.15rem; }
   html.large-text .hint { font-size: 1.65rem; }
-  html.large-text .win-text span { font-size: 1.65rem; }
+  html.large-text .win-text > span { font-size: 1.65rem; }
   html.large-text .win-text strong { font-size: 2rem; }
   html.large-text .spot-card p, html.large-text .spot-card li { font-size: 1.7rem; }
   html.large-text .hint-btn { font-size: 1.6rem; height: 52px; }
-  html.large-text .intro li { font-size: 1.85rem; }
-  html.large-text .intro p { font-size: 1.75rem; }
+  html.large-text .intro p { font-size: 1.6rem; }
+  html.large-text .words-list { font-size: 1.6rem; }
   html.large-text .dont-slide figcaption { font-size: 1.65rem; }
   html.large-text .status { font-size: 1.75rem; --status-line: 2.25rem; }
   .one-line { white-space: nowrap; }   /* laptops: keep this note on one line */
@@ -591,6 +700,22 @@
   html.large-text .hint-btn.lesson-hint { font-size: 1.1rem; height: 36px; }
   /* A popup's text in the big orange style (the last slide's "Make sure…" on phones) */
   .spot-card .big-note { border-left: none; padding-left: 0; margin-bottom: 12px; }
+
+  /* Short phone screens (an iPhone SE with Safari's bars: 553px tall),
+     2026-11-16: tighter, so slides 1, 2 and 8 fit without scrolling */
+  @media (max-width: 760px) and (max-height: 620px) {
+    .intro.goals, .intro.words { gap: 6px; }
+    .intro .goal h2, .intro h2.words-title { font-size: 1.3rem; }
+    .intro-lead, .goal p { font-size: 0.95rem; }
+    .showme { margin-top: 4px; padding: 2px 14px; font-size: 0.95rem; }
+    .goal-pics { margin-top: 2px; }
+    .words-stage { gap: 8px; }
+    .words-list { font-size: 0.95rem; gap: 3px; }
+    .play .step.callout { font-size: 0.92rem; line-height: 1.25; padding: 2px 10px; }
+    .play .lead { margin-bottom: 2px; font-size: 0.95rem; }
+    .dont-slide { padding-top: 0; }
+    .dont-slide h2 { font-size: 1.3rem; margin-bottom: 6px; }
+  }
 
   [hidden] { display: none !important; }
 </style>
@@ -674,7 +799,11 @@
   <svg id="spot-svg" aria-hidden="true"></svg>
   <div class="spot-card" id="spot-card">
     <div id="spot-text"></div>
-    <button class="ok-btn ready" id="spot-ok">Got it</button>
+    <div class="spot-btns">
+      <!-- (a second button, only on popups that offer a choice: slide 2's "Rules") -->
+      <button class="ok-btn plain" id="spot-alt" hidden></button>
+      <button class="ok-btn ready" id="spot-ok">Got it</button>
+    </div>
   </div>
 </div>
 
@@ -698,8 +827,9 @@ const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 ═══════════════════════════════════════════════════════════════════ */
 // The Woodblock colors (INKS in shapes.js), one per piece, so every slide's
 // pieces look different: the first six for the pieces of slides 2–3
-const COLOR = { I:INKS.indigo, F:INKS.gold, W:INKS.vermilion, N:INKS.moss, P:INKS.sakura, Y:INKS.asagi,
-                U:INKS.wisteria, V:INKS.persimmon };
+// (2026-11-14: every piece's ONE color, PIECE_COLOR in shapes.js; the
+// colors written into the puzzles below are ignored for real letters)
+const COLOR = PIECE_COLOR;
 gameSettings.distinctColors = false;     // (use these colors, not the game's own palette)
 gameSettings.explain = false;            // mistakes only glow red; no message saying what's wrong
 gameSettings.hlOffset = { x: 26, y: -16 };   // the highlighter a little higher and further right (user, 2026-11-05)
@@ -710,7 +840,7 @@ gameSettings.hlBeside = PHONE_LAYOUT.matches;
 PHONE_LAYOUT.addEventListener('change', ()=>{ gameSettings.hlBeside = PHONE_LAYOUT.matches; });
 function fixedPiece(name, absCells, color){
   const r0 = Math.min(...absCells.map(c=>c[0])), c0 = Math.min(...absCells.map(c=>c[1]));
-  return { name, color: color || COLOR[name], row: r0, col: c0, cells: absCells.map(([r,c])=>[r-r0, c-c0]) };
+  return { name, color: pieceColor(name, color), row: r0, col: c0, cells: absCells.map(([r,c])=>[r-r0, c-c0]) };
 }
 const trayPiece = (name, cells) => ({ name, color: COLOR[name], cells });
 
@@ -856,7 +986,7 @@ const TWELVE = [
   [[0,0],[0,2],[1,0],[1,1],[1,2]], [[0,0],[1,0],[2,0],[2,1],[2,2]],
   [[0,0],[1,0],[1,1],[2,1],[2,2]], [[0,1],[1,0],[1,1],[1,2],[2,1]],
   [[0,1],[1,0],[1,1],[2,1],[3,1]], [[0,0],[0,1],[1,1],[2,1],[2,2]],
-].map((cells, i)=>[PIECE_PALETTE[i], cells]);
+].map((cells, i)=>[PIECE_COLOR['FILNPTUVWXYZ'[i]], cells]);   // (in letter order: each piece's one color)
 function pieceSvg(cells, color, cell){
   const gap = 2, b = bounds(cells);
   const w = b.cols*cell + (b.cols-1)*gap, h = b.rows*cell + (b.rows-1)*gap;
@@ -949,6 +1079,13 @@ const ROTATE_STEPS = [
           + '<span class="nobr"><b>rotate</b> it.<span class="arrow">&#10148;</span></span>', until: 'rotate' },
   { html: 'Then drag it onto the grid.', until: 'place' },
 ];
+// One slide for both (user, 2026-11-13; PUZZLE_3: in both its answers the
+// F has to be turned AND flipped, solver.js)
+const TURN_FLIP_STEPS = [ ROTATE_STEPS[0],
+  { html: (TOUCH ? 'Tap a piece twice to ' : 'Double-click a piece or press <kbd>E</kbd> to ')
+          + '<span class="nobr"><b>reflect</b> it.</span>', until: 'reflect' },
+  { html: 'Then drag it onto the grid.', until: 'place' },
+];
 const REFLECT_STEPS = [
   { html: (TOUCH ? 'Tap a piece twice to ' : 'Double-click a piece or press <kbd>E</kbd> to ')
           + '<span class="nobr"><b>reflect</b> it.<span class="arrow">&#10148;</span></span>', until: 'reflect' },
@@ -971,12 +1108,17 @@ const FIND_GOOD = {
 };
 // Slide 3b: identical, but the text on the left fades and the sum plays
 // (runExplainer); Next once the six empty squares are numbered
-const FIND_SUM = { replay: true, textGone: 'fade', explainer: true };
-// Slide 3c: identical again (as 3b ended); a popup, then the empty squares
-// are counted, then Next
-const FIND_EVEN = { replay: true, textGone: 'hidden', numbers: true,
+// (2026-11-13, user: slide 3c merged into 3b) then "Since this grid is
+// 6 × 6…" (OK), the empty squares are counted, then Next
+const FIND_SUM = { replay: true, textGone: 'fade', explainer: true,
   popups: [ { countAfter: true,
     html: '<p>Since this grid is 6 &times; 6 squares, there is <b>also an even number of empty squares</b> in every row and column.</p>' } ] };
+// The pause after the six empty squares are numbered, before that popup
+const SUM_READ_MS = 1500;
+// Slide 2's welcome popup (user, 2026-11-13): Rules leaves the tutorial and
+// opens the rules popup on the page underneath (closeTutorial)
+const WELCOME_HTML = `<p>This tutorial contains all of the rules as well as some useful strategies. If you&rsquo;d prefer to just read the rules, ${TAP_WORD.toLowerCase()} the &ldquo;Rules&rdquo; button below. Otherwise press &ldquo;Continue&rdquo;.</p>`
+  + `<p>You can exit the Rules or the Tutorial by ${TOUCH ? 'tapping' : 'clicking'} the &times; in the top right.</p>`;
 const FIND_BAD = {
   lead: 'This is the incorrect grid from the last slide.',
   steps: [ { html: 'Highlight the empty squares.', until: 'allEmpty' } ],
@@ -989,45 +1131,43 @@ const FIND_BAD = {
   ],
 };
 const SLIDES = [
-  { kind: 'intro' },
+  // (2026-11-14: the old one-slide intro became these two; see renderGoals)
+  { kind: 'goals' },
+  { kind: 'words', welcome: true },   // (the welcome popup moved here from the pick slide: user, 2026-11-15)
   { kind: 'pick', boards: [PAIR_BAD, PAIR_GOOD],
     // (shortened, user 2026-11-13)
     pickIntro: '<p>Here are two different <u>Tilings</u> using the same pieces.</p>',
     pickAsk: 'Take a second to count the blocks in every row and every column. Select the grid with an even number of blocks in every row and every column.' },
   { kind: 'play', puzzle: PAIR_GOOD, highlighter: true, findEmpty: FIND_GOOD,
-    lead: 'Before moving on to <u>Tiling</u>, try the highlighter. It&rsquo;s incredibly useful for <u>Solving for Parity</u>.',
+    lead: 'Before moving on to <u>Tiling</u>, try the highlighter.',
     steps: FIND_GOOD.steps },
   { kind: 'play', puzzle: PAIR_GOOD, highlighter: true, findEmpty: FIND_SUM,
-    lead: 'Before moving on to <u>Tiling</u>, try the highlighter. It&rsquo;s incredibly useful for <u>Solving for Parity</u>.',
-    steps: FIND_GOOD.steps },
-  { kind: 'play', puzzle: PAIR_GOOD, highlighter: true, findEmpty: FIND_EVEN,
-    lead: 'Before moving on to <u>Tiling</u>, try the highlighter. It&rsquo;s incredibly useful for <u>Solving for Parity</u>.',
+    lead: 'Before moving on to <u>Tiling</u>, try the highlighter.',
     steps: FIND_GOOD.steps },
   // (2026-11-13: the "highlight the incorrect grid's empty squares" slide
   // (PAIR_BAD, FIND_BAD) is replaced by this: slide 2 again, counting
   // the empty squares)
   { kind: 'pick', boards: [EMPTY_BAD, EMPTY_GOOD], countEmpty: true,
     pickIntro: '',
-    pickAsk: 'Same as before: select the grid with an even number of blocks in every row and column. But this time, <b>count the empty squares</b> instead of the blocks.' },
+    // (the user's wording, 2026-11-15)
+    pickAsk: 'Count the empty squares in every row and column. In a 6 &times; 6 grid like this, an even number of empty squares in every row and column also means that you have parity. Select the grid that has achieved parity.' },
   { kind: 'play', puzzle: PUZZLE_HL, highlighter: true, highlighterLesson: true,
     countAnimation: true, countEmpty: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of empty squares, so every row and column has an even number of blocks.' },
-  { kind: 'play', puzzle: PUZZLE_2, steps: ROTATE_STEPS,
+  // (2026-11-13, user: rotate and reflect on one slide; the rotate slide's
+  // PUZZLE_2 is no longer used)
+  { kind: 'play', puzzle: PUZZLE_3, steps: TURN_FLIP_STEPS,
     lead: 'Now for the other half: <u>Tiling</u>.',
     countAnimation: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   { kind: 'dont' },
-  { kind: 'play', puzzle: PUZZLE_3, steps: REFLECT_STEPS,
-    // ("You can also rotate and reflect pieces once they're on the grid."
-    // removed 2026-11-05: user, "people will be able to figure that out")
-    countAnimation: true,
-    solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of blocks.' },
   // (2026-11-12: "meet the highlighter" (PUZZLE_EMPTY, highlighterIntro) and
   // the highlighter lesson moved up: slides 3–5)
   { kind: 'play', puzzle: PUZZLE_4, highlighter: true,
-    // The Hint button sits under the orange note, hidden until it's needed
-    boardRight: `<div class="big-note" id="big-note">Make sure there is an even number of blocks in each row AND column.</div>` + HINT_BUTTON,
-    bigNoteGlow: true,
+    // The Hint button sits beside the board, hidden until it's needed
+    // (the orange "Make sure there is an even number of blocks in each row
+    // AND column." note above it was dropped: user, 2026-11-13)
+    boardRight: HINT_BUTTON,
     // The hint is offered once every piece is placed (no rule broken) but
     // the rows and columns aren't all even
     hintWhenUneven: true,
@@ -1048,29 +1188,288 @@ const SLIDES = [
 ];
 const DONT_ITEMS = [['dotted','a dotted line'], ['edge','the edge of the grid'], ['piece','another piece']];
 
-function renderIntro(){
-  const box = $('intro');
-  box.innerHTML = `
-    <p>There are <span class="two">two</span> objectives in Parity Blocks:</p>
-    <ol>
-      <li>Fit the pieces onto the grid. This is referred to as <u>Tiling</u>.
-        <p class="sub">Below are the pieces used in the game. They are called <b style="color:var(--color-accent)">pentominoes</b> because they are each made up of five blocks.
-          <span class="ominoes">Domino = two blocks &middot; Triomino = three &middot; Tetromino = four (the reason for the name Tetris) &middot; Pentomino = five</span></p>
-        <div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>
-      </li>
-      <li>Make every row and every column have an even number of blocks. This is referred to as <u>Solving for Parity</u>.</li>
-    </ol>`;
-  // (smaller on phones, so all twelve fit in two rows of six)
-  const size = window.matchMedia('(max-width: 760px)').matches ? 11 : 15;
-  TWELVE.forEach(([color, cells])=>$('twelve').appendChild(pieceSvg(cells, color, size)));
+/* ── Slides 1 and 2 (2026-11-14, the user's pick from the mock-ups: "F",
+   two slides that play by themselves, slowly) ──
+   Slide 1, the two goals: Tiling (the six pieces drop onto the grid one
+   at a time, each one fading in the set of 12 as it's used), then Solving
+   for Parity (the rules' three pictures: each row of the wrong board
+   checked, then each column, then the solved board's counts, all green).
+   Slide 2, "Words we use": one block appears ("This is a block."), four
+   more join it, numbered ("5 blocks make a piece"), they join into one
+   piece; the grid and the other pieces come ("Pieces go on the grid."),
+   then the empty squares are highlighted and numbered 1–6 ("The squares
+   no piece covers are empty squares."). The captions stay, in a list.
+   Next lights up when each finishes; "Play again" replays it. */
+const INTRO = {      // [BEHAVIOR] timings (ms): "significantly slower" than the mock-up (user)
+  start: 800,
+  dropEach: 950,     // slide 1: a piece onto the grid
+  afterTiling: 1200,
+  checkEach: 600,    // a row / column checked
+  between: 700,      // rows → columns → the solved board
+  countEach: 260,    // the solved board's counts
+  blockFirst: 700, blockHold: 2200, blockEach: 750, joinHold: 2000,   // slide 2
+  gridIn: 700, pieceEach: 450, gridHold: 1800,
+  countStep: 650,    // slide 2: each square counted (lit green, numbered)
+  squareRow: 280,    // slide 2: the grid's squares lighting up, row by row
+};
+const INTRO_WORDS = [   // [CONTENT] slide 2's captions, in order
+  'This is a block.',
+  '5 blocks make a piece (a pentomino).',
+  // (user, 2026-11-15: "square" defined here, since slide 5 counts them)
+  'The grid is made of squares. Pieces go on the squares.',
+  'The squares left uncovered are empty squares.',
+];
+// Show an svg element / element now (fade + settle; see .ia in the styles)
+const reveal = el=>{ if(el) el.classList.add('ia-on'); };
+const hideForAnim = el=>{ if(el){ el.classList.add('ia'); if(REDUCED_MOTION) el.classList.add('ia-on'); } };
+function replayButton(){ return `<button type="button" class="replay-btn" id="replay-btn" hidden>&#8635; Play again</button>`; }
+function introFinished(){
+  markDone();
+  const b = $('replay-btn');
+  if(b){ b.hidden = false; b.onclick = ()=>showSlide(current); }
 }
+
+/* (2026-11-15, user: "Show me" buttons, so players choose to look and pay
+   attention; mock-up "A") Each goal starts closed: its name, one line and
+   a "Show me ▾" button. Opening a goal slides its pictures open and plays
+   them; "Hide ▴" closes it (opening again replays). Phones: opening one
+   closes the other, so the slide never scrolls. Laptops: both can stay
+   open. Next lights up once both goals have been opened and played. */
+const goalRun = { 1: 0, 2: 0 };           // bumped to stop a goal's animation
+const goalSeen = new Set();
+function renderGoals(){
+  const box = $('intro'), phone = PHONE_LAYOUT.matches;
+  box.className = 'intro goals';
+  const showMe = n=>`<button type="button" class="showme" aria-expanded="false" aria-controls="goal${n}-pics">
+      <span class="lbl">Show me</span><span class="chev" aria-hidden="true">&#9662;</span></button>`;
+  box.innerHTML = `
+    <p class="intro-lead">There are <span class="two">two</span> goals in Parity Blocks:</p>
+    <div class="goal" id="goal1" data-g="1">
+      <h2><span class="gnum">1</span>Tiling</h2>
+      <p>Fit the pieces onto the grid.</p>
+      ${showMe(1)}
+      <div class="goal-region" id="goal1-pics"><div><div class="goal-pics"><div class="twelve" id="twelve" aria-label="The 12 pentominoes"></div>
+        <span class="goal-arrow" aria-hidden="true">&rarr;</span><div id="goal-board"></div></div></div></div>
+    </div>
+    <div class="goal" id="goal2" data-g="2">
+      <h2><span class="gnum">2</span>Solving for Parity</h2>
+      <p>Every row and every column must contain an even number of blocks.</p>
+      ${showMe(2)}
+      <div class="goal-region" id="goal2-pics"><div><div class="goal-pics checks" id="goal-checks"></div></div></div>
+    </div>
+    <p class="goals-left" id="goals-left">${done[current] ? '' : 'Open both goals to continue.'}</p>`;
+  // the 12 pieces (two rows of six), each tagged with its letter
+  const size = phone ? 6 : 10;
+  TWELVE.forEach(([color, cells], i)=>{ const s = pieceSvg(cells, color, size); s.dataset.name = 'FILNPTUVWXYZ'[i]; $('twelve').appendChild(s); });
+  // the grid the six pieces drop onto (the words slide's example board)
+  const tiles = termBoardPieces();
+  const board = miniBoard({ rows: 6, cols: 6, cell: phone ? 11 : 17, pieces: tiles });
+  $('goal-board').appendChild(board);
+  const drops = [...board.querySelectorAll('.mb-piece')];
+  drops.forEach(hideForAnim);
+  // the rules' three pictures
+  const cell = phone ? 8 : 13, ex = PARITY_EXAMPLE;
+  const pics = [
+    [miniBoard({ rows:6, cols:6, cell, pieces: ex.wrong,  show: 'rows', noStrokes: true }), 'Check rows'],
+    [miniBoard({ rows:6, cols:6, cell, pieces: ex.wrong,  show: 'cols', noStrokes: true }), 'Check columns'],
+    [miniBoard({ rows:6, cols:6, cell, pieces: ex.solved, show: 'solved' }), 'All even: solved!'],
+  ];
+  pics.forEach(([svg, cap])=>{
+    const f = document.createElement('figure');
+    f.appendChild(svg);
+    const c = document.createElement('figcaption'); c.textContent = cap; f.appendChild(c);
+    $('goal-checks').appendChild(f);
+    svg.querySelectorAll('[data-row], [data-col]').forEach(hideForAnim);
+  });
+  markTerms(box);
+  goalSeen.clear();
+  const [rowsSvg, colsSvg, okSvg] = pics.map(p=>p[0]);
+  const animated = { 1: drops, 2: [rowsSvg, colsSvg, okSvg].flatMap(s=>[...s.querySelectorAll('[data-row], [data-col]')]) };
+  // (user, 2026-11-15) the blocks of the row / column being counted light
+  // up, like every other count in the tutorial (.row-glow: green, red for
+  // an odd line). glows['r2'] = row 3's, glows['c0'] = column 1's.
+  const lineGlows = (svg, pieces)=>{
+    const layer = svg.firstElementChild, step = cell + 3, pad = 6, cov = new Set(), out = {};
+    pieces.forEach(p=>p.cells.forEach(([r,c])=>cov.add((p.row + r) + ',' + (p.col + c))));
+    const make = cells=>cells.map(([r,c])=>svgEl('rect', { x: pad + c*step, y: pad + r*step, width: cell, height: cell, rx: 3,
+                                                           class: 'row-glow' + (cells.length % 2 ? ' odd' : '') }, layer));
+    for(let i=0; i<6; i++){
+      const row = [], col = [];
+      for(let j=0; j<6; j++){ if(cov.has(i + ',' + j)) row.push([i, j]); if(cov.has(j + ',' + i)) col.push([j, i]); }
+      out['r' + i] = make(row); out['c' + i] = make(col);
+    }
+    return out;
+  };
+  const glows = [lineGlows(rowsSvg, ex.wrong), lineGlows(colsSvg, ex.wrong), lineGlows(okSvg, ex.solved)];
+  const usedIcons = ()=>$('twelve').querySelectorAll('svg.used');
+
+  // Play one goal's pictures from the start (a later() that also stops
+  // when that goal is closed or opened again)
+  function playGoal(n, onDone){
+    const run = ++goalRun[n], slide = animRun;
+    const at = (ms, fn)=>setTimeout(()=>{ if(goalRun[n] === run && animRun === slide) fn(); }, ms);
+    animated[n].forEach(el=>el.classList.remove('ia-on'));
+    if(n === 1) usedIcons().forEach(el=>el.classList.remove('used'));
+    if(REDUCED_MOTION){ animated[n].forEach(reveal); if(n === 1) tiles.forEach(t=>{ const u = $('twelve').querySelector(`svg[data-name="${t.name}"]`); if(u) u.classList.add('used'); }); onDone(); return; }
+    let t = INTRO.start;
+    if(n === 1){
+      // the pieces drop onto the grid, one at a time
+      drops.forEach((g, i)=>at(t + i * INTRO.dropEach, ()=>{
+        reveal(g);
+        const used = $('twelve').querySelector(`svg[data-name="${tiles[i].name}"]`);
+        if(used) used.classList.add('used');
+      }));
+      t += drops.length * INTRO.dropEach + 300;
+    } else {
+      // rows, then columns, then the solved board's rows and columns, all
+      // at the same pace (user, 2026-11-15: the last one was twice as fast).
+      // Each line: its blocks light up, its count pops in and stays, the light fades.
+      const step = INTRO.checkEach;
+      const line = (svgIdx, kind, i, when)=>{
+        const svg = [rowsSvg, colsSvg, okSvg][svgIdx], lit = glows[svgIdx][(kind === 'row' ? 'r' : 'c') + i];
+        at(when, ()=>{ svg.querySelectorAll(`[data-${kind}="${i}"]`).forEach(reveal); lit.forEach(g=>g.classList.add('on')); });
+        at(when + step * 0.75, ()=>lit.forEach(g=>g.classList.remove('on')));
+      };
+      for(let r=0; r<6; r++) line(0, 'row', r, t + r * step);
+      t += 6 * step + INTRO.between;
+      for(let c=0; c<6; c++) line(1, 'col', c, t + c * step);
+      t += 6 * step + INTRO.between;
+      for(let r=0; r<6; r++) line(2, 'row', r, t + r * step);
+      t += 6 * step;
+      for(let c=0; c<6; c++) line(2, 'col', c, t + c * step);
+      t += 6 * step + 300;
+    }
+    at(t, onDone);
+  }
+  function setOpen(n, open){
+    const g = $('goal' + n), btn = g.querySelector('.showme');
+    g.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.querySelector('.lbl').textContent = open ? 'Hide' : 'Show me';
+    if(!open) goalRun[n]++;               // (stops its animation)
+  }
+  [1, 2].forEach(n=>{
+    $('goal' + n).querySelector('.showme').onclick = ()=>{
+      const opening = !$('goal' + n).classList.contains('open');
+      // phones: only one open at a time, so the slide never scrolls
+      if(opening && PHONE_LAYOUT.matches) setOpen(n === 1 ? 2 : 1, false);
+      setOpen(n, opening);
+      if(!opening) return;
+      playGoal(n, ()=>{
+        goalSeen.add(n);
+        if(goalSeen.size === 2 && !done[current]){ $('goals-left').textContent = ''; markDone(); }
+      });
+    };
+  });
+}
+
+function renderWords(){
+  const box = $('intro'), phone = PHONE_LAYOUT.matches;
+  box.className = 'intro words';
+  box.innerHTML = `
+    <h2 class="words-title">Words we use</h2>
+    <div class="words-stage"><div id="words-pic"></div>
+      <ol class="words-list" id="words-list">${INTRO_WORDS.map(w=>`<li>${w}</li>`).join('')}</ol></div>
+    ${replayButton()}`;
+  // (phones: smaller on short screens, e.g. an iPhone SE in Safari, so the
+  // slide fits without scrolling)
+  const cell = phone ? Math.max(16, Math.min(24, Math.floor((innerHeight - 440) / 6))) : 42, gap = 3, pad = 6, step = cell + gap;
+  const tiles = termBoardPieces();
+  const svg = miniBoard({ rows: 6, cols: 6, cell, pieces: tiles });
+  $('words-pic').appendChild(svg);
+  const layer = svg.firstElementChild;               // (miniBoard's inner group: board coordinates)
+  const frame = layer.querySelector('.rb-frame'), cells = [...layer.querySelectorAll('.rb-cell')];
+  const groups = [...layer.querySelectorAll('.mb-piece')];
+  const P = tiles[tiles.length - 1], pGroup = groups[groups.length - 1];
+  // A square that gets counted: a green glow over it (the same green light
+  // as every other count in the tutorial, .row-glow) and its number
+  const countable = (g, x, y, n, onPiece)=>{
+    const glow = svgEl('rect', { x, y, width: cell, height: cell, rx: 4, class: 'row-glow' }, g);
+    const num = squareNumber(g, x, y, cell, n, onPiece);
+    hideForAnim(num);
+    return { g, glow, num };
+  };
+  // P's five blocks, drawn one by one where P sits
+  const blocks = P.cells.map(([r,c], i)=>{
+    const g = svgEl('g', { class: 'w-block' }, layer);
+    const x = pad + (P.col + c) * step, y = pad + (P.row + r) * step;
+    drawPiece(g, [[0,0]], P.color, x, y, cell, gap);
+    return countable(g, x, y, i + 1, true);
+  });
+  // the empty squares: highlighted, then counted, in reading order
+  const empties = termBoardEmpties().map(([r,c], i)=>{
+    const g = svgEl('g', {}, layer);
+    const x = pad + c * step, y = pad + r * step;
+    squareHighlight(g, x, y, cell);
+    return countable(g, x, y, i + 1, false);
+  });
+  [frame, ...cells, ...groups, ...blocks.map(b=>b.g), ...empties.map(e=>e.g)].forEach(hideForAnim);
+  // a soft light over each of the grid's squares, for "made of squares"
+  const squareGlows = cells.map(c=>svgEl('rect', { x: c.getAttribute('x'), y: c.getAttribute('y'), width: cell, height: cell, rx: 4, class: 'square-glow' }, layer));
+  cells.forEach((c, i)=>c.after(squareGlows[i]));   // (under the pieces)
+  const list = $('words-list'), items = [...list.children];
+  items.forEach(hideForAnim);
+  markTerms(box);
+  // the caption being shown is in full; the ones before it are greyed out
+  // (user, 2026-11-15: so "This is a block." isn't read with the piece)
+  const say = i=>{ items.forEach((li, j)=>li.classList.toggle('now', j === i)); reveal(items[i]); };
+  // count squares one at a time: each lights up green, its number pops in
+  // and stays, the green fades (like the row / column counts)
+  const count = (list, at, then)=>{
+    list.forEach((s, i)=>later(at + i * INTRO.countStep, ()=>{
+      s.glow.classList.add('on'); reveal(s.num);
+      later(INTRO.countStep * 0.75, ()=>s.glow.classList.remove('on'));
+    }));
+    return at + list.length * INTRO.countStep;
+  };
+
+  function play(){
+    if(REDUCED_MOTION){ blocks.forEach(b=>b.g.remove()); [frame, ...cells, ...groups].forEach(reveal);
+      empties.forEach(e=>{ reveal(e.g); reveal(e.num); }); items.forEach(reveal); introFinished(); return; }
+    list.classList.add('playing');
+    let t = INTRO.blockFirst;
+    // 1: one block
+    later(t, ()=>{ reveal(blocks[0].g); say(0); });
+    t += INTRO.blockHold;
+    // 2: four more join it; then all five are counted
+    blocks.slice(1).forEach((b, i)=>later(t + i * INTRO.blockEach, ()=>reveal(b.g)));
+    t += 4 * INTRO.blockEach + 500;
+    later(t, ()=>say(1));
+    t = count(blocks, t + 400, null);
+    t += INTRO.joinHold;
+    // they join into one piece (the numbers go with them: nothing left over)
+    later(t, ()=>{ blocks.forEach(b=>b.g.classList.add('ia-out')); reveal(pGroup); });
+    t += 500;
+    // 3: the grid; its squares light up row by row (the word gets a
+    // picture), then the other pieces
+    later(t, ()=>{ reveal(frame); cells.forEach(reveal); say(2); });
+    t += INTRO.gridIn;
+    for(let r=0; r<6; r++) later(t + r * INTRO.squareRow, ()=>{
+      const row = squareGlows.slice(r * 6, r * 6 + 6);
+      row.forEach(g=>g.classList.add('on'));
+      later(INTRO.squareRow * 2, ()=>row.forEach(g=>g.classList.remove('on')));
+    });
+    t += 6 * INTRO.squareRow + INTRO.squareRow * 2 + 400;
+    groups.slice(0, -1).forEach((g, i)=>later(t + i * INTRO.pieceEach, ()=>reveal(g)));
+    t += (groups.length - 1) * INTRO.pieceEach + INTRO.gridHold;
+    // 4: the empty squares light up, then are counted
+    later(t, ()=>{ say(3); empties.forEach(e=>reveal(e.g)); });
+    t = count(empties, t + 900, null) + 700;
+    later(t, ()=>{ list.classList.remove('playing'); items.forEach(li=>li.classList.remove('now')); introFinished(); });
+  }
+  // (2026-11-15: the welcome popup comes first on this slide; it plays
+  // only once they press Continue: see showSlide)
+  wordsPlay = play;
+  if(!(SLIDES[current].welcome && !done[current])) play();
+}
+let wordsPlay = null;
 
 /* ═══════════════════════════════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════════════════════════════ */
 let current = 0;
 const SLIDE_KEY = 'pb_tutorialSlide';             // sessionStorage: the slide to come back to after a refresh
-const done = SLIDES.map(s=>s.kind === 'intro');   // slide 1 has no task
+const done = SLIDES.map(()=>false);               // (slides 1–2 are done when their animation ends)
 const solvedView = {};                            // slide index → what the solved board looked like
 
 function renderDots(){
@@ -1105,7 +1504,7 @@ function showSlide(i){
   current = i;
   animRun++;
   const s = SLIDES[i];
-  $('intro').hidden = s.kind !== 'intro';
+  $('intro').hidden = s.kind !== 'goals' && s.kind !== 'words';
   $('dont-slide').hidden = s.kind !== 'dont';
   $('pick').hidden = s.kind !== 'pick';
   findStage = null;
@@ -1140,7 +1539,8 @@ function showSlide(i){
   $('tut-overlay').innerHTML = '';
   ['tut-overlay', 'n-boardr', 'hl-tool'].forEach(id=>$(id).classList.remove('fading'));
   try { sessionStorage.setItem(SLIDE_KEY, String(i)); } catch(e){}   // so a refresh comes back here
-  if(s.kind === 'intro') renderIntro();
+  if(s.kind === 'goals') renderGoals();
+  if(s.kind === 'words') renderWords();
   if(s.kind === 'dont') showDontSlide();
   if(s.kind === 'pick') showPickSlide();
   // Every slide starts fresh, even when you come Back to it (Next stays
@@ -1167,6 +1567,13 @@ function showSlide(i){
   if(s.highlighterIntro) showHighlighterIntro();
   if(s.highlighterLesson) showHighlighterLesson();
   if(s.findEmpty) showFindEmpty();
+  // Slide 2's welcome popup (until the slide is done): Continue = the
+  // slide's animation plays (nothing moves before or behind the popup:
+  // user, 2026-11-15); Rules = leave the tutorial for the rules popup.
+  // (almost at once, with a quick fade: user, 2026-11-13)
+  if(s.welcome && !done[i]) later(30, ()=>{ $('spot').classList.add('quick');
+    showHint([{ center: true, ok: 'Continue', html: WELCOME_HTML,
+      alt: { label: 'Rules', run: ()=>closeTutorial(false, true) } }], 0, ()=>{ if(wordsPlay) wordsPlay(); }); });
   renderDots();
   updateNext();
   $('play').parentElement.scrollTop = 0;
@@ -1271,15 +1678,27 @@ function showHint(steps, step, onClose){
     holes[0].bottom = holes[0].top + holes[0].height;
   }
   const box = (b, extra)=>`x="${b.left - pad}" y="${b.top - pad}" width="${b.width + 2*pad}" height="${b.height + 2*pad}" rx="8" ${extra}`;
+  // (dark mode, only the pieces lit: the grid is darkened half as much, so
+  // it can still be seen; at full strength a dark grid went black: user
+  // 2026-11-13)
+  let halfLit = '';
+  if(s.lit === 'tray' && document.documentElement.classList.contains('dark')){
+    const b = $('board-outer').getBoundingClientRect();
+    halfLit = `<rect ${box(b, 'fill="black" fill-opacity="0.7"')}/>`;
+  }
   const svg = $('spot-svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.innerHTML = `<defs><mask id="spot-mask"><rect width="${W}" height="${H}" fill="white"/>`
-    + holes.map(b=>`<rect ${box(b, 'fill="black"')}/>`).join('') + `</mask></defs>`
+    + halfLit + holes.map(b=>`<rect ${box(b, 'fill="black"')}/>`).join('') + `</mask></defs>`
     + `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.75)" mask="url(#spot-mask)"/>`
     // (a glowing ring round each dotted square, when the area is made of
     // them; never round an area or the highlighted square: user, 2026-11-05)
     + (s.lit === 'area' && puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '');
   $('spot-ok').textContent = s.ok || 'Got it';
+  // (alt: { label, run }: a second, plain button to the left of the main one)
+  $('spot-alt').hidden = !s.alt;
+  $('spot-alt').textContent = s.alt ? s.alt.label : '';
+  $('spot-alt').onclick = s.alt ? (()=>{ hideHint(); hintOnClose = null; s.alt.run(); }) : null;
   $('spot-card').style.visibility = '';
   $('spot-card').classList.toggle('glow', !!s.glow);
   // The explanation goes above or below the whole board, whichever has
@@ -1289,7 +1708,12 @@ function showHint(steps, step, onClose){
   const boardBox = $('board-outer').getBoundingClientRect();
   const top = boardBox.top - (s.lit === 'board' ? COUNT_ROOM : 0), bottom = boardBox.bottom;
   card.style.overflowY = 'auto';
-  if(s.over){
+  if(s.center){
+    // In the middle of the screen (a slide with no grid: slide 2's welcome)
+    card.style.bottom = '';
+    card.style.maxHeight = (H - 2*gapPx) + 'px';
+    card.style.top = Math.max(gapPx, (H - card.offsetHeight) / 2) + 'px';
+  } else if(s.over){
     // Over the middle of the grid (never off the screen)
     card.style.bottom = '';
     card.style.maxHeight = (H - 2*gapPx) + 'px';
@@ -1304,7 +1728,7 @@ function showHint(steps, step, onClose){
   card.scrollTop = 0;                               // start at the first sentence
   $('spot-ok').focus({ preventScroll: true });
 }
-function hideHint(){ $('spot').hidden = true; $('spot').classList.remove('instant'); $('spot-card').style.visibility = ''; }
+function hideHint(){ $('spot').hidden = true; $('spot').classList.remove('instant', 'quick'); $('spot-card').style.visibility = ''; }
 // "Got it": the next part of the popup, or (after the last) close it.
 // Tapping the dark area does the same.
 function nextHint(){
@@ -1523,7 +1947,8 @@ gameHooks.onMark = ()=>{
 // six, the pieces stay put, and once all six are right N and P turn and
 // drop in by themselves, then the empty squares are counted)
 const HL_POPUP = [  // [CONTENT] (one "Got it" each; "The first four will be easy…" removed, user 2026-11-13)
-  '<p>This is a partially solved puzzle. Turn on the highlighter and highlight where the <b>six empty squares</b> have to go.</p>',
+  // (user, 2026-11-15: say WHY they're highlighting)
+  '<p>This is a partially solved puzzle. To narrow down where the pieces can go, highlight where the six empty squares have to go.</p>',
 ];
 const HL_NOTE = [   // [CONTENT] the reminder beside the board (the step must stay 2nd: it gets the check)
   '<b>Rule:</b> Every row and column has an even number of empty squares.',
@@ -1532,8 +1957,8 @@ const HL_NOTE = [   // [CONTENT] the reminder beside the board (the step must st
 const HL_HINT =    // [CONTENT]
   '<b>Hint:</b> Four empty squares are boxed in by pieces. Then find a row with only one highlighted square: it needs one more. (0 counts as an even number.)';
 const HL_SIX = HL_GIVEN.map(([r,c])=>r + ',' + c).concat(HL_GOALS);   // all six empty squares
-const PLACE_GAP_MS = 500;     // between the two pieces dropping in
-const FLY_MS = 650;           // a piece flying from the top onto the grid
+const PLACE_GAP_MS = 600;     // between the two pieces dropping in
+const FLY_MS = 800;           // a piece flying from the top onto the grid (was 650; slower: user 2026-11-13)
 const HL_NOTE_STAGGER_MS = 250;  // the reminder's lines fade in one after another
 const HL_HINT_MS = 90000;    // a minute and a half of not finding them
 let emptySpacesFound = false;
@@ -1545,21 +1970,23 @@ const goalsFound = ()=>{ const k = Object.keys(getMarks()); return k.length === 
 function checkEmptySpacesFound(){
   if(emptySpacesFound || !goalsFound()) return;
   emptySpacesFound = true;
+  // (2026-11-13, user: the old check + faint flash wasn't clear) the step's
+  // line becomes "✓ All 6 empty squares found!" in green, and the six pop
+  // one at a time, each keeping a green ring
   const step = $('n-boardr').querySelectorAll('.empty-card p')[1];
-  if(step) step.classList.add('step-done');
+  if(step){ step.innerHTML = HL_FOUND; step.classList.add('found-line'); }
   setHighlighting(false);
   $('hl-tool').classList.remove('glowing');
   $('hl-tool').classList.add('fading');
   $('hl-hint-btn').hidden = true;
-  HL_SIX.forEach(k=>{
-    const [r,c] = k.split(',');
-    const cell = document.querySelector(`#board .board-cell[data-r="${r}"][data-c="${c}"]`);
-    if(!cell) return;
-    cell.classList.remove('found-flash'); void cell.offsetWidth; cell.classList.add('found-flash');
-    cell.addEventListener('animationend', ()=>cell.classList.remove('found-flash'), { once: true });
-  });
-  later(1600, ()=>autoPlace(HL_SOLUTION, 0));
+  const hint = $('hl-hint'); if(hint) hint.hidden = true;
+  HL_SIX.forEach((k, i)=>later(i * FOUND_POP_MS, ()=>{ const cell = cellEl(k); if(cell) cell.classList.add('found-pop'); }));
+  later(HL_SIX.length * FOUND_POP_MS + FOUND_HOLD_MS, ()=>autoPlace(HL_SOLUTION, 0));
 }
+const HL_FOUND = '&#10003; All 6 empty squares found!';   // [CONTENT]
+const FOUND_POP_MS = 180;     // between the six squares popping
+const FOUND_HOLD_MS = 1100;   // then a moment to look before the pieces move
+const cellEl = k=>{ const [r,c] = String(k).split(','); return document.querySelector(`#board .board-cell[data-r="${r}"][data-c="${c}"]`); };
 // Where N and P go (absolute squares), in the order they drop in
 const HL_SOLUTION = [
   { name: 'P', at: [[0,5],[1,4],[1,5],[2,4],[2,5]] },
@@ -1591,13 +2018,22 @@ function autoPlace(list, i){
   const r0 = Math.min(...at.map(c=>c[0])), c0 = Math.min(...at.map(c=>c[1]));
   const target = at.map(([r,c])=>[r-r0, c-c0]);
   const turns = turnsBetween(trayCells[name], target);
-  const TURN_MS = 420;
-  turns.forEach(([how, fn], j)=>later(j * TURN_MS, ()=>{
+  // (2026-11-13: slower, one step at a time) its five squares on the grid
+  // glow first, then the piece bumps, turns, and moves there
+  const TURN_MS = 650, GLOW_FIRST_MS = 900, BUMP_MS = 450;
+  const spots = at.map(([r,c])=>cellEl(r + ',' + c)).filter(Boolean);
+  spots.forEach(el=>el.classList.add('target-glow'));
+  later(GLOW_FIRST_MS - BUMP_MS, ()=>{
+    const el = trayPieceEl(name);
+    if(el && !REDUCED_MOTION) el.animate([{ transform: 'none' }, { transform: 'scale(1.2)' }, { transform: 'none' }], { duration: 400, easing: 'ease-out' });
+  });
+  turns.forEach(([how, fn], j)=>later(GLOW_FIRST_MS + j * TURN_MS, ()=>{
     trayCells[name] = fn(trayCells[name]);
     pendingFeel = { type:'turn', how, source:{ kind:'tray', name } };
     renderAll();
   }));
-  later(turns.length * TURN_MS + 250, ()=>{
+  later(GLOW_FIRST_MS + turns.length * TURN_MS + 300, ()=>{
+    later(FLY_MS, ()=>spots.forEach(el=>el.classList.remove('target-glow')));
     const from = trayPieceEl(name).getBoundingClientRect();
     const id = 'auto' + i;
     const def = puzzle.pieces.find(d=>d.name === name);
@@ -1823,7 +2259,8 @@ function showFindEmpty(){
   else later(500, ()=>$('n-trayl').classList.add('fading'));
   if(f.numbers){ drawNumbers(empties, false); showBanner(EQUATION_HTML, 'tray', false); }
   later(1400, ()=>{
-    if(f.explainer) runExplainer(markDone);
+    // (3b, after the sum: a short pause to read it, then its popups)
+    if(f.explainer) runExplainer(()=>later(SUM_READ_MS, ()=>runFindPopups(f.popups || [], 0)));
     else runFindPopups(f.popups, 0);
   });
 }
@@ -2169,15 +2606,17 @@ function drawCounts(animate, onDone, opts){
   later(at(lines.length) + 150, onDone || (()=>{ addSolvedNote(); markDone(); }));
 }
 
-function closeTutorial(finished){
+// openRules (slide 2's "Rules" button): the page underneath opens its rules
+// popup once the tutorial has closed
+function closeTutorial(finished, openRules){
   try { sessionStorage.removeItem(SLIDE_KEY); } catch(e){}   // next time starts from slide 1
   // Inside the popup on a puzzle page: ask that page to close it
-  if(window.parent !== window) window.parent.postMessage({ type:'pb-tutorial-close', finished: !!finished }, '*');
+  if(window.parent !== window) window.parent.postMessage({ type:'pb-tutorial-close', finished: !!finished, openRules: !!openRules }, '*');
   else {
     // Opened as its own page (the splash screen's Tutorial button): remember
     // it's been seen, so it won't pop up again on the first puzzle, then go back
     try { localStorage.setItem('pb_tutorialSeen', '1'); } catch(e){}
-    location.href = ParityTheme.withTheme('index.html');   // (carries light / dark: theme.js)
+    location.href = ParityTheme.withTheme(openRules ? 'index.html?rules=1' : 'index.html');   // (carries light / dark: theme.js)
   }
 }
 
@@ -2222,6 +2661,12 @@ let startAt = 0;
 try { startAt = parseInt(sessionStorage.getItem(SLIDE_KEY), 10) || 0; } catch(e){}
 if(!(startAt > 0 && startAt < SLIDES.length)) startAt = 0;
 for(let i = 0; i < startAt; i++) done[i] = true;
+// The official terms in their own color on every slide and popup, whenever
+// text appears (user, 2026-11-14; markTerms in shapes.js). (A
+// MutationObserver runs before the next paint, so text never shows
+// uncolored first; its own changes call it once more, finding nothing.)
+new MutationObserver(()=>markTerms(document.body))
+  .observe(document.body, { childList: true, subtree: true, characterData: true });
 showSlide(startAt);
 attachScrollHint(document.querySelector('.tut-body'));   // (phones: a ▾ while the slide goes on below)
 </script>

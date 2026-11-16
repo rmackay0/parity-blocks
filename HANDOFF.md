@@ -1,8 +1,69 @@
 # Parity Blocks — Handoff Notes
 
-## START HERE (updated 2026-11-13)
+## START HERE (updated 2026-11-16)
 
-**Status: everything is committed AND pushed** (2026-11-13, with the
+**Status: committed AND pushed 2026-11-16** (the user asked: "rigorous
+testing and then commit and pushing"). Everything below up to "Ask the
+user next time (2026-11-13)" is this session's work.
+
+**The tutorial now: 10 slides** (list at the top of tutorial.html):
+1 the two goals, each opened with a "Show me ▾" button (phones: one open at
+a time; laptops: both; Next once both have played): Tiling (pieces drop
+onto a grid, each fading in the set of 12) and Solving for Parity (the
+rules' check rows / columns / all even pictures, numbers only, each line's
+blocks lit green / red as counted) · 2 "Words we use" (opens with the
+welcome popup: Continue = plays, Rules = leave for the rules popup;
+nothing plays before Continue): a block, 5 blocks counted green → a piece,
+"The grid is made of squares" (squares lit), "The squares left uncovered
+are empty squares" (counted); captions stay, earlier ones greyed ·
+3 pick the grid · 4 highlight every empty square · 5 the sum, then
+"Since this grid is 6 × 6…" (old 3b + 3c merged) · 6 pick again, counting
+empty squares (user's new wording) · 7 the highlighter board (popup: "To
+narrow down where the pieces can go…"; on success "✓ All 6 empty squares
+found!", the six pop green, each piece's squares glow before it moves,
+slower) · 8 rotate AND reflect on one slide (PUZZLE_3, TURN_FLIP_STEPS) ·
+9 don't place over · 10 the final puzzle (no "Make sure…" note).
+Timings: `INTRO` in tutorial.html (user wanted them "significantly slower").
+Mock-up artifacts (private): "Parity Blocks Slide 1" (art styles A–D,
+layouts E–G; user picked F) and "Parity Blocks Goals Accordion" (A/B/C;
+user picked A everywhere, Claude's advice: C was weaker for attention).
+
+**One color per pentomino, everywhere** (user, 2026-11-14): `PIECE_COLOR`
+in shapes.js (F persimmon, I indigo, L vermilion, N wisteria, P plum,
+T asagi, U gold, V moss, W sky, X sakura, Y pine, Z slate; gold and sakura
+on U and X because the tutorial's highlighter slides never use those).
+game.js `pieceColors` / fixed pieces, tutorial, rules, sandbox, analyzer
+all use it; solver.js PENTOMINOES keeps a copy (keep them the same).
+
+**Official terms in teal** (`--color-term`, rules.css; `markTerms` in
+shapes.js wraps them, the tutorial runs it on every change): grid, square,
+empty square, block, piece, pentomino, Tiling, Solving for Parity. Teal =
+a game word, always normal weight; emphasis = bold in the text color;
+indigo only on controls (buttons, step boxes, glows, the ➤ arrow).
+Watch out: CSS like `.x span {display:block}` breaks text with terms in it
+(the "Correct!" badge did; now `.win-text > span`).
+
+**Rules popup** matches slide 1 (no animation): numbered teal headings,
+the 12 pieces → grid, the check pictures with numbers only (miniBoard
+`noStrokes`), then the numbered block and piece pictures (no empty squares).
+Shared in shapes.js: `PARITY_EXAMPLE`, `PENTOMINO_CELLS`, `twelvePieces`,
+`termPictures(cell, compact, withEmpty)`, `squareNumber`, `squareHighlight`.
+
+**Tests (2026-11-16):** tutorial_test.js rewritten (plays all 10 slides,
+✓/✗ per check); hl_hint_test, glow_clip_test, phone_layout_check,
+scroll_hint_test, board_still_test updated for the new slides. iPhone SE
+in Safari (375 × 553): every slide fits now (short-screen block at the end
+of tutorial.html's styles). Still failing, as before this session:
+next_level_test, play_test, progress_test, share_test.
+
+**Ask the user next time (2026-11-16):**
+- How slides 1 and 2 feel on a real phone (speed, "Show me").
+- Slide 2 still plays by itself: "Show me" there too?
+- The welcome popup now sits on slide 2 (they asked); OK?
+- Whether "parity" (lowercase, slide 6) should be a teal term.
+- Whether the rules should also drop the block / piece pictures.
+
+**Earlier status: everything is committed AND pushed** (2026-11-13, with the
 user's OK): the tutorial revamp, the Firefox light / dark fix, slide 1
 and slide 3 tweaks.
 

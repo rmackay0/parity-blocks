@@ -25,6 +25,21 @@ const INKS = {
   slate:      '#8A97A8',
 };
 
+/* [COLORS] ONE COLOR PER PENTOMINO, everywhere: the puzzle page, the
+   tutorial, the rules, the sandbox and the analyzer (user, 2026-11-14:
+   "the colors are changing a bunch"). Before this, colors were handed out
+   in puzzle order, so the same piece changed color from puzzle to puzzle.
+   Gold and sakura (like the highlighter's yellow and pink) go to U and X,
+   the two pieces none of the tutorial's highlighter slides use.
+   (solver.js keeps a copy of these for the analyzer: keep them the same.) */
+const PIECE_COLOR = {
+  F: INKS.persimmon, I: INKS.indigo, L: INKS.vermilion, N: INKS.wisteria,
+  P: INKS.plum,      T: INKS.asagi,  U: INKS.gold,      V: INKS.moss,
+  W: INKS.sky,       X: INKS.sakura, Y: INKS.pine,      Z: INKS.slate,
+};
+// A piece's color by its letter (anything else: the fallback given)
+function pieceColor(name, fallback){ return PIECE_COLOR[name] || fallback; }
+
 /* ── Geometry ── */
 function normalize(cells){
   const minR = Math.min(...cells.map(c=>c[0]));
@@ -447,9 +462,11 @@ function miniBoard(opts){
       svgEl('path', { d: buildHighlighterPath(-over, y, boardW+over, y, thick, r+1), class:'rb-hl '+cls(rowCount(r)), 'data-row': r }, svg); };
     const colMark = c=>{ const x = pad + c*step + cell/2;
       svgEl('path', { d: buildHighlighterPath(x, -over, x, boardH+over, thick, c+11), class:'rb-hl '+cls(colCount(c)), 'data-col': c }, svg); };
-    if(show === 'rows' || show === 'count') for(let r=0; r<rows; r++) rowMark(r);
-    if(show === 'cols' || show === 'count') for(let c=0; c<cols; c++) colMark(c);
-    if(show === 'odd'){
+    // (opts.noStrokes: only the counts, no lines across the pieces: the
+    // tutorial's first slide and the rules, user 2026-11-15)
+    if(!opts.noStrokes && (show === 'rows' || show === 'count')) for(let r=0; r<rows; r++) rowMark(r);
+    if(!opts.noStrokes && (show === 'cols' || show === 'count')) for(let c=0; c<cols; c++) colMark(c);
+    if(!opts.noStrokes && show === 'odd'){
       for(let r=0; r<rows; r++) if(rowCount(r) % 2) rowMark(r);
       for(let c=0; c<cols; c++) if(colCount(c) % 2) colMark(c);
     }
@@ -469,4 +486,186 @@ function miniBoard(opts){
   // seems to point at one square in particular
   if(opts.noMarkOn) drawNoMark(svg, boardW/2, boardH/2, Math.min(boardW, boardH)/2 - 2);
   return outer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   OFFICIAL TERMS (user, 2026-11-14: players were confused by blocks vs
+   pieces vs empty squares)
+   markTerms(root) wraps every official term in the text under root in
+   <span class="term"> (its color: --color-term in rules.css). Not inside
+   buttons, pictures, <kbd> or anything marked .no-terms.
+   termPictures(cell) = the three pictures that say what they are: a
+   block, a piece, and the empty squares on a grid (tutorial slide 1 and
+   the rules popup).
+═══════════════════════════════════════════════════════════════════ */
+// (not the "Blocks" in the game's name, Parity Blocks. "square" is a term:
+// slide 5's 36 squares = 30 blocks + 6 empty squares depends on it; slide
+// 2 defines it, "The grid is made of squares": user, 2026-11-15)
+const TERM_RE = /\b(?<!Parity )(empty squares?|squares?|blocks?|pieces?|pentominoes|pentomino|grids?|Tilings?|Solving for Parity)\b/gi;
+function markTerms(root){
+  if(!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode(n){
+    const p = n.parentElement;
+    if(!p || p.closest('.term, button, svg, script, style, kbd, .no-terms')) return NodeFilter.FILTER_REJECT;
+    TERM_RE.lastIndex = 0;
+    return TERM_RE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+  }});
+  const found = [];
+  while(walker.nextNode()) found.push(walker.currentNode);
+  found.forEach(n=>{
+    const text = n.nodeValue, frag = document.createDocumentFragment();
+    let last = 0;
+    TERM_RE.lastIndex = 0;
+    let m;
+    while((m = TERM_RE.exec(text))){
+      if(m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const span = document.createElement('span');
+      span.className = 'term';
+      span.textContent = m[0];
+      frag.appendChild(span);
+      last = m.index + m[0].length;
+    }
+    if(last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    n.parentNode.replaceChild(frag, n);
+  });
+}
+
+// An example board for the "empty squares" picture: six different pieces,
+// six empty squares. Made up for this picture (not a tutorial or real puzzle,
+// so it gives nothing away).
+const TERM_BOARD = [
+  { name: 'I', at: [[0,0],[0,1],[0,2],[0,3],[0,4]] },
+  { name: 'V', at: [[1,0],[1,1],[1,2],[2,0],[3,0]] },
+  { name: 'U', at: [[1,3],[1,5],[2,3],[2,4],[2,5]] },
+  { name: 'Y', at: [[3,1],[3,2],[3,3],[3,4],[4,2]] },
+  { name: 'L', at: [[4,3],[5,0],[5,1],[5,2],[5,3]] },
+  { name: 'P', at: [[3,5],[4,4],[4,5],[5,4],[5,5]] },
+];
+// (as miniBoard wants them: color, top-left row / col, cells from there)
+const termBoardPieces = ()=>TERM_BOARD.map(p=>{
+  const r0 = Math.min(...p.at.map(a=>a[0])), c0 = Math.min(...p.at.map(a=>a[1]));
+  return { name: p.name, color: PIECE_COLOR[p.name], row: r0, col: c0, cells: p.at.map(([r,c])=>[r - r0, c - c0]) };
+});
+// its six empty squares, in reading order
+function termBoardEmpties(){
+  const covered = new Set();
+  TERM_BOARD.forEach(p=>p.at.forEach(([r,c])=>covered.add(r + ',' + c)));
+  const out = [];
+  for(let r=0; r<6; r++) for(let c=0; c<6; c++) if(!covered.has(r + ',' + c)) out.push([r, c]);
+  return out;
+}
+const TERM_F = [[0,1],[0,2],[1,0],[1,1],[2,1]];
+const TERM_F_COLOR = PIECE_COLOR.F;
+
+// The 12 pentominoes, in letter order, as shown on the tutorial's first
+// slide and in the rules (2026-11-15: shared here)
+const PENTOMINO_CELLS = {
+  F: [[0,1],[0,2],[1,0],[1,1],[2,1]], I: [[0,0],[1,0],[2,0],[3,0],[4,0]],
+  L: [[0,0],[1,0],[2,0],[3,0],[3,1]], N: [[0,1],[1,1],[2,0],[2,1],[3,0]],
+  P: [[0,0],[0,1],[1,0],[1,1],[2,0]], T: [[0,0],[0,1],[0,2],[1,1],[2,1]],
+  U: [[0,0],[0,2],[1,0],[1,1],[1,2]], V: [[0,0],[1,0],[2,0],[2,1],[2,2]],
+  W: [[0,0],[1,0],[1,1],[2,1],[2,2]], X: [[0,1],[1,0],[1,1],[1,2],[2,1]],
+  Y: [[0,1],[1,0],[1,1],[2,1],[3,1]], Z: [[0,0],[0,1],[1,1],[2,1],[2,2]],
+};
+// One small picture of a piece (its own svg), tagged with its letter
+function pieceIcon(name, cell){
+  const cells = PENTOMINO_CELLS[name], gap = 2, b = bounds(cells);
+  const w = b.cols*cell + (b.cols-1)*gap, h = b.rows*cell + (b.rows-1)*gap;
+  const svg = svgEl('svg', { width: w + 4, height: h + 4, viewBox: `-2 -2 ${w + 4} ${h + 4}`, 'aria-hidden': 'true' });
+  drawPiece(svg, cells, PIECE_COLOR[name], 0, 0, cell, gap);
+  svg.dataset.name = name;
+  return svg;
+}
+// The 12 in two rows of six, in a soft box (class "twelve")
+function twelvePieces(cell){
+  const box = document.createElement('div');
+  box.className = 'twelve';
+  box.setAttribute('aria-label', 'The 12 pentominoes');
+  Object.keys(PENTOMINO_CELLS).forEach(n=>box.appendChild(pieceIcon(n, cell)));
+  return box;
+}
+
+/* The rules' example board (6×6, P U T V), for the "check rows / check
+   columns / all even" pictures in the rules popup and on the tutorial's
+   first slide. Made up, not a real puzzle, so it gives nothing away. */
+const PARITY_EXAMPLE = (()=>{
+  const P = { color:PIECE_COLOR.P, cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
+  const U = { color:PIECE_COLOR.U, cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
+  const T = { color:PIECE_COLOR.T, cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
+  const V = { color:PIECE_COLOR.V, cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
+  return {
+    // every row and column has an even number of blocks
+    solved: [ {...P, row:0, col:4}, {...U, row:4, col:0}, {...T, row:3, col:2}, {...V, row:2, col:1} ],
+    // the same, V one square up and left: rows 2 and 5, columns 1 and 4 go odd
+    wrong:  [ {...P, row:0, col:4}, {...U, row:4, col:0}, {...T, row:3, col:2}, {...V, row:1, col:0} ],
+  };
+})();
+
+/* (2026-11-14, user picked mock-up F: "counted" pictures, no rings or
+   arrows) A number in the middle of a square: white on a piece, ink on a
+   highlighted empty square. Returns the <text>. */
+function squareNumber(parent, x, y, cell, n, onPiece){
+  const t = svgEl('text', { x: x + cell/2, y: y + cell/2 + 0.5, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+                            class: 'term-num' + (onPiece ? ' on-piece' : ''), style: `font-size:${Math.round(cell * 0.6)}px` }, parent);
+  t.textContent = n;
+  return t;
+}
+// The yellow highlight on an empty square (the highlighter's first color)
+function squareHighlight(parent, x, y, cell){
+  return svgEl('rect', { x, y, width: cell, height: cell, rx: 3, class: 'term-hl' }, parent);
+}
+
+function termFigure(svg, html){
+  const fig = document.createElement('figure');
+  fig.className = 'term-fig';
+  fig.appendChild(svg);
+  const cap = document.createElement('figcaption');
+  cap.innerHTML = html;
+  fig.appendChild(cap);
+  return fig;
+}
+// One block with "1" on it (which = 'block'), or the F with its five
+// blocks numbered 1–5 (which = 'piece')
+function termPieceSvg(which, cell){
+  const gap = 3, cells = which === 'block' ? [[0,0]] : TERM_F, b = bounds(cells), m = 3;
+  const w = b.cols*cell + (b.cols-1)*gap, h = b.rows*cell + (b.rows-1)*gap;
+  const svg = svgEl('svg', { width: w + 2*m, height: h + 2*m, viewBox: `${-m} ${-m} ${w + 2*m} ${h + 2*m}`, 'aria-hidden': 'true', class: 'term-svg' });
+  drawPiece(svg, cells, TERM_F_COLOR, 0, 0, cell, gap);
+  cells.forEach(([r,c], i)=>squareNumber(svg, c*(cell+gap), r*(cell+gap), cell, i + 1, true));
+  return svg;
+}
+// The example board, its six empty squares highlighted and numbered 1–6
+function termEmptySvg(cell){
+  const svg = miniBoard({ rows: 6, cols: 6, cell, pieces: termBoardPieces() });
+  const pad = 6, step = cell + 3;
+  termBoardEmpties().forEach(([r,c], i)=>{
+    squareHighlight(svg, pad + c*step, pad + r*step, cell);
+    squareNumber(svg, pad + c*step, pad + r*step, cell, i + 1, false);
+  });
+  svg.classList.add('term-svg');
+  return svg;
+}
+// The three, with their captions (the rules popup). compact = smaller
+// captions (phones)
+const TERM_CAPTIONS = {   // [CONTENT] (the wording of mock-up F, user's pick)
+  block: 'This is a block.',
+  piece: '5 blocks make a piece (a pentomino).',
+  empty: 'The squares left uncovered are empty squares.',
+};
+// (withEmpty = false: just the block and the piece, as in the rules popup:
+// "no need to explain empty spaces" there, user 2026-11-15)
+function termPictures(cell, compact, withEmpty){
+  const wrap = document.createElement('div');
+  wrap.className = 'term-pics' + (compact ? ' compact' : '');
+  const top = document.createElement('div');
+  top.className = 'term-row';
+  // (the block and the piece drawn bigger than the grid's squares, so their
+  // numbers read as easily)
+  const big = Math.round(cell * 1.4);
+  top.appendChild(termFigure(termPieceSvg('block', big), TERM_CAPTIONS.block));
+  top.appendChild(termFigure(termPieceSvg('piece', big), TERM_CAPTIONS.piece));
+  if(withEmpty !== false) top.appendChild(termFigure(termEmptySvg(cell), TERM_CAPTIONS.empty));
+  wrap.appendChild(top);
+  markTerms(wrap);
+  return wrap;
 }

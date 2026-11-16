@@ -217,7 +217,10 @@ function solverConfig(p){
 }
 function colorOf(p, name){
   const d = p.pieces.find(q=>q.name === name);
-  return d && d.color || ParitySolver.pentomino(name).color;
+  // (each pentomino's one color first, 2026-11-14; a puzzle's own stored
+  // color only for a piece that isn't one of the 12 letters)
+  const std = ParitySolver.PENTOMINOES.find(q=>q.name === name);
+  return std ? std.color : (d && d.color);
 }
 
 function renderSelect(){

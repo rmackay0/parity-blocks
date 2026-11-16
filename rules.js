@@ -24,8 +24,13 @@ const TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 const RULES_TEXT = {
   title: 'How to Play',
   goalsHeading: 'Goals',
-  goal1: 'Fit all of the pieces onto the grid.',
-  goal2: 'Make sure that every row and every column has an even number of blocks in it.',
+  // (2026-11-15: the same design as the tutorial's first slide, no
+  // animation: each goal's name as a heading, one line under it. The
+  // official terms are colored by markTerms, shapes.js)
+  goal1Title: 'Tiling',
+  goal1: 'Fit the pieces onto the grid.',
+  goal2Title: 'Solving for Parity',
+  goal2: 'Every row and every column must contain an even number of blocks.',
   checkRows: 'Check rows',
   checkCols: 'Check columns',
   allEven: 'All even: solved!',
@@ -46,17 +51,10 @@ const RULES_TEXT = {
 const SEEN_KEY = 'pb_rulesSeen';
 
 /* ── Example boards (6x6). Each piece: color, cells, top-left row/col ── */
-const EX_P = { color:INKS.gold,      cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
-const EX_U = { color:INKS.indigo,    cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
-const EX_T = { color:INKS.moss,      cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
-const EX_V = { color:INKS.vermilion, cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
-const EXAMPLE = {
-  // Every row and column has an even number of filled blocks
-  solved: [ {...EX_P, row:0, col:4}, {...EX_U, row:4, col:0}, {...EX_T, row:3, col:2}, {...EX_V, row:2, col:1} ],
-  // Same pieces, V moved up-left one square: rows 2 & 5 and columns 1 & 4 go odd
-  wrong:  [ {...EX_P, row:0, col:4}, {...EX_U, row:4, col:0}, {...EX_T, row:3, col:2}, {...EX_V, row:1, col:0} ],
-};
-const F_PIECE = { color:INKS.sakura, cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] };
+// (2026-11-14: the example now lives in shapes.js, PARITY_EXAMPLE, since
+// the tutorial's first slide shows the same pictures)
+const EXAMPLE = PARITY_EXAMPLE;
+const F_PIECE = { color:PIECE_COLOR.F, cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] };
 
 /* Drawing helpers (svgEl, drawPiece, drawNoMark, miniBoard) are in shapes.js */
 
@@ -99,9 +97,21 @@ function item(parent, texts, visuals, rowClass){
     const p = document.createElement('p');
     if(cls) p.className = cls;
     if(num){ const s = document.createElement('span'); s.className = 'rules-num'; s.textContent = num; p.appendChild(s); }
-    p.appendChild(document.createTextNode(text));
+    p.insertAdjacentHTML('beforeend', text);   // (RULES_TEXT is ours, and may hold <u>)
     div.appendChild(p);
   });
+  const row = document.createElement('div');
+  row.className = 'rules-visuals' + (rowClass ? ' ' + rowClass : '');
+  visuals.forEach(v=>row.appendChild(v));
+  div.appendChild(row);
+  parent.appendChild(div);
+}
+
+// A goal: a numbered heading (its name), one line, then its pictures in a row
+function goalItem(parent, n, title, text, visuals, rowClass){
+  const div = document.createElement('div');
+  div.className = 'rules-item rules-goal';
+  div.innerHTML = `<h4 class="rules-goal-title"><span class="rules-gnum">${n}</span>${title}</h4><p>${text}</p>`;
   const row = document.createElement('div');
   row.className = 'rules-visuals' + (rowClass ? ' ' + rowClass : '');
   visuals.forEach(v=>row.appendChild(v));
@@ -156,14 +166,27 @@ function build(){
   const goals = document.createElement('h3');
   goals.textContent = T.goalsHeading;
   popup.appendChild(goals);
-  item(popup, [[T.goal1, null, '1.']], [
-    figure(miniBoard({ rows:6, cols:6, cell:24, pieces:EXAMPLE.solved })),
-  ]);
-  item(popup, [[T.goal2, null, '2.']], [
-    figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'rows'   }), T.checkRows),
-    figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'cols'   }), T.checkCols),
+  const phone = window.matchMedia('(max-width: 600px)').matches;
+  // 1 Tiling: the 12 pieces → a grid they've been fitted onto
+  const arrow = document.createElement('span');
+  arrow.className = 'rules-goal-arrow';
+  arrow.textContent = '→';
+  goalItem(popup, 1, T.goal1Title, T.goal1, [
+    twelvePieces(phone ? 6 : 9), arrow,
+    miniBoard({ rows:6, cols:6, cell: phone ? 11 : 16, pieces: termBoardPieces() }),
+  ], 'tiling');
+  // 2 Solving for Parity: the counts beside the rows, then the columns, then
+  // all even (numbers only, no lines across the pieces: user 2026-11-15)
+  goalItem(popup, 2, T.goal2Title, T.goal2, [
+    figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'rows', noStrokes: true }), T.checkRows),
+    figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'cols', noStrokes: true }), T.checkCols),
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.solved, show:'solved' }), T.allEven),
   ], 'three');
+  // What a block and a piece are (the tutorial's pictures, without the
+  // empty squares: user 2026-11-15)
+  const terms = termPictures(phone ? 15 : 20, false, false);
+  terms.classList.add('rules-terms');
+  popup.appendChild(terms);
 
   // Rules
   const rules = document.createElement('h3');
@@ -180,7 +203,8 @@ function build(){
     figure(pieceOnly(rotateCells(F_PIECE.cells), F_PIECE.color, 22)),
   ]);
   // Half inside the dotted line, half outside
-  const crossing = { color:INKS.asagi, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
+  // (four blocks, T-shaped: the T's color)
+  const crossing = { color:PIECE_COLOR.T, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
   item(popup, [[T.dotted]], [
     figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],
       dotted:[[1,1],[1,2],[2,1],[2,2]], noMarkOn: crossing })),
@@ -202,6 +226,8 @@ function build(){
   ok.textContent = T.ok;
   ok.addEventListener('click', closeRules);
   popup.appendChild(ok);
+
+  markTerms(popup);   // (the official terms in their own color)
 
   // Clicking the dimmed area outside the popup closes it
   backdrop.addEventListener('click', e=>{ if(e.target === backdrop) closeRules(); });

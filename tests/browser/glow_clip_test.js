@@ -9,15 +9,16 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
 let failures = 0;
 
 // [slide index, selector, how far the glow reaches (px), how to turn it on]
+// (2026-11-15: the 10-slide tutorial. 3 = highlight every empty square,
+// 6 = the highlighter board, 7 = rotate + reflect, 8 = don't place over,
+// 9 = the final puzzle; the old intro slide and the "Make sure…" note are gone)
 const GLOWS = [
-  [1, '#step0', 14, null],
   [3, '#step0', 14, null],
-  [2, '.dont-slide h2', 14, null],
-  [4, '.hl-pencil', 21, null],
-  [4, '#board-outer', 20, ()=>{ setHighlighting(true); setIntroStage('grid'); }],
-  [5, '.hl-pencil', 21, null],
-  [6, '#big-note', 18, null],
-  [6, '#hint-btn', 19, ()=>{ document.getElementById('hint-btn').classList.add('shown', 'lit'); }],
+  [3, '.hl-pencil', 21, ()=>{ document.getElementById('hl-tool').classList.add('glowing'); }],
+  [6, '.hl-pencil', 21, null],
+  [7, '#step0', 14, null],
+  [8, '.dont-slide h2', 14, null],
+  [9, '#hint-btn', 19, ()=>{ document.getElementById('hint-btn').classList.add('shown', 'lit'); }],
 ];
 
 (async () => {
@@ -32,8 +33,8 @@ const GLOWS = [
       for (const [slide, sel, reach, setup] of GLOWS) {
         await page.evaluate(n => showSlide(n), slide);
         await page.waitForTimeout(400);
-        // (slide 6 opens with a two-part popup: close it)
-        if (slide === 5) { for (let k = 0; k < 2; k++) { await page.click('#spot-ok'); await page.waitForTimeout(300); } await page.waitForTimeout(800); }
+        // (slide 7 opens with a popup: close it)
+        if (slide === 6) { await page.click('#spot-ok'); await page.waitForTimeout(1100); }
         if (setup) { await page.evaluate(setup); await page.waitForTimeout(400); }
         const r = await page.evaluate(([sel, reach]) => {
           const el = document.querySelector(sel);

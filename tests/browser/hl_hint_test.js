@@ -17,19 +17,20 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     const label = `${dev}, ${found ? 'square found' : 'not found'}`;
     console.log(label);
     const ctx = await browser.newContext({ viewport:{ width:w, height:h }, isMobile: dev !== 'laptop', hasTouch: dev !== 'laptop' });
-    await ctx.addInitScript(()=>sessionStorage.setItem('pb_tutorialSlide', '5'));   // (slide 6)
+    await ctx.addInitScript(()=>sessionStorage.setItem('pb_tutorialSlide', '6'));   // (slide 7 since 2026-11-15: the highlighter board)
     const page = await ctx.newPage();
     const errors = [];
     page.on('pageerror', e=>errors.push(e.message));
     await page.clock.install();
     await page.goto(BASE + 'tutorial.html');
     await page.clock.runFor(500);
-    for(let k = 0; k < 2; k++){ await page.click('#spot-ok'); await page.clock.runFor(300); }   // (the opening popup's two parts; the hint's clock starts now)
+    await page.click('#spot-ok'); await page.clock.runFor(300);   // (the opening popup, one part now; the hint's clock starts now)
     await page.clock.runFor(1000);
     const text = await page.innerText('#n-boardr');     // (only the text you can see)
     check(!/only one highlighted/.test(text), 'at first the note has no hint sentence');
     check(await page.isHidden('#hl-hint'), 'hint hidden');
-    if(found) await page.evaluate(()=>{ const m = getMarks(); m['3,5'] = 2; m['5,5'] = 2; setMarks(m); });
+    // (all six now: none are given since the 2026-11-12 revamp)
+    if(found) await page.evaluate(()=>{ const m = {}; HL_SIX.forEach(k=>{ m[k] = 2; }); setMarks(m); });
     await page.clock.runFor(80000);
     check(await page.isHidden('#hl-hint'), 'still hidden after 83 s');
     await page.clock.runFor(10000);
@@ -42,7 +43,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
       const before = await scrollTop();
       check(await popupOpen(), 'not found: the hint pops up at 93 s');
       const hint = await page.innerText('#spot-text');
-      check(hint.includes('Find a row with only one highlighted square'), 'wording: "' + hint.trim() + '"');
+      check(/find a row with only one highlighted square/i.test(hint), 'wording: "' + hint.trim() + '"');
       const over = await page.evaluate(()=>{ const c = document.getElementById('spot-card').getBoundingClientRect(), b = document.getElementById('board-outer').getBoundingClientRect();
         return c.top < b.bottom && c.bottom > b.top && c.top >= 0 && c.bottom <= innerHeight; });
       check(over, 'it sits over the grid, on screen');
@@ -67,7 +68,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     else {
       check(await page.isVisible('#hl-hint'), 'not found: the hint is there at 93 s');
       const hint = await page.textContent('#hl-hint');
-      check(hint.includes('Find a row with only one highlighted square'), 'wording: "' + hint.trim() + '"');
+      check(/find a row with only one highlighted square/i.test(hint), 'wording: "' + hint.trim() + '"');
       const inView = await page.evaluate(()=>{ const r = document.getElementById('hl-hint').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
       check(inView, 'hint on screen');
       const clear = await page.evaluate(()=>{ const t = document.getElementById('hl-tool').getBoundingClientRect(), c = document.querySelector('#n-boardr .empty-card').getBoundingClientRect();

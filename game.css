@@ -258,8 +258,10 @@ body {
   font-size: 1.45rem; line-height: 1.1; color: var(--color-valid);
 }
 .win-badge.stack .win-text strong { font-size: 2rem; }
-.win-text span { display: block; margin-top: 3px; font-size: 1rem; line-height: 1.4; color: var(--color-text); }
-.win-badge.stack .win-text span { font-size: 1.05rem; }
+/* (">": only the text line itself, not the colored terms inside it, which
+   were each put on a line of their own: user, 2026-11-15) */
+.win-text > span { display: block; margin-top: 3px; font-size: 1rem; line-height: 1.4; color: var(--color-text); }
+.win-badge.stack .win-text > span { font-size: 1.05rem; }
 .win-badge.animate { animation: winFade 0.25s ease both; }
 .win-badge.animate .win-circle { animation: winCircle 0.3s 0.11s cubic-bezier(.3,1.5,.5,1) both; }
 .win-badge.animate .win-check  { animation: winDraw 0.93s 0.15s ease-in-out both; }

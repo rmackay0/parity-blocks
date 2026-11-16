@@ -170,6 +170,8 @@ window.addEventListener('message', e=>{
   timerTick();                       // (and starts again)
   tutorialFrame.src = 'about:blank';
   try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(err){}
+  // (slide 2's "Rules" button: read the rules instead of the tutorial)
+  if(e.data.openRules && window.ParityRules) ParityRules.open();
 });
 let tutorialSeen = false, tutorialInProgress = false;
 try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch(err){}

@@ -29,7 +29,8 @@ function dumpAll(){
       // 1. The tutorial's rotate slide: put both pieces in the middle (wrong).
       // (found by what it is, not its number: the 2026-11-12 revamp moved it)
       await page.goto(BASE + 'tutorial.html');
-      await page.evaluate(() => showSlide(SLIDES.findIndex(s => s.steps === ROTATE_STEPS)));
+      // (2026-11-13: rotate and reflect share one slide)
+      await page.evaluate(() => showSlide(SLIDES.findIndex(s => s.steps === TURN_FLIP_STEPS)));
       await page.waitForTimeout(300);
       const t0 = await rect();
       await page.evaluate(dumpAll);

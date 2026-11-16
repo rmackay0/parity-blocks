@@ -40,22 +40,23 @@ function ParitySolverModule(root){
 /* ───────────────────────────────────────────────────────────────────────
    1. THE 12 PENTOMINOES
    Standard names. `cells` are [row, col] offsets in one arbitrary starting
-   orientation; orientations() generates the rest. `color` is the default
-   used for puzzles made by the puzzle finder.
+   orientation; orientations() generates the rest. `color` = each piece's
+   ONE color, the same as PIECE_COLOR in shapes.js (2026-11-14: keep the
+   two the same; this copy is for the analyzer, which doesn't load shapes.js).
    ─────────────────────────────────────────────────────────────────────── */
 const PENTOMINOES = [
-  { name:'F', color:'#9c7350', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] },
-  { name:'I', color:'#5f9e8f', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]] },
-  { name:'L', color:'#c9a877', cells:[[0,0],[1,0],[2,0],[3,0],[3,1]] },
-  { name:'N', color:'#7d6aa8', cells:[[0,1],[1,1],[2,0],[2,1],[3,0]] },
-  { name:'P', color:'#b8923f', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] },
-  { name:'T', color:'#6b8a9c', cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] },
-  { name:'U', color:'#a85c4a', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] },
-  { name:'V', color:'#8a9c5a', cells:[[0,0],[1,0],[2,0],[2,1],[2,2]] },
-  { name:'W', color:'#a44e6b', cells:[[0,0],[1,0],[1,1],[2,1],[2,2]] },
-  { name:'X', color:'#4f8a7a', cells:[[0,1],[1,0],[1,1],[1,2],[2,1]] },
-  { name:'Y', color:'#8c6a4a', cells:[[0,1],[1,0],[1,1],[2,1],[3,1]] },
-  { name:'Z', color:'#8a5a7a', cells:[[0,0],[0,1],[1,1],[2,1],[2,2]] },
+  { name:'F', color:'#EC8A3D', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] },   // persimmon
+  { name:'I', color:'#2B4C7E', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]] },   // indigo
+  { name:'L', color:'#E2483D', cells:[[0,0],[1,0],[2,0],[3,0],[3,1]] },   // vermilion
+  { name:'N', color:'#8E6FB0', cells:[[0,1],[1,1],[2,0],[2,1],[3,0]] },   // wisteria
+  { name:'P', color:'#A0507A', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] },   // plum
+  { name:'T', color:'#3E8E9E', cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] },   // asagi
+  { name:'U', color:'#E8B33B', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] },   // gold
+  { name:'V', color:'#7BA05B', cells:[[0,0],[1,0],[2,0],[2,1],[2,2]] },   // moss
+  { name:'W', color:'#86AED6', cells:[[0,0],[1,0],[1,1],[2,1],[2,2]] },   // sky
+  { name:'X', color:'#F2A7B8', cells:[[0,1],[1,0],[1,1],[1,2],[2,1]] },   // sakura
+  { name:'Y', color:'#4E7D5B', cells:[[0,1],[1,0],[1,1],[2,1],[3,1]] },   // pine
+  { name:'Z', color:'#8A97A8', cells:[[0,0],[0,1],[1,1],[2,1],[2,2]] },   // slate
 ];
 function pentomino(name){
   const p = PENTOMINOES.find(q=>q.name === name);

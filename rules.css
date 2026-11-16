@@ -43,6 +43,12 @@
   --rules-btn-bg:        #FBFBF8;    /* the small plain buttons: Rules, Large text, Dark mode */
   --rules-btn-hover:     #ECECE6;
   --rules-btn-line:      #1F2330;    /* their fine ink border */
+  /* The official terms (grid, square, empty square, block, piece,
+     pentomino, Tiling, Solving for Parity) in their own color, in the
+     rules and the tutorial (user, 2026-11-14; markTerms in shapes.js) */
+  --color-term:          #1E7B86;    /* deep teal */
+  --rules-hl:            #F6DC74;    /* an empty square highlighted (the highlighter's yellow) */
+  --rules-accent:        #2B4C7E;    /* indigo: the goals' numbers */
 
   /* [POSITIONING] */
   --rules-width:         600px;      /* popup max width */
@@ -68,7 +74,30 @@ html.dark {
   --rules-btn-bg:        #1F2533;
   --rules-btn-hover:     #2A3142;
   --rules-btn-line:      #EDEAE3;
+  --color-term:          #6CC7D1;
+  --rules-hl:            #F2D35A;
+  --rules-accent:        #8FA9D6;
 }
+/* an official term (wrapped by markTerms, shapes.js) */
+/* (always normal weight, even inside bold text, so every teal word looks the
+   same: teal means "a game word", bold means emphasis: user, 2026-11-15) */
+.term { color: var(--color-term); font-weight: 400; }
+u:has(> .term) { text-decoration-color: var(--color-term); }   /* (an underlined term: the line in teal too) */
+/* termPictures (shapes.js): a block, a piece, the empty squares on a grid */
+/* (2026-11-14: the "counted" look the user picked: numbers on the
+   squares, the empty squares highlighted yellow; no rings or arrows) */
+.term-pics { display: flex; flex-direction: column; align-items: center; }
+.term-row { display: flex; justify-content: center; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
+.term-fig { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0; }
+.term-fig figcaption { font-size: 0.95rem; line-height: 1.35; text-align: center; color: var(--rules-text); max-width: 10em; }
+.term-pics.compact .term-row { gap: 12px; }
+.term-pics.compact figcaption { font-size: 0.85rem; max-width: 8em; }
+.term-svg { overflow: visible; }
+.term-hl { fill: var(--rules-hl); }
+.term-num { font-family: var(--rules-font); fill: #1F2330; }   /* (on yellow: dark ink in both modes) */
+.term-num.on-piece { fill: #FFFFFF; }
+.rules-terms { margin: 0 0 var(--rules-item-gap); }
+.rules-popup u { text-underline-offset: 3px; text-decoration-skip-ink: none; }
 
 /* ── The "Rules" button (top-right of each page) ── */
 .rules-btn {
@@ -249,6 +278,19 @@ html.large-text .rules-popup .rules-ok { font-size: 1.8rem; height: 60px; }
 .rules-visuals.three { flex-wrap: nowrap; gap: 10px; }
 .rules-visuals.three .rules-figure { flex: 1 1 0; min-width: 0; max-width: 180px; }
 .rules-visuals.three svg { width: 100%; height: auto; }
+
+/* (2026-11-15) the goals, as on the tutorial's first slide: a numbered
+   heading in the term color, one line, then the pictures */
+.rules-item.rules-goal { gap: 4px; }
+.rules-goal-title { margin: 0; font-family: var(--rules-title-font); font-weight: 400; font-size: 1.6rem; line-height: 1.15; color: var(--color-term); }
+.rules-gnum { display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; margin-right: 9px; border-radius: 50%;
+              font-family: var(--rules-font); font-size: 0.62em; vertical-align: 0.25em; background: var(--rules-accent); color: var(--rules-panel); }
+.rules-goal .rules-visuals { margin-top: 8px; }
+.rules-visuals.tiling { flex-wrap: nowrap; gap: 12px; }
+.rules-goal-arrow { font-size: 1.5rem; color: var(--rules-text-dim); }
+.rules-popup .twelve { display: grid; grid-template-columns: repeat(6, auto); gap: 6px 8px; justify-items: center; align-items: center;
+                       background: rgba(128, 128, 128, 0.08); border-radius: 12px; padding: 8px 10px; }
+@media (max-width: 600px) { .rules-popup .twelve { gap: 4px 3px; padding: 6px; } .rules-goal-title { font-size: 1.4rem; } }
 
 .rules-ok {
   display: block;

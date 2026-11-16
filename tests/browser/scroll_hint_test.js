@@ -26,6 +26,8 @@ const shown = p=>p.evaluate(()=>[...document.querySelectorAll('.scroll-hint')].s
       // Tutorial, slide 1 (taller than an iPhone SE's screen)
       await page.goto(BASE + 'tutorial.html');
       await page.waitForTimeout(700);
+      // (2026-11-16: slide 1's goals start closed, so open the taller one)
+      if(dev === 'phone'){ await page.locator('#goal2 .showme').tap(); await page.waitForTimeout(1200); }
       const more = await page.evaluate(()=>{ const b = document.querySelector('.tut-body'); return b.scrollHeight - b.clientHeight; });
       if(dev === 'phone'){
         check(more > 24, `slide 1 goes on below the screen (${more}px)`);

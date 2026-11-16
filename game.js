@@ -64,10 +64,12 @@ const PIECE_PALETTE = [
   INKS.indigo, INKS.gold, INKS.vermilion, INKS.moss, INKS.sakura, INKS.asagi,
   INKS.wisteria, INKS.persimmon, INKS.sky, INKS.plum, INKS.pine, INKS.slate,
 ];
-// Each piece's color in puzzle p, as { name: color }
+// Each piece's color in puzzle p, as { name: color }. (2026-11-14: every
+// pentomino has ONE color everywhere, PIECE_COLOR in shapes.js; the
+// palette order is only a fallback for a piece without a letter's name)
 function pieceColors(p){
   const colors = {};
-  p.pieces.forEach((d, i)=>{ colors[d.name] = gameSettings.distinctColors ? PIECE_PALETTE[i % PIECE_PALETTE.length] : d.color; });
+  p.pieces.forEach((d, i)=>{ colors[d.name] = pieceColor(d.name, gameSettings.distinctColors ? PIECE_PALETTE[i % PIECE_PALETTE.length] : d.color); });
   return colors;
 }
 
@@ -114,7 +116,7 @@ function loadPuzzle(p, opts){
   });
   // Pieces that start on the board and can't be moved (puzzle.fixedPieces:
   // [{name, color, cells, row, col}]). They count as filled blocks.
-  const fixed = (p.fixedPieces || []).map((f,i)=>({ id:'fixed'+i, name:f.name, color:f.color,
+  const fixed = (p.fixedPieces || []).map((f,i)=>({ id:'fixed'+i, name:f.name, color:pieceColor(f.name, f.color),
     cells:f.cells.map(c=>c.slice()), row:f.row, col:f.col, locked:true }));
   if(opts.keep){
     const mine = placedPieces.filter(q=>!q.locked && names.has(q.name));

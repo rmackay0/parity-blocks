@@ -422,6 +422,17 @@
 <script src="rules.js"></script>
 <script src="progress.js"></script>
 <script>
+// Back from the tutorial's "Rules" button (tutorial.html?…, slide 2): open
+// the rules popup, and take ?rules=1 out of the address
+(function(){
+  const u = new URL(location.href);
+  if(u.searchParams.get('rules') !== '1') return;
+  u.searchParams.delete('rules');
+  history.replaceState(null, '', u.pathname + u.search + u.hash);
+  ParityRules.open();
+})();
+</script>
+<script>
 /* ═══════════════════════════════════════════════════════════════════
    [BEHAVIOR] Where each difficulty button goes.
    play.html?level=<difficulty> opens whatever is published for it in
