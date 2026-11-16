@@ -1955,9 +1955,12 @@ const HL_NOTE = [   // [CONTENT] the note beside the board (the step must stay 2
   // (user, 2026-11-16, shorter: say why, with the numbers. even_empties:
   // with the 3 squares no piece fits counted as empty, 2 placements of the
   // six are even; only 1 of those can be tiled)
-  `There are ${HL_TILINGS} different ways to tile this grid. There are 2 ways to place the empty squares so that every row and every column has an even number of empty squares. Use the highlighter to highlight where the 6 empty squares have to go. This turns ${HL_TILINGS} different ways into only 1 way.`,
+  // (two messages, split before "Use the highlighter": user, 2026-11-16)
+  `There are ${HL_TILINGS} different ways to tile this grid. There are 2 ways to place the empty squares so that every row and every column has an even number of empty squares.`,
+  `Use the highlighter to highlight where the 6 empty squares have to go. This turns ${HL_TILINGS} different ways into only 1 way.`,
   '<b>Highlight</b> the 6 empty squares.',
 ];
+const HL_WHY = HL_NOTE.slice(0, 2);   // the two messages (phones: popup parts instead)
 const HL_HINT =    // [CONTENT] (2026-11-16, for the new board)
   '<b>Hint:</b> Three empty squares are in spots where no piece fits. Then find a row or column with only one highlighted square: it needs one more. (0 counts as an even number.)';
 const HL_SIX = HL_EMPTY.map(([r,c])=>r + ',' + c);   // all six empty squares
@@ -2069,7 +2072,7 @@ function showHighlighterLesson(){
   // The step is .hl-step: it becomes "✓ All 6 empty squares found!")
   // (laptops: the paragraph already says to highlight them, so no separate
   // step line; its place is kept, empty, for "✓ All 6 … found!": nothing moves)
-  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(1) : [HL_NOTE[0], HL_FOUND];
+  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(2) : HL_WHY.concat([HL_FOUND]);
   card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' + (PHONE_LAYOUT.matches ? '' : ' pending') : ''}">${t}</p>`).join('')
     + `<p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
   $('n-boardr').appendChild(card);
@@ -2081,7 +2084,7 @@ function showHighlighterLesson(){
     const lit = [...boardEl.querySelectorAll('.board-cell')].map(el=>[+el.dataset.r, +el.dataset.c]);
     const over = PHONE_LAYOUT.matches;     // (phones: over the grid, like their other popups)
     $('spot').classList.add('instant');
-    const parts = over ? HL_POPUP.concat([`<p>${HL_NOTE[0]}</p>`]) : HL_POPUP;
+    const parts = over ? HL_POPUP.concat(HL_WHY.map(t=>`<p>${t}</p>`)) : HL_POPUP;
     showHint(parts.map(p=>({ lit, over, html: `<div class="hl-pop">${p}</div>` })), 0, afterHighlighterPopup);
   });
 }
@@ -2670,6 +2673,11 @@ document.addEventListener('keydown', e=>{
 // before it count as done), otherwise at slide 1
 let startAt = 0;
 try { startAt = parseInt(sessionStorage.getItem(SLIDE_KEY), 10) || 0; } catch(e){}
+// (for testing, 2026-11-16) tutorial.html?slide=7 opens straight onto
+// slide 7, the slides before it counted as done. (Players could use it to
+// skip ahead: fine, the user says; the tutorial is optional.)
+const slideParam = parseInt(new URLSearchParams(location.search).get('slide'), 10);
+if(slideParam >= 1 && slideParam <= SLIDES.length) startAt = slideParam - 1;
 if(!(startAt > 0 && startAt < SLIDES.length)) startAt = 0;
 for(let i = 0; i < startAt; i++) done[i] = true;
 // The official terms in their own color on every slide and popup, whenever

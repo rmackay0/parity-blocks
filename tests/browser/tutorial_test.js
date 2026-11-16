@@ -143,6 +143,8 @@ async function placePiece(page, frame, name, target, touch){
     // a laptop; on phones a second popup part
     if(touch){
       check(label, 'slide 7: phones: the "17 ways" text is the popup\'s second part', /There are 17 different ways to tile this grid/.test(await popupText()));
+      await frame.click('#spot-ok'); await page.waitForTimeout(400);
+      check(label, 'slide 7: phones: "Use the highlighter…" is its third part', /^Use the highlighter/.test(await popupText()));
       await frame.click('#spot-ok');
     } else check(label, 'slide 7: laptops: the "17 ways" text is beside the board', /There are 17 different ways to tile this grid/.test(await F(()=>document.getElementById('n-boardr').innerText)));
     await page.waitForTimeout(1200);
