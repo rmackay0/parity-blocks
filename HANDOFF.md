@@ -60,8 +60,12 @@ next_level_test, play_test, progress_test, share_test.
 opens straight onto slide N (for testing; the user is fine with players
 using it). Slide 7's note is two messages, split before "Use the
 highlighter" (laptops: two paragraphs; phones: popup parts 2 and 3); its
-text is the user's shorter version ("…2 ways to place the empty squares…
-This turns 17 different ways into only 1 way"). Slide 7 has the
+text is now "There are 17 different ways to tile the remaining two
+pieces. There are 2 ways to place the empty squares…" / "Use the
+highlighter… This rules out the 16 wrong ways." On laptops the note box
+fits its text: no reserved room; once all 6 are found, "✓ All 6 empty
+squares found!" replaces the second message (the user is fine with text
+boxes changing size). Slide 7 has the
 user's new board (N F Z V fixed, L and P to place; solver.js: 17 tilings,
 one passes parity; `PUZZLE_HL`, `HL_TILINGS`, `HL_EMPTY`, `HL_SOLUTION`).
 The note beside the board is the user's "There are 17 different ways to
@@ -78,6 +82,10 @@ easy to redo: solver.js analyzePuzzle with the fixed pieces as prefilled).
 - The welcome popup now sits on slide 2 (they asked); OK?
 - Whether "parity" (lowercase, slide 6) should be a teal term.
 - Whether the rules should also drop the block / piece pictures.
+- Slide 7: add "(3 of them go where no piece fits)" to the "2 ways"
+  sentence? Should its two messages be two separate boxes on laptops?
+- Fix the 4 tests that were already failing (next_level, play, progress,
+  share).
 
 **Earlier status: everything is committed AND pushed** (2026-11-13, with the
 user's OK): the tutorial revamp, the Firefox light / dark fix, slide 1
@@ -90,11 +98,8 @@ and slide 3 tweaks.
 - How the new tutorial plays on a real iPhone, especially slide 7 (the
   last two pieces turn and drop in by themselves), Large text on the new
   slides (not checked), and slides 8–11 (unchanged; may now repeat things).
-- Claude's trimming ideas (not done): merge slides 4 and 5 (3b / 3c);
-  maybe drop the final slide's orange "Make sure…" note; one slide for
-  rotate + reflect.
-- Then: rewrite tutorial_test, hl_hint_test, glow_clip_test,
-  phone_layout_check for the new slides (once the slides settle); the
+- (Done 2026-11-16: the trimming ideas and the test rewrites.) Still
+  open: the
   sandbox notes (new "any of the 12 pentominoes" Analyze button with a
   "how many pentominoes?" popup; straight dotted lines): see "User's notes
   for later".
