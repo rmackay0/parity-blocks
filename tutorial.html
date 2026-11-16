@@ -443,6 +443,7 @@
   @keyframes targetGlow { from { box-shadow: inset 0 0 0 3px rgba(var(--glow), 0.5), 0 0 6px rgba(var(--glow), 0.3); }
                           to   { box-shadow: inset 0 0 0 3px rgba(var(--glow), 1), 0 0 16px rgba(var(--glow), 0.8); } }
   #board .board-cell.target-glow { animation: targetGlow 0.55s ease-in-out infinite alternate; }
+  .empty-card p.pending { visibility: hidden; }   /* (its room kept until it's needed) */
   .empty-card p.found-line { color: var(--color-valid); font-weight: 700; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; transform-origin: left center; }
   /* a plain line above a slide's steps (slides 3, 4, 6) */
   .lead { margin: 0 0 6px; }
@@ -1951,8 +1952,10 @@ const HL_POPUP = [  // [CONTENT] (one "Got it" each; "The first four will be eas
   '<p>This is a partially solved puzzle. To narrow down where the pieces can go, highlight where the six empty squares have to go.</p>',
 ];
 const HL_NOTE = [   // [CONTENT] the note beside the board (the step must stay 2nd: it becomes "✓ All 6 empty squares found!")
-  // (user, 2026-11-16: say why, with the number of tilings)
-  `There are ${HL_TILINGS} different ways to tile this grid. Instead of trying to tile this up to ${HL_TILINGS} different times, use the highlighter to highlight where the empty squares have to go. This way you can see the only way this grid has to be tiled.`,
+  // (user, 2026-11-16, shorter: say why, with the numbers. even_empties:
+  // with the 3 squares no piece fits counted as empty, 2 placements of the
+  // six are even; only 1 of those can be tiled)
+  `There are ${HL_TILINGS} different ways to tile this grid. There are 2 ways to place the empty squares so that every row and every column has an even number of empty squares. Use the highlighter to highlight where the 6 empty squares have to go. This turns ${HL_TILINGS} different ways into only 1 way.`,
   '<b>Highlight</b> the 6 empty squares.',
 ];
 const HL_HINT =    // [CONTENT] (2026-11-16, for the new board)
@@ -1975,7 +1978,7 @@ function checkEmptySpacesFound(){
   // line becomes "✓ All 6 empty squares found!" in green, and the six pop
   // one at a time, each keeping a green ring
   const step = $('n-boardr').querySelector('.empty-card p.hl-step');
-  if(step){ step.innerHTML = HL_FOUND; step.classList.add('found-line'); }
+  if(step){ step.innerHTML = HL_FOUND; step.classList.remove('pending'); step.classList.add('found-line'); }
   setHighlighting(false);
   $('hl-tool').classList.remove('glowing');
   $('hl-tool').classList.add('fading');
@@ -2064,8 +2067,10 @@ function showHighlighterLesson(){
   // (phones, 2026-11-16: the long "17 ways" line is a second popup part
   // instead, so the slide fits without scrolling; the note keeps the step.
   // The step is .hl-step: it becomes "✓ All 6 empty squares found!")
-  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(1) : HL_NOTE;
-  card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' : ''}">${t}</p>`).join('')
+  // (laptops: the paragraph already says to highlight them, so no separate
+  // step line; its place is kept, empty, for "✓ All 6 … found!": nothing moves)
+  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(1) : [HL_NOTE[0], HL_FOUND];
+  card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' + (PHONE_LAYOUT.matches ? '' : ' pending') : ''}">${t}</p>`).join('')
     + `<p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
   $('n-boardr').appendChild(card);
   placeHighlighterTool();          // (on phones the note sits above the pieces and just moved them down)
