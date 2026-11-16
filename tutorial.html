@@ -443,7 +443,6 @@
   @keyframes targetGlow { from { box-shadow: inset 0 0 0 3px rgba(var(--glow), 0.5), 0 0 6px rgba(var(--glow), 0.3); }
                           to   { box-shadow: inset 0 0 0 3px rgba(var(--glow), 1), 0 0 16px rgba(var(--glow), 0.8); } }
   #board .board-cell.target-glow { animation: targetGlow 0.55s ease-in-out infinite alternate; }
-  .empty-card p.pending { visibility: hidden; }   /* (its room kept until it's needed) */
   .empty-card p.found-line { color: var(--color-valid); font-weight: 700; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; transform-origin: left center; }
   /* a plain line above a slide's steps (slides 3, 4, 6) */
   .lead { margin: 0 0 6px; }
@@ -1981,7 +1980,7 @@ function checkEmptySpacesFound(){
   // line becomes "✓ All 6 empty squares found!" in green, and the six pop
   // one at a time, each keeping a green ring
   const step = $('n-boardr').querySelector('.empty-card p.hl-step');
-  if(step){ step.innerHTML = HL_FOUND; step.classList.remove('pending'); step.classList.add('found-line'); }
+  if(step){ step.innerHTML = HL_FOUND; step.classList.add('found-line'); }
   setHighlighting(false);
   $('hl-tool').classList.remove('glowing');
   $('hl-tool').classList.add('fading');
@@ -2070,10 +2069,11 @@ function showHighlighterLesson(){
   // (phones, 2026-11-16: the long "17 ways" line is a second popup part
   // instead, so the slide fits without scrolling; the note keeps the step.
   // The step is .hl-step: it becomes "✓ All 6 empty squares found!")
-  // (laptops: the paragraph already says to highlight them, so no separate
-  // step line; its place is kept, empty, for "✓ All 6 … found!": nothing moves)
-  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(2) : HL_WHY.concat([HL_FOUND]);
-  card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' + (PHONE_LAYOUT.matches ? '' : ' pending') : ''}">${t}</p>`).join('')
+  // (laptops: the two messages; the 2nd, "Use the highlighter…", is the
+  // step that becomes "✓ All 6 … found!" (user, 2026-11-16: no empty room
+  // kept for it; the box only gets smaller then, so nothing moves))
+  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(2) : HL_WHY;
+  card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' : ''}">${t}</p>`).join('')
     + `<p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
   $('n-boardr').appendChild(card);
   placeHighlighterTool();          // (on phones the note sits above the pieces and just moved them down)
