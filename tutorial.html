@@ -1956,8 +1956,8 @@ const HL_NOTE = [   // [CONTENT] the note beside the board (the step must stay 2
   // with the 3 squares no piece fits counted as empty, 2 placements of the
   // six are even; only 1 of those can be tiled)
   // (two messages, split before "Use the highlighter": user, 2026-11-16)
-  `There are ${HL_TILINGS} different ways to tile this grid. There are 2 ways to place the empty squares so that every row and every column has an even number of empty squares.`,
-  `Use the highlighter to highlight where the 6 empty squares have to go. This turns ${HL_TILINGS} different ways into only 1 way.`,
+  `There are ${HL_TILINGS} different ways to tile the remaining two pieces. There are 2 ways to place the empty squares so that every row and every column has an even number of empty squares.`,
+  `Use the highlighter to highlight where the 6 empty squares have to go. This rules out the ${HL_TILINGS - 1} wrong ways.`,   // (user, 2026-11-16)
   '<b>Highlight</b> the 6 empty squares.',
 ];
 const HL_WHY = HL_NOTE.slice(0, 2);   // the two messages (phones: popup parts instead)
