@@ -639,7 +639,12 @@
   html.large-text .spot-card p, html.large-text .spot-card li { font-size: 1.7rem; }
   html.large-text .hint-btn { font-size: 1.6rem; height: 52px; }
   html.large-text .intro p { font-size: 1.6rem; }
-  html.large-text .words-list { font-size: 1.6rem; }
+  /* (2026-11-16: slides 1–3's reading text was missed; tests/browser/large_text_test.js) */
+  html.large-text .words-list, html.large-text .intro .words-list li { font-size: 1.6rem; }
+  html.large-text .goal-pics figcaption { font-size: 1.3rem; text-align: center; }
+  @media (max-width: 600px) { html.large-text .goal-pics figcaption { font-size: 1rem; } }   /* (phones: as wide as its small picture) */
+  html.large-text .goals-left { font-size: 1.35rem !important; }
+  html.large-text .pick p:not(.note) { font-size: 1.6rem; }
   html.large-text .dont-slide figcaption { font-size: 1.65rem; }
   html.large-text .status { font-size: 1.75rem; --status-line: 2.25rem; }
   .one-line { white-space: nowrap; }   /* laptops: keep this note on one line */
@@ -1117,8 +1122,8 @@ const FIND_SUM = { replay: true, textGone: 'fade', explainer: true,
 const SUM_READ_MS = 1500;
 // Slide 2's welcome popup (user, 2026-11-13): Rules leaves the tutorial and
 // opens the rules popup on the page underneath (closeTutorial)
-const WELCOME_HTML = `<p>This tutorial contains all of the rules as well as some useful strategies. If you&rsquo;d prefer to just read the rules, ${TAP_WORD.toLowerCase()} the &ldquo;Rules&rdquo; button below. Otherwise press &ldquo;Continue&rdquo;.</p>`
-  + `<p>You can exit the Rules or the Tutorial by ${TOUCH ? 'tapping' : 'clicking'} the &times; in the top right.</p>`;
+// (user's wording, 2026-11-16; the "exit with the ×" reminder removed)
+const WELCOME_HTML = `<p>This tutorial is designed to teach the rules as well as some very useful strategies. If you&rsquo;d prefer to just read the rules, ${TAP_WORD.toLowerCase()} the &ldquo;Rules&rdquo; button below. Otherwise press &ldquo;Continue&rdquo;.</p>`;
 const FIND_BAD = {
   lead: 'This is the incorrect grid from the last slide.',
   steps: [ { html: 'Highlight the empty squares.', until: 'allEmpty' } ],
@@ -1137,7 +1142,8 @@ const SLIDES = [
   { kind: 'pick', boards: [PAIR_BAD, PAIR_GOOD],
     // (shortened, user 2026-11-13)
     pickIntro: '<p>Here are two different <u>Tilings</u> using the same pieces.</p>',
-    pickAsk: 'Take a second to count the blocks in every row and every column. Select the grid with an even number of blocks in every row and every column.' },
+    // (user's wording, 2026-11-16)
+    pickAsk: 'Take a second to count the number of blocks in every row and every column. Select the grid with an even number of blocks in every row and every column.' },
   { kind: 'play', puzzle: PAIR_GOOD, highlighter: true, findEmpty: FIND_GOOD,
     lead: 'Before moving on to <u>Tiling</u>, try the highlighter.',
     steps: FIND_GOOD.steps },
@@ -2219,7 +2225,7 @@ function pickGrid(b, btns){
   const what = empty ? 'empty squares' : 'blocks';
   const rightNote = empty
     ? 'Every row and every column has an even number of empty squares, so it has an even number of blocks.'
-    : 'Every row and every column has an even number of blocks. This Tiling Solves for Parity.';
+    : 'Every row and every column has an even number of blocks. This tiling achieves parity.';   // (user's wording, 2026-11-16)
   if(b.right){
     countPair(b.svg, b.puzzle, false, ()=>praise('Correct!', rightNote));
     return;

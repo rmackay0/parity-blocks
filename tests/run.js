@@ -52,6 +52,7 @@ const TESTS = {
   'glow_clip_test':        { covers: ['tutorial.html', 'scroll-hint.js', 'game.css'] },
   'phone_layout_check':    { covers: ['tutorial.html', 'game.js', 'game.css', 'shapes.js', 'rules.css'] },
   'scroll_hint_test':      { covers: ['scroll-hint.js', 'tutorial.html', 'rules.js', 'rules.css'] },
+  'large_text_test':       { covers: ['tutorial.html', 'rules.js', 'rules.css', 'shapes.js', 'game.css', 'play.html'] },
   // Rules, light / dark
   'rules_text_test':       { covers: ['rules.js', 'rules.css', 'shapes.js', 'tutorial.html'] },
   'theme_toggle_test':     { covers: ['theme.js', 'index.html', 'play.html', 'rules.css', 'game.css'] },

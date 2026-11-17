@@ -93,7 +93,7 @@ async function placePiece(page, frame, name, target, touch){
 
     // ── Slide 2: the welcome popup first; nothing plays until Continue ──
     await page.waitForTimeout(1500);
-    check(label, 'slide 2: the welcome popup is showing', await popupOpen() && /This tutorial contains all of the rules/.test(await popupText()));
+    check(label, 'slide 2: the welcome popup is showing', await popupOpen() && /This tutorial is designed to teach the rules/.test(await popupText()));
     check(label, 'slide 2: nothing plays behind the popup', await F(()=>document.querySelectorAll('#intro .ia-on').length) === 0);
     await frame.click('#spot-ok');
     check(label, 'slide 2: plays to the end after Continue', await playThrough(30, false));

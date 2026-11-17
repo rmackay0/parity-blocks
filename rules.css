@@ -236,6 +236,8 @@ u:has(> .term) { text-decoration-color: var(--color-term); }   /* (an underlined
 /* Large text in the rules popup */
 html.large-text .rules-popup { --rules-text-size: 1.8rem; --rules-caption-size: 1.45rem; max-width: 820px; }
 html.large-text .rules-popup .rules-ok { font-size: 1.8rem; height: 60px; }
+/* (2026-11-16) the block / piece pictures' captions grow too */
+html.large-text .rules-popup .term-fig figcaption { font-size: var(--rules-caption-size); }
 
 /* [POSITIONING] Each goal/rule: text, then its picture(s) underneath */
 .rules-item {
