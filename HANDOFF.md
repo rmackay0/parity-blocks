@@ -62,6 +62,10 @@ in the sandbox while pieces are added / removed, each level, every slide).
   code (one color per letter since 11-14); likely a cached old game.js.
   Told them Cmd+Shift+R; piece_colors_test now guards it. Dead
   `PAIR_COLOR` table removed from tutorial.html.
+- 2026-11-17 (committed, not pushed): slide 2 highlights each empty
+  square only as it's counted (was all at once); "This is a block." greys
+  out as soon as the second block appears; slide 1's drags show no
+  fingertip circle on phones (laptops keep the mouse pointer).
 
 **Status: committed AND pushed 2026-11-17** (8317300, with the user's
 OK): the test runner, the fixed tests and "Later 2026-11-16" below.
