@@ -130,10 +130,13 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       await page.reload();
       await page.waitForTimeout(500);
       check(await markOf(2, 3) === 'var(--hl-2)', 'highlights come back after a reload');
-      // Reset clears them
+      // Clear takes the pieces off but keeps the highlights (they're the
+      // player's notes: 2026-11-17)
+      const marked = await page.locator('#board .board-cell.marked').count();
       await tap(page.locator('#reset-btn'));
-      await tap(page.locator('#reset-confirm'));
-      check(await page.locator('#board .board-cell.marked').count() === 0, 'Reset clears the highlights');
+      await page.waitForTimeout(200);
+      check(await page.evaluate(()=>placedPieces.filter(p=>!p.locked).length) === 0, 'Clear takes the pieces off');
+      check(await page.locator('#board .board-cell.marked').count() === marked && marked > 0, 'Clear keeps the highlights');
       check(!errors.length, 'no page errors: ' + errors.join('; '));
       await ctx.close();
     }

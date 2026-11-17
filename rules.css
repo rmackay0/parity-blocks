@@ -295,6 +295,8 @@ html.large-text .rules-popup .term-fig figcaption { font-size: var(--rules-capti
 .rules-popup .twelve { display: grid; grid-template-columns: repeat(6, auto); gap: 6px 8px; justify-items: center; align-items: center;
                        background: rgba(128, 128, 128, 0.08); border-radius: 12px; padding: 8px 10px; }
 @media (max-width: 600px) { .rules-popup .twelve { gap: 4px 3px; padding: 6px; } .rules-goal-title { font-size: 1.4rem; } }
+/* the Tiling picture's six pieces (2026-11-17): two rows of three */
+.rules-popup .twelve.six { grid-template-columns: repeat(3, auto); gap: 10px 12px; }
 
 .rules-ok {
   display: block;

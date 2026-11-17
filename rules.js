@@ -28,7 +28,7 @@ const RULES_TEXT = {
   // animation: each goal's name as a heading, one line under it. The
   // official terms are colored by markTerms, shapes.js)
   goal1Title: 'Tiling',
-  goal1: 'Fit the pieces onto the grid.',
+  goal1: 'Fit all of the pieces onto the grid.',   // ("all of": user, 2026-11-17, after a tester's note)
   goal2Title: 'Parity',            // (was "Solving for Parity" until 2026-11-16, user)
   goal2: 'Every row and every column must contain an even number of blocks.',
   checkRows: 'Check rows',
@@ -167,12 +167,13 @@ function build(){
   goals.textContent = T.goalsHeading;
   popup.appendChild(goals);
   const phone = window.matchMedia('(max-width: 600px)').matches;
-  // 1 Tiling: the 12 pieces → a grid they've been fitted onto
+  // 1 Tiling: the puzzle's pieces → the grid with ALL of them fitted on
+  // (2026-11-17: was all 12 pentominoes, which suggested a choice)
   const arrow = document.createElement('span');
   arrow.className = 'rules-goal-arrow';
   arrow.textContent = '→';
   goalItem(popup, 1, T.goal1Title, T.goal1, [
-    twelvePieces(phone ? 6 : 9), arrow,
+    tilingPieces(phone ? 7 : 11), arrow,
     miniBoard({ rows:6, cols:6, cell: phone ? 11 : 16, pieces: termBoardPieces() }),
   ], 'tiling');
   // 2 Solving for Parity: the counts beside the rows, then the columns, then

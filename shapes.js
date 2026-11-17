@@ -580,8 +580,8 @@ const PENTOMINO_CELLS = {
   Y: [[0,1],[1,0],[1,1],[2,1],[3,1]], Z: [[0,0],[0,1],[1,1],[2,1],[2,2]],
 };
 // One small picture of a piece (its own svg), tagged with its letter
-function pieceIcon(name, cell){
-  const cells = PENTOMINO_CELLS[name], gap = 2, b = bounds(cells);
+function pieceIcon(name, cell, cellsOverride){
+  const cells = cellsOverride || PENTOMINO_CELLS[name], gap = 2, b = bounds(cells);
   const w = b.cols*cell + (b.cols-1)*gap, h = b.rows*cell + (b.rows-1)*gap;
   const svg = svgEl('svg', { width: w + 4, height: h + 4, viewBox: `-2 -2 ${w + 4} ${h + 4}`, 'aria-hidden': 'true' });
   drawPiece(svg, cells, PIECE_COLOR[name], 0, 0, cell, gap);
@@ -594,6 +594,27 @@ function twelvePieces(cell){
   box.className = 'twelve';
   box.setAttribute('aria-label', 'The 12 pentominoes');
   Object.keys(PENTOMINO_CELLS).forEach(n=>box.appendChild(pieceIcon(n, cell)));
+  return box;
+}
+/* The Tiling pictures (2026-11-17, a tester: showing all 12 and placing 6
+   made it look as if you don't have to use every piece). Only the example
+   board's six pieces are shown, each turned the way it starts:
+   TILING_MOVES says what it does on its way onto the grid ('turn' = one
+   quarter turn clockwise, 'flip' = mirrored, '' = goes straight on).
+   Tutorial slide 1 drags them on; the rules popup shows before → after. */
+const TILING_MOVES = { I: 'turn', V: '', U: 'turn', Y: 'flip', L: 'flip', P: '' };
+function tilingStartCells(name, boardCells){
+  const m = TILING_MOVES[name];
+  if(m === 'turn') return normalize(boardCells.map(([r,c])=>[-c, r]));   // (a quarter turn back)
+  if(m === 'flip') return normalize(boardCells.map(([r,c])=>[r, -c]));
+  return boardCells;
+}
+// The six, in a soft box like the 12 (class "twelve" for its look)
+function tilingPieces(cell){
+  const box = document.createElement('div');
+  box.className = 'twelve six';
+  box.setAttribute('aria-label', 'The pieces to fit onto the grid');
+  termBoardPieces().forEach(t=>box.appendChild(pieceIcon(t.name, cell, tilingStartCells(t.name, t.cells))));
   return box;
 }
 

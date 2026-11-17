@@ -52,8 +52,9 @@
       <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
     </div>
     <div class="top-right">
-      <!-- Clears the board (asks first). Tucked in the corner on purpose. -->
-      <button type="button" class="reset-btn" id="reset-btn" aria-label="Reset puzzle">Reset</button>
+      <!-- Clears the board at once (Undo for a few seconds); the timer keeps
+           going. On a solved board it asks "Play again?". (2026-11-17) -->
+      <button type="button" class="reset-btn" id="reset-btn" aria-label="Clear the board">Clear</button>
       <!-- Opens the rules popup (rules.js); styled by rules.css -->
       <button type="button" class="rules-btn" data-open-rules>Rules</button>
     </div>
@@ -106,11 +107,17 @@
   <iframe id="tutorial-frame" title="Tutorial"></iframe>
 </div>
 
-<!-- [CONTENT] "Are you sure?" before Reset clears the board -->
+<!-- After Clear: a few seconds to take it back (2026-11-17) -->
+<div class="undo-bar" id="undo-bar" role="status" hidden>
+  <span>Board cleared</span>
+  <button type="button" id="undo-btn">Undo</button>
+</div>
+
+<!-- [CONTENT] "Play again?" before a SOLVED board is cleared (and its timer restarted) -->
 <div class="popup-backdrop" id="reset-popup" hidden>
   <div class="popup" role="dialog" aria-modal="true" aria-labelledby="reset-title">
-    <h2 id="reset-title">Start over?</h2>
-    <p id="reset-text">This takes every piece off the board and restarts the timer.</p>
+    <h2 id="reset-title">Play again?</h2>
+    <p id="reset-text">This clears the board so you can solve it again. Your star stays in the Archive.</p>
     <div class="popup-buttons">
       <button type="button" class="secondary" id="reset-cancel">Keep playing</button>
       <button type="button" id="reset-confirm">Reset</button>
@@ -180,14 +187,36 @@ try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch(er
 const wasRefreshed = (performance.getEntriesByType('navigation')[0] || {}).type === 'reload';
 try { tutorialInProgress = wasRefreshed && sessionStorage.getItem('pb_tutorialSlide') !== null; } catch(err){}
 
-// Reset: asks first, then clears the board and restarts the timer. On a
-// solved puzzle it's the way to play it again.
+/* Clear (2026-11-17, a tester: "I just needed a way to reset the board",
+   and the timer restarting got in the way). Takes every piece off the
+   board at once: no question, the timer keeps going, highlights stay (they
+   are the player's notes). "Undo" puts the pieces back for a few seconds,
+   until a piece is placed again. On a SOLVED puzzle it's still "Play
+   again?", which clears the board and restarts the timer. */
+const UNDO_MS = 6000;
+let clearedPieces = null, undoTimer = 0;
+const undoBar = document.getElementById('undo-bar');
+function dropUndo(){ clearedPieces = null; clearTimeout(undoTimer); undoBar.hidden = true; }
 document.getElementById('reset-btn').onclick = ()=>{
-  document.getElementById('reset-title').textContent = solved ? 'Play again?' : 'Start over?';
-  document.getElementById('reset-text').textContent = solved
-    ? 'This clears the board so you can solve it again. Your star stays in the Archive.'
-    : 'This takes every piece off the board and restarts the timer.';
-  document.getElementById('reset-popup').hidden = false;
+  if(solved){
+    document.getElementById('reset-popup').hidden = false;
+    return;
+  }
+  const mine = placedPieces.filter(p=>!p.locked);
+  if(!mine.length) return;
+  placedPieces = placedPieces.filter(p=>p.locked);
+  renderAll();                                   // (saves the empty board)
+  clearedPieces = mine;
+  undoBar.hidden = false;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(dropUndo, UNDO_MS);
+};
+document.getElementById('undo-btn').onclick = ()=>{
+  if(!clearedPieces) return;
+  const back = clearedPieces;
+  dropUndo();
+  placedPieces = placedPieces.concat(back);
+  renderAll();
 };
 document.getElementById('reset-cancel').onclick = ()=>{ document.getElementById('reset-popup').hidden = true; };
 document.getElementById('reset-confirm').onclick = ()=>{
@@ -314,7 +343,9 @@ function startPuzzle(p, tabName){
   document.title = 'Parity Blocks: ' + tabName;
   loadPuzzle(p);
   restoreBoard();
-  gameHooks.onChange = saveBoard;                      // (set after restoring, so loading doesn't overwrite the save)
+  // (set after restoring, so loading doesn't overwrite the save. A piece
+  // placed after Clear ends the chance to Undo it)
+  gameHooks.onChange = ()=>{ saveBoard(); if(clearedPieces && myPieces().length) dropUndo(); };
   window.addEventListener('pagehide', saveBoard);      // keep the time right if they leave without moving anything
   if(!tutorialSeen || tutorialInProgress) window.openTutorial();
 }

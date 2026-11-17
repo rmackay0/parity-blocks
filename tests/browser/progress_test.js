@@ -27,11 +27,24 @@ const { BASE, solution, check, finish } = require('./lib');
     await page.goto(BASE + 'play.html?level=medium'); await page.waitForTimeout(300);
     check(`[${label}] Medium meanwhile is still empty`, await onBoard(), '');
 
-    // 2. Reset clears the save
+    // 2. Clear (2026-11-17): pieces off at once, no question, timer keeps
+    // going; Undo puts them back; placing a piece ends the Undo; saved empty
     await page.goto(BASE + 'play.html?level=hard'); await page.waitForTimeout(300);
-    await page.click('#reset-btn'); await page.click('#reset-confirm'); await page.waitForTimeout(200);
+    const clock = () => page.evaluate(() => Date.now() - startTime);
+    const t0 = await clock();
+    await page.click('#reset-btn'); await page.waitForTimeout(200);
+    check(`[${label}] Clear: board empty at once, no popup`, [await onBoard(), await page.isVisible('#reset-popup')], ['', false]);
+    check(`[${label}] Clear: the timer keeps going`, (await clock()) >= t0, true);
+    check(`[${label}] Clear: "Board cleared · Undo" shows`, await page.isVisible('#undo-bar'), true);
+    await page.click('#undo-btn'); await page.waitForTimeout(200);
+    check(`[${label}] Undo: the pieces come back`, await onBoard(), before);
+    check(`[${label}] Undo: the bar goes`, await page.isVisible('#undo-bar'), false);
+    await page.click('#reset-btn'); await page.waitForTimeout(200);
+    await put(hard.slice(0, 1)); await page.waitForTimeout(100);
+    check(`[${label}] a piece placed after Clear: Undo gone`, await page.isVisible('#undo-bar'), false);
+    await page.click('#reset-btn'); await page.waitForTimeout(200);
     await page.reload(); await page.waitForTimeout(300);
-    check(`[${label}] after Reset + reload: empty`, await onBoard(), '');
+    check(`[${label}] after Clear + reload: empty`, await onBoard(), '');
 
     // 3. Solve Hard: recorded for today; the save is kept, marked solved
     await put(hard); await page.waitForTimeout(200);

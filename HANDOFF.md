@@ -167,6 +167,25 @@ the board AND restarts the timer; the green check comes 1.46 s after
 solving, on the jingle's big note, `WIN_BIG` in celebrate.js; live
 counts exist only in the sandbox, `gameSettings.liveCounts`.)
 
+What came of it (2026-11-17):
+- DONE "all of the pieces": tutorial slide 1 and the rules say "Fit all
+  of the pieces onto the grid." and show only the example board's six
+  pieces (not all 12), turned the way they start: `TILING_MOVES` /
+  `tilingStartCells` / `tilingPieces` in shapes.js (slide 1's drags and the
+  rules' Tiling picture share them; `.twelve.six` = two rows of three).
+- DONE board clearing: the puzzle page's button is now **Clear**: pieces
+  off at once, no question, the timer keeps going, highlights stay (the
+  player's notes); "Board cleared · Undo" for 6 s (`UNDO_MS`), gone as soon
+  as a piece is placed. On a SOLVED board it still asks "Play again?"
+  (clears + restarts the timer). Tests: progress_test, highlighter_test.
+- DECLINED counts beside the board (user): busier to look at; classic
+  pentomino puzzles don't have them; in practice you count the grid once
+  and then watch the six empty squares. Don't suggest it again.
+- OPEN: celebrate the solve a little longer (Claude's idea: ~1 s on the
+  real solved board first, then the popup + jingle); a "Skip ▸▸" to
+  finish a tutorial animation at once, and trim the slowest (slide 1's
+  drags ~14 s).
+
 **Ask the user next time (2026-11-16):**
 - How slides 1 and 2 feel on a real phone (speed, "Show me").
 - Slide 2 still plays by itself: "Show me" there too?
