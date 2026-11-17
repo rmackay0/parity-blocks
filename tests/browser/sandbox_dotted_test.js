@@ -57,5 +57,6 @@ function check(label, got, want){
 
   console.log(errors.length ? 'page errors: ' + errors.join(' | ') : 'no page errors');
   console.log(failures ? `${failures} FAILED` : 'all passed');
+  process.exitCode = failures || errors.length ? 1 : 0;      // (for tests/run.js)
   await browser.close();
 })();

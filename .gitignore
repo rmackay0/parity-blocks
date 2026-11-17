@@ -2,6 +2,8 @@
 *.zip
 # Screenshots the browser tests save when run from tests/browser
 tests/browser/*.png
+# Each test's output from tests/run.js
+tests/logs/
 # Playwright, installed locally for the browser tests (see HANDOFF.md)
 node_modules/
 package-lock.json

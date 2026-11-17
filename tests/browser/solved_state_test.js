@@ -141,4 +141,5 @@ function check(label, got, want){
   }
   await browser.close();
   console.log('\n' + (failures ? failures + ' FAILED' : 'all passed') + ' | ' + (errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors'));
+  process.exitCode = failures || errors.length ? 1 : 0;      // (for tests/run.js)
 })();

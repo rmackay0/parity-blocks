@@ -46,4 +46,5 @@ function check(label, got, want){
   await browser.close();
   console.log(errors.length ? 'PAGE ERRORS:\n' + errors.join('\n') : 'no page errors');
   console.log(failures ? failures + ' FAILED' : 'all passed');
+  process.exitCode = failures || errors.length ? 1 : 0;      // (for tests/run.js)
 })();

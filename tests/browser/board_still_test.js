@@ -1,7 +1,7 @@
 // Fills boards wrongly so a long message appears, and checks the board doesn't move.
 // Run: node board_still_test.js
 const { chromium } = require('playwright');
-const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
+const { BASE, check, finish } = require('./lib');
 // Runs inside the page: puts every piece from the top in the middle of the
 // grid, all piled on each other (the longest possible message)
 function dumpAll(){
@@ -36,7 +36,7 @@ function dumpAll(){
       await page.evaluate(dumpAll);
       await page.waitForTimeout(3300);              // the message waits 3 s before it appears
       const t1 = await rect(), s1 = await status();
-      console.log(`[${label}] tutorial slide 2: board ${JSON.stringify(t0)} → ${JSON.stringify(t1)} ${JSON.stringify(t0) === JSON.stringify(t1) ? 'DID NOT MOVE ✓' : 'MOVED ✗'} | message (${s1.lines} line${s1.lines > 1 ? 's' : ''}): "${s1.text}"`);
+      check(`[${label}] tutorial rotate slide, pieces piled up: board stays put (left, top, width)`, t1, t0);
       if (device === 'phone' || large) await page.screenshot({ path: `still-tut-${device}${large ? '-large' : ''}.png` });
 
       // 2. A real puzzle (Hard): every piece dumped in the middle → longest possible message
@@ -48,11 +48,12 @@ function dumpAll(){
       const g1 = await rect();
       const st = await page.evaluate(() => ({ text: document.getElementById('status').textContent, hidden: document.getElementById('status').hidden,
         red: document.querySelectorAll('.placed-piece.invalid').length + (document.getElementById('board-outer').classList.contains('uneven') ? ' + red frame' : '') }));
-      console.log(`[${label}] puzzle page:      board ${JSON.stringify(g0)} → ${JSON.stringify(g1)} ${JSON.stringify(g0) === JSON.stringify(g1) ? 'DID NOT MOVE ✓' : 'MOVED ✗'} | message area hidden ${st.hidden}, text "${st.text}" (expected "") | red pieces ${st.red}`);
+      check(`[${label}] puzzle page, pieces piled up: board stays put`, g1, g0);
+      check(`[${label}] puzzle page: no written message`, st.text, '');
       if (!large) await page.screenshot({ path: `still-play-${device}.png` });
       await ctx.close();
     }
   }
   await browser.close();
-  console.log(errors.length ? errors : 'no page errors');
+  finish(errors);
 })();

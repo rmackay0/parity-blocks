@@ -1,7 +1,6 @@
 // Tests the new game features on the real puzzle page.  Run: node game_features_test.js
 const { chromium } = require('playwright');
-const S = require('/Users/robertmackay/Projects/Parity Blocks/solver.js');
-const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
+const { BASE, S, check, finish } = require('./lib');
 const same = (a, b) => JSON.stringify(S.normalize(a)) === JSON.stringify(S.normalize(b));
 const rot = c => { const rows = Math.max(...c.map(x=>x[0]))+1; return S.normalize(c.map(([r,q])=>[q, rows-1-r])); };
 const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normalize(c.map(([r,q])=>[r, cols-1-q])); };
@@ -21,9 +20,9 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   // 1. Letter and arrow keys do nothing now (removed by the user)
   const before1 = await page.evaluate(() => JSON.stringify([placedPieces, trayCells]));
   for (const k of ['l', 'i', 'f', 'ArrowDown', 'ArrowLeft']) await page.keyboard.press(k);
-  console.log('letter + arrow keys: nothing changed', before1 === await page.evaluate(() => JSON.stringify([placedPieces, trayCells])),
-    '| outlined pieces:', await page.locator('.selected').count(), '(expected 0)',
-    '| Reflect/Rotate buttons:', await page.locator('#reflect-btn, #rotate-btn').count(), '(expected 0)');
+  check('letter + arrow keys: nothing changed, none outlined, no Reflect/Rotate buttons',
+    [before1 === await page.evaluate(() => JSON.stringify([placedPieces, trayCells])), await page.locator('.selected').count(),
+     await page.locator('#reflect-btn, #rotate-btn').count()], [true, 0, 0]);
 
   // 2. Drag L onto the grid, then point at it: R rotates, E reflects. R/E keep
   //    acting on it even when a turn moves it out from under the mouse
@@ -37,10 +36,10 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   const lb = await page.locator(`.placed-piece[data-id="${await page.evaluate(() => placedPieces.find(q=>q.name==='L').id)}"] .blk`).first().boundingBox();
   await page.mouse.move(lb.x + lb.width/2, lb.y + lb.height/2);
   await page.keyboard.press('r');
-  console.log('pointing at L, R rotated it:', same((await piece('L')).cells, rot(L2.cells)));
+  check('pointing at L, R rotated it', same((await piece('L')).cells, rot(L2.cells)), true);
   const L3 = (await piece('L')).cells;
   await page.keyboard.press('e');
-  console.log('then E reflected it (same piece, mouse not moved):', same((await piece('L')).cells, refl(L3)));
+  check('then E reflected it (same piece, mouse not moved)', same((await piece('L')).cells, refl(L3)), true);
 
   // 3. Hold a tray piece, press R, drag it onto the grid → it lands rotated
   const U0 = await tray('U');
@@ -53,7 +52,7 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   await page.mouse.up();
   await page.waitForTimeout(400);
   const U1 = await piece('U');
-  console.log('hold+R then drag+E: U landed rotated then reflected:', !!U1 && same(U1.cells, refl(rot(U0))));
+  check('hold+R then drag+E: U landed rotated then reflected', !!U1 && same(U1.cells, refl(rot(U0))), true);
 
   // 4. Hold without moving + E: reflects once, and letting go doesn't also rotate
   const N0 = await tray('N');
@@ -62,7 +61,7 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   await page.keyboard.press('e');
   await page.mouse.up();
   await page.waitForTimeout(400);
-  console.log('hold+E then release: reflected once, no extra rotate:', same(await tray('N'), refl(N0)));
+  check('hold+E then release: reflected once, no extra rotate', same(await tray('N'), refl(N0)), true);
 
   // 5. Box select is gone: dragging across the board's empty frame moves nothing
   const board = await page.locator('#board-outer').boundingBox();
@@ -72,8 +71,8 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   await page.mouse.move(board.x + board.width - 1, board.y + board.height - 1, { steps: 6 });
   await page.mouse.up();
   const b1 = { L: await piece('L'), U: await piece('U') };
-  console.log('drag on empty board: no box drawn', await page.locator('.marquee').count() === 0,
-    '| pieces unchanged', JSON.stringify(b0) === JSON.stringify(b1));
+  check('drag on empty board: no box drawn, pieces unchanged',
+    [await page.locator('.marquee').count(), JSON.stringify(b0) === JSON.stringify(b1)], [0, true]);
 
   // 6. Point at a piece and press a key
   const blockOf = async name => {
@@ -83,16 +82,16 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   let bb = await blockOf('L'); const Lc = (await piece('L')).cells;
   await page.mouse.move(bb.x + bb.width/2, bb.y + bb.height/2);
   await page.keyboard.press('r');
-  console.log('pointing at L + R: L rotated', same((await piece('L')).cells, rot(Lc)));
+  check('pointing at L + R: L rotated', same((await piece('L')).cells, rot(Lc)), true);
   const topName = await page.evaluate(() => document.querySelector('.tray-slot:not(.used)').dataset.name);
   const T0 = await tray(topName); s = await page.locator(`.tray-slot[data-name="${topName}"]`).boundingBox();
   await page.mouse.move(s.x + s.width/2, s.y + s.height/2);
   await page.keyboard.press('e');
-  console.log(`pointing at ${topName} at the top + E: reflected`, same(await tray(topName), refl(T0)));
+  check(`pointing at ${topName} at the top + E: reflected`, same(await tray(topName), refl(T0)), true);
   const all0 = await page.evaluate(() => JSON.stringify([placedPieces, trayCells]));
   await page.mouse.move(5, 5);
   await page.keyboard.press('r');
-  console.log('pointing at nothing + R: nothing changed', all0 === await page.evaluate(() => JSON.stringify([placedPieces, trayCells])));
+  check('pointing at nothing + R: nothing changed', all0 === await page.evaluate(() => JSON.stringify([placedPieces, trayCells])), true);
 
   // 7. Typing in the sandbox's name box doesn't trigger R / E
   await page.goto(BASE + 'sandbox.html');
@@ -102,8 +101,8 @@ const refl = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normali
   await page.mouse.move(box7.x + box7.width/2, box7.y + box7.height/2);   // pointing at a piece while typing
   await page.fill('#save-name', '');
   await page.type('#save-name', 'rotate reflect');
-  console.log('typing "rotate reflect" in the sandbox: pieces changed', before7 !== await page.evaluate(() => JSON.stringify([placedPieces, trayCells])), '(expected false)');
+  check('typing "rotate reflect" in the sandbox: pieces changed', before7 !== await page.evaluate(() => JSON.stringify([placedPieces, trayCells])), false);
 
   await browser.close();
-  console.log(errors.length ? errors : 'no page errors');
+  finish(errors);
 })();

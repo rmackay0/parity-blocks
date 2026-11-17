@@ -2,6 +2,33 @@
 
 ## START HERE (updated 2026-11-16)
 
+**Testing (new, 2026-11-16, user: "quick iteration… only thorough testing
+when necessary"):** run tests from the project folder with
+`node tests/run.js` (one-time setup: Playwright, see "Testing" below).
+| Command | What | Time | When |
+|---|---|---|---|
+| `node tests/run.js` | quick: solver checks + `smoke_test.js` (every page and tutorial slide, laptop + phone, each level solved, no JS errors) | ~20 s | after any code edit |
+| `node tests/run.js changed` | quick + the tests covering files changed since origin/main (`--since HEAD` = only uncommitted) | varies | after a batch of changes |
+| `node tests/run.js full` | every test, 3 at a time (`--jobs 1` if a timing test flakes) | ~10 min | before a push; when slides are added / reordered |
+| `node tests/run.js tutorial_test` | just the named tests | | one area |
+`--list` shows which files each test covers (the `TESTS` map in
+tests/run.js). A test passes when it exits 0; output goes to
+`tests/logs/<name>.log` (git-ignored), only failing lines are shown.
+Shared helpers in `tests/browser/lib.js`: `BASE`, `solution(level)` (the
+published answer, cut squares included), `check(label, got, want)`,
+`finish(errors)` (sets the exit code). New tests: use them and add a line
+to `TESTS`. Fixed this session: next_level (measured to the wrong button
+on Hard; `solution` ignored Hard's cut squares), play (old puzzles; now
+plays all three published levels from the start screen), progress (old
+answer; calendar opened directly while Archive is hidden), share (timing).
+Print-only tests now check: click, overlap (moved to test-puzzle-1: Hard's
+dotted lines made L red), game_features, rules_text, tame_errors,
+board_still, claude_puzzles, phone_layout_check (fails on any scroll /
+off-centre / too close); feel, sandbox_dotted, solved_state, theme_toggle
+now set exit codes. Not tests (screenshots / data tools, run by hand):
+look_screens, dotted_squares_screens, make_icons, make_puzzles,
+puzzle_stats, puzzle4_tilings.
+
 **Status: committed AND pushed 2026-11-16** (the user asked: "rigorous
 testing and then commit and pushing"). Everything below up to "Ask the
 user next time (2026-11-13)" is this session's work.

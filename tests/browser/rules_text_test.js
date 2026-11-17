@@ -1,6 +1,6 @@
 // Checks the rules popup (and its Large text button) on laptop and phone.  Run: node rules_text_test.js
 const { chromium } = require('playwright');
-const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
+const { BASE, check, finish } = require('./lib');
 
 (async () => {
   const browser = await chromium.launch();
@@ -23,11 +23,11 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
     await page.click('.rules-top');
     await page.waitForTimeout(200);
     const before = await btnInfo();
-    console.log(`[${label}] rules opens with button:`, JSON.stringify(before));
+    check(`[${label}] rules opens with button`, before.label, 'Large text');
     await page.screenshot({ path: `rules-${label}-standard.png` });
     await page.click('.rules-popup .text-size-btn');
     const after = await btnInfo();
-    console.log(`[${label}] after clicking it:`, JSON.stringify(after));
+    check(`[${label}] after clicking it: button says, text bigger`, [after.label, parseFloat(after.textSize) > parseFloat(before.textSize)], ['Standard text', true]);
     await page.screenshot({ path: `rules-${label}-large.png` });
     await page.evaluate(() => { const p = document.querySelector('.rules-popup'); p.scrollTop = p.scrollHeight; });
     await page.screenshot({ path: `rules-${label}-large-bottom.png` });
@@ -36,10 +36,10 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
     // 2. The setting carries over to the tutorial
     await page.goto(BASE + 'tutorial.html');
     await page.waitForTimeout(300);
-    console.log(`[${label}] tutorial picks it up: button says "${await page.textContent('#text-size-btn')}", large:`,
-      await page.evaluate(() => document.documentElement.classList.contains('large-text')));
+    check(`[${label}] tutorial picks it up (button, large)`, [await page.textContent('#text-size-btn'),
+      await page.evaluate(() => document.documentElement.classList.contains('large-text'))], ['Standard text', true]);
     await page.click('#text-size-btn');      // switch back to standard in the tutorial
-    console.log(`[${label}] tutorial button now says "${await page.textContent('#text-size-btn')}"`);
+    check(`[${label}] tutorial button then says`, await page.textContent('#text-size-btn'), 'Large text');
 
     // 3. Puzzle page rules popup reflects the tutorial's change, and still offers the tutorial
     await page.evaluate(() => localStorage.setItem('pb_tutorialSeen', '1'));
@@ -48,18 +48,19 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
     await page.click('[data-open-rules]');
     await page.waitForTimeout(200);
     const onPlay = await btnInfo();
-    console.log(`[${label}] puzzle page rules:`, JSON.stringify(onPlay), '| has "Play the tutorial":', await page.isVisible('.rules-tutorial'));
-    // Close with ✕, Esc and the backdrop
+    check(`[${label}] puzzle page rules: standard again, has "Play the tutorial"`, [onPlay.label, onPlay.textSize === before.textSize,
+      await page.isVisible('.rules-tutorial')], ['Large text', true, true]);
+    // Close with ✕ and Esc
     await page.click('.rules-close');
-    console.log(`[${label}] ✕ closes it:`, await page.isHidden('.rules-backdrop'));
+    check(`[${label}] ✕ closes it`, await page.isHidden('.rules-backdrop'), true);
     await page.click('[data-open-rules]'); await page.keyboard.press('Escape');
-    console.log(`[${label}] Esc closes it:`, await page.isHidden('.rules-backdrop'));
+    check(`[${label}] Esc closes it`, await page.isHidden('.rules-backdrop'), true);
     // The game still works afterwards (clicking a piece at the top rotates it)
     const name0 = await page.evaluate(() => puzzle.pieces[0].name), cells0 = await page.evaluate(n => JSON.stringify(trayCells[n]), name0);
     await page.click(`.tray-slot[data-name="${name0}"]`); await page.waitForTimeout(400);
-    console.log(`[${label}] game still responds after closing rules:`, cells0 !== await page.evaluate(n => JSON.stringify(trayCells[n]), name0));
+    check(`[${label}] game still responds after closing rules`, cells0 !== await page.evaluate(n => JSON.stringify(trayCells[n]), name0), true);
     await ctx.close();
   }
   await browser.close();
-  console.log(errors.length ? errors : 'no page errors');
+  finish(errors);
 })();

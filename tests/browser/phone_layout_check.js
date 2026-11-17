@@ -2,7 +2,8 @@
 // and does anything come closer than 12px to the screen's sides?
 // Run: node phone_layout_check.js   (LARGE=1 for Large text)
 const { chromium } = require('playwright');
-const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
+const { BASE } = require('./lib');
+let failures = 0;
 
 (async () => {
   const browser = await chromium.launch();
@@ -43,6 +44,8 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
         const body = document.querySelector('.tut-body');
         return {
           W, scrollW: body.scrollWidth, overflowY: body.scrollHeight - body.clientHeight,
+          // (the glow overlays can reach past the edge; harmless while sideways overflow is hidden)
+          sideways: !['hidden', 'clip'].includes(getComputedStyle(body).overflowX) && body.scrollWidth > body.clientWidth,
           board: board && { left: Math.round(board.left), right: Math.round(W - board.right) },
           play: !document.getElementById('play').hidden && (q => [Math.round(q.left), Math.round(q.right)])(box(document.getElementById('play'))),
           tight: tight.slice(0, 8),
@@ -52,9 +55,15 @@ const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
         (r.board ? ` | board gap left ${r.board.left} / right ${r.board.right}${Math.abs(r.board.left - r.board.right) > 2 ? '  ✗ OFF-CENTRE' : '  ✓'}` : '') +
         (r.play ? ` | play area ${r.play}` : '') +
         (r.tight.length ? `\n    too close to a side: ${r.tight.join(', ')}` : ''));
+      // (2026-11-16: these now fail the test, for tests/run.js)
+      const bad = [r.overflowY > 0 && 'needs scrolling', r.sideways && 'scrolls sideways',
+        r.board && Math.abs(r.board.left - r.board.right) > 2 && 'board off-centre', r.tight.length && 'too close to a side'].filter(Boolean);
+      if (bad.length) { failures++; console.log(`FAIL [${w}x${h}] slide ${i + 1}: ${bad.join(', ')}`); }
       await page.screenshot({ path: `layout-${w}-slide${i + 1}.png` });
     }
     await ctx.close();
   }
   await browser.close();
+  console.log(failures ? `\n${failures} FAILED` : '\nall passed');
+  process.exitCode = failures ? 1 : 0;
 })();

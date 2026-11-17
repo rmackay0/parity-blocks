@@ -3,15 +3,15 @@
 //  2. each one opens on the puzzle page and can be solved by clicking + dragging its answer
 // Run: node claude_puzzles_test.js
 const { chromium } = require('playwright');
-const S = require('/Users/robertmackay/Projects/Parity Blocks/solver.js');
 const fs = require('fs');
-const BASE = 'file:///Users/robertmackay/Projects/Parity%20Blocks/';
+const path = require('path');
+const { BASE, ROOT, S, check, finish } = require('./lib');
 const key = cells => JSON.stringify(S.normalize(cells));
 const rotate = c => { const rows = Math.max(...c.map(x=>x[0]))+1; return S.normalize(c.map(([r,q])=>[q, rows-1-r])); };
 const reflect = c => { const cols = Math.max(...c.map(x=>x[1]))+1; return S.normalize(c.map(([r,q])=>[r, cols-1-q])); };
 
 // The answers are written in puzzles.js comments: "Answer: I [[0,0],...]  F [[...]] ..."
-const src = fs.readFileSync('/Users/robertmackay/Projects/Parity Blocks/puzzles.js', 'utf8');
+const src = fs.readFileSync(path.join(ROOT, 'puzzles.js'), 'utf8');
 const answers = {};
 for (const m of src.matchAll(/Answer: (.*)\n\s*'(claude-[a-z]+-\d)'/g)) {
   answers[m[2]] = [...m[1].matchAll(/([A-Z]) (\[\[.*?\]\])/g)].map(x => ({ name: x[1], cells: JSON.parse(x[2]) }));
@@ -29,13 +29,14 @@ for (const m of src.matchAll(/Answer: (.*)\n\s*'(claude-[a-z]+-\d)'/g)) {
   page.on('pageerror', e => errors.push('sandbox: ' + e.message));
   await page.goto(BASE + 'sandbox.html'); await page.waitForTimeout(400);
   const titles = () => page.evaluate(() => [...document.querySelectorAll('#archive-list .arch-item b')].map(b => b.textContent));
-  console.log('archive after first visit:', JSON.stringify(await titles()));
+  const first = await titles();
+  check('archive after first visit: 5 Claude puzzles + the user\'s own', [first.length, first.filter(t => t.startsWith('Claude-created')).length, first.includes('My own puzzle')], [6, 5, true]);
   await page.reload(); await page.waitForTimeout(400);
-  console.log('after a reload (no doubles):', (await titles()).length, '(expected 6)');
+  check('after a reload (no doubles)', (await titles()).length, 6);
   page.once('dialog', d => d.accept());
   await page.locator('#archive-list .arch-item').first().locator('[data-act=delete]').click();
   await page.reload(); await page.waitForTimeout(400);
-  console.log('deleted one, reloaded:', (await titles()).length, '(expected 5) | note on the first:', JSON.stringify(await page.evaluate(() => archive[0].notes)));
+  check('deleted one, reloaded: it stays deleted', (await titles()).length, 5);
   await page.screenshot({ path: 'sandbox-claude.png' });
   await ctx.close();
 
@@ -63,10 +64,11 @@ for (const m of src.matchAll(/Answer: (.*)\n\s*'(claude-[a-z]+-\d)'/g)) {
       for (let i = 1; i <= 8; i++) await p.mouse.move(from.x + from.width/2 + (to.x + to.width/2 - from.x - from.width/2)*i/8, from.y + from.height/2 + (to.y + to.height/2 - from.y - from.height/2)*i/8);
       await p.mouse.up(); await p.waitForTimeout(300);
     }
-    console.log(`${id}: "${info.title}" | red X shown ${info.xs} | solved by playing: ${await p.isVisible('#solved-popup')}`);
+    check(`${id}: tab title, solved by playing`, [info.title, await p.isVisible('#solved-popup')], ['Parity Blocks: Practice', true]);
     await p.screenshot({ path: `play-${id}.png` });
     await p.close();
   }
+  check('found the answers in puzzles.js', Object.keys(answers).length, 5);
   await browser.close();
-  console.log(errors.length ? errors : 'no page errors');
+  finish(errors);
 })();
