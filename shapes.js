@@ -32,8 +32,10 @@ const INKS = {
    Gold and sakura (like the highlighter's yellow and pink) go to U and X,
    the two pieces none of the tutorial's highlighter slides use.
    (solver.js keeps a copy of these for the analyzer: keep them the same.) */
+// (2026-11-16, user: F's orange swapped with another piece's color to suit
+// the page better: F and N traded persimmon and wisteria)
 const PIECE_COLOR = {
-  F: INKS.persimmon, I: INKS.indigo, L: INKS.vermilion, N: INKS.wisteria,
+  F: INKS.wisteria,  I: INKS.indigo, L: INKS.vermilion, N: INKS.persimmon,
   P: INKS.plum,      T: INKS.asagi,  U: INKS.gold,      V: INKS.moss,
   W: INKS.sky,       X: INKS.sakura, Y: INKS.pine,      Z: INKS.slate,
 };
@@ -532,14 +534,22 @@ function markTerms(root){
 
 // An example board for the "empty squares" picture: six different pieces,
 // six empty squares. Made up for this picture (not a tutorial or real puzzle,
-// so it gives nothing away).
+// so it gives nothing away). (2026-11-16, user: it now achieves parity too,
+// every row and column 4 or 6 blocks; picked from solver.js's 187 parity
+// tilings of these six pieces. P stays last: slide 2 counts its blocks.)
+//   I I I I I P
+//   . . U U P P
+//   V V V U P P
+//   V . U U Y .
+//   V L Y Y Y Y
+//   . L L L L .
 const TERM_BOARD = [
   { name: 'I', at: [[0,0],[0,1],[0,2],[0,3],[0,4]] },
-  { name: 'V', at: [[1,0],[1,1],[1,2],[2,0],[3,0]] },
-  { name: 'U', at: [[1,3],[1,5],[2,3],[2,4],[2,5]] },
-  { name: 'Y', at: [[3,1],[3,2],[3,3],[3,4],[4,2]] },
-  { name: 'L', at: [[4,3],[5,0],[5,1],[5,2],[5,3]] },
-  { name: 'P', at: [[3,5],[4,4],[4,5],[5,4],[5,5]] },
+  { name: 'V', at: [[2,0],[2,1],[2,2],[3,0],[4,0]] },
+  { name: 'U', at: [[1,2],[1,3],[2,3],[3,2],[3,3]] },
+  { name: 'Y', at: [[3,4],[4,2],[4,3],[4,4],[4,5]] },
+  { name: 'L', at: [[4,1],[5,1],[5,2],[5,3],[5,4]] },
+  { name: 'P', at: [[0,5],[1,4],[1,5],[2,4],[2,5]] },
 ];
 // (as miniBoard wants them: color, top-left row / col, cells from there)
 const termBoardPieces = ()=>TERM_BOARD.map(p=>{

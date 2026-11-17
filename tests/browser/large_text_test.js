@@ -70,8 +70,11 @@ const SCOPE = ['.tut-body', '#spot', '.rules-popup', '#status', '#solved-popup']
     for (let n = 1; n <= slides; n++) {
       if (only && n !== only) continue;
       await both(p => p.goto(BASE + 'tutorial.html?slide=' + n));
-      for (const t of [600, 2500, 6000]) {
-        await pages[0].waitForTimeout(t === 600 ? 600 : t - 600);
+      // (many moments: some labels, like slide 5's "Counting the squares",
+      // only show for a second or two)
+      let was = 0;
+      for (const t of [600, 1500, 2500, 3500, 5000, 7000, 9000]) {
+        await pages[0].waitForTimeout(t - was); was = t;
         compared += await compare(`slide ${n}`);
         // Get past popups so the text under them is seen too
         await both(async p => { if (await p.isVisible('#spot-ok')) await p.click('#spot-ok'); });

@@ -233,7 +233,7 @@
   .words-list.playing li.ia-on:not(.now) { opacity: 0.3; }
   /* counting on slide 2: a brighter green than the rows' (it sits on one
      square of a dark piece), and the white numbers outlined so they read on it */
-  .words-stage .row-glow.on, .goal-pics .row-glow.on { opacity: 0.85; }
+  .words-stage .row-glow.on, .goal-pics .row-glow.on { opacity: 0.88; }
   /* "The grid is made of squares": each square lit softly in the term color */
   .square-glow { fill: var(--color-term); opacity: 0; transition: opacity 0.3s; }
   .square-glow.on { opacity: 0.45; }
@@ -247,8 +247,21 @@
   .ia.ia-out { opacity: 0; }
   svg .ia:not(.ia-on) { transform: scale(0.6); }
   svg .mb-piece.ia:not(.ia-on) { transform: translateY(-16px); }                 /* (dropping onto the grid) */
+  /* slide 1: a piece dragged onto the grid (dragOnto, 2026-11-16). The
+     grid's own piece appears at once, under the copy as it's put down */
+  svg .mb-piece.ia.no-drop:not(.ia-on) { transform: none; }
+  svg .mb-piece.ia.no-drop { transition: none; }
+  .drag-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; }
+  .drag-piece { position: absolute; left: 0; top: 0; transform-origin: center; }
+  .drag-piece svg { display: block; overflow: visible; }
+  .drag-pointer { position: absolute; left: -2px; top: -2px; }
+  .drag-pointer svg path { fill: #fff; stroke: #1F2330; stroke-width: 1.3; stroke-linejoin: round; }
+  .drag-pointer.finger { left: -15px; top: -15px; width: 30px; height: 30px; border-radius: 50%;
+                         background: rgba(31, 35, 48, 0.22); border: 2px solid rgba(255, 255, 255, 0.85); }
   svg .rb-frame.ia:not(.ia-on), svg .rb-cell.ia:not(.ia-on), svg .rb-hl.ia:not(.ia-on) { transform: none; }
   .words-list li.ia:not(.ia-on) { transform: translateY(8px); }
+  /* slide 1's small check pictures: a row every 16px, so the counts fit that */
+  .goal-pics svg .rb-count { font-size: 15px; font-weight: 800; }
   @media (max-width: 760px) {
     .intro.goals, .intro.words { gap: 10px; }
     .intro-lead, .goal p { font-size: 1rem; }
@@ -256,7 +269,7 @@
     .goal-pics { gap: 8px; margin-top: 4px; }
     .goal-pics.checks { gap: 6px; }
     /* (the counts sized to the small grids, so they don't overlap) */
-    .goal-pics svg .rb-count { font-size: 11px; }
+    .goal-pics svg .rb-count { font-size: 11px; }     /* (rows are 11px apart here) */
     .goal-pics figcaption { font-size: 0.78rem; }
     .intro .twelve { gap: 5px 4px; padding: 6px; }
     .words-stage { flex-direction: column; gap: 14px; }
@@ -281,13 +294,14 @@
   .pick-msg .bad { color: var(--color-status); font-weight: 700; animation: fadeIn 0.4s ease both; }
   .pick-msg .next-up { color: var(--color-text); animation: fadeIn 0.4s ease both; }
   /* counts on the two little boards (and the game board's counts when odd) */
-  .pc-count { font-family: var(--font-text); font-weight: 700; font-size: 15px; fill: var(--color-valid);
+  /* (mock-up B, 2026-11-16: see .row-glow) */
+  .pc-count { font-family: var(--font-text); font-weight: 800; font-size: 18px; fill: var(--color-count-even);
               transform-box: fill-box; transform-origin: center; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; }
-  .pc-count.odd, .count.odd { fill: var(--color-status); }
-  .pc-glow { fill: var(--color-valid); opacity: 0; transition: opacity 0.15s; }
-  .pc-glow.on { opacity: 0.55; }
-  .pc-glow.odd, .row-glow.odd { fill: var(--color-status); }
-  .pc-glow.stay { opacity: 0.55; }
+  .pc-count.odd, .count.odd { fill: var(--color-count-odd); }
+  .pc-glow { fill: var(--color-count-even); opacity: 0; transition: opacity 0.15s; }
+  .pc-glow.on { opacity: 0.85; }
+  .pc-glow.odd, .row-glow.odd { fill: var(--color-count-odd); }
+  .pc-glow.stay { opacity: 0.85; }
   @media (max-width: 760px) {
     .pick p { font-size: 1rem; margin-bottom: 6px; }
     .pick-boards { gap: 6px; }
@@ -491,6 +505,7 @@
   .dim-label.pop { transform-box: fill-box; transform-origin: center; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; }
   /* "Counting the squares": smaller, just above the column counts */
   .eq-banner.small { font-size: 1.15rem; padding: 4px 14px; border-width: 1.5px; }
+  html.large-text .eq-banner.small { font-size: 1.55rem; }   /* (large_text_test, 2026-11-16) */
   @media (max-width: 760px) { .eq-banner { font-size: 1.35rem; padding: 6px 14px; } }
   /* the first step gets a check once it's done */
   .empty-card p.step-done::after { content: ' \2713'; color: var(--color-valid); font-weight: 700; }
@@ -586,9 +601,11 @@
 
   /* ── Final slide: counting the blocks in each row and column ── */
   #tut-overlay { position: absolute; left: var(--board-pad); top: var(--board-pad); overflow: visible; pointer-events: none; z-index: 7; }
-  .row-glow { fill: var(--color-valid); opacity: 0; transition: opacity 0.12s; }
-  .row-glow.on { opacity: 0.6; }
-  .count { font-family: var(--font-text); font-weight: 700; font-size: 18px; fill: var(--color-valid);
+  /* (2026-11-16, user picked counting mock-up B: brighter green / red, almost
+     solid over the blocks, bigger numbers; was --color-valid at 0.6, 18px) */
+  .row-glow { fill: var(--color-count-even); opacity: 0; transition: opacity 0.12s; }
+  .row-glow.on { opacity: 0.88; }
+  .count { font-family: var(--font-text); font-weight: 800; font-size: 21px; fill: var(--color-count-even);
            transform-box: fill-box; transform-origin: center; animation: popIn 0.4s cubic-bezier(.3,1.6,.5,1) both; }
 
   @media (max-width: 760px) {
@@ -992,6 +1009,19 @@ const TWELVE = [
   [[0,0],[1,0],[1,1],[2,1],[2,2]], [[0,1],[1,0],[1,1],[1,2],[2,1]],
   [[0,1],[1,0],[1,1],[2,1],[3,1]], [[0,0],[0,1],[1,1],[2,1],[2,2]],
 ].map((cells, i)=>[PIECE_COLOR['FILNPTUVWXYZ'[i]], cells]);   // (in letter order: each piece's one color)
+// Slide 1 (user, 2026-11-16): the six pieces are dragged onto the grid, and
+// some turn or flip on the way, as a player would. Their pictures in slide
+// 1's set of 12 are drawn the way they start, worked out from where they
+// end on the grid: 'turn' = one quarter turn clockwise, 'flip' = mirrored.
+const SLIDE1_MOVES = { I: 'turn', V: '', U: 'turn', Y: 'flip', L: 'flip', P: '' };
+function slide1Icon(name, tileCells){
+  const m = SLIDE1_MOVES[name];
+  if(m === 'turn') return normalize(tileCells.map(([r,c])=>[-c, r]));   // (a quarter turn back)
+  if(m === 'flip') return normalize(tileCells.map(([r,c])=>[r, -c]));
+  return tileCells;
+}
+// Any dragged copies still on screen (the slide changed, or Hide was pressed)
+function clearDragGhosts(){ document.querySelectorAll('.drag-ghost').forEach(e=>e.remove()); }
 function pieceSvg(cells, color, cell){
   const gap = 2, b = bounds(cells);
   const w = b.cols*cell + (b.cols-1)*gap, h = b.rows*cell + (b.rows-1)*gap;
@@ -1208,7 +1238,9 @@ const DONT_ITEMS = [['dotted','a dotted line'], ['edge','the edge of the grid'],
    Next lights up when each finishes; "Play again" replays it. */
 const INTRO = {      // [BEHAVIOR] timings (ms): "significantly slower" than the mock-up (user)
   start: 800,
-  dropEach: 950,     // slide 1: a piece onto the grid
+  dropEach: 950,     // (old: slide 1's pieces dropped in; unused since the drags)
+  // slide 1: each piece dragged from the set of 12 onto the grid (2026-11-16)
+  pickUp: 280, dragMove: 520, dragTurn: 480, dragLand: 220, dragGap: 260,
   afterTiling: 1200,
   checkEach: 600,    // a row / column checked
   between: 700,      // rows → columns → the solved board
@@ -1264,15 +1296,21 @@ function renderGoals(){
       <div class="goal-region" id="goal2-pics"><div><div class="goal-pics checks" id="goal-checks"></div></div></div>
     </div>
     <p class="goals-left" id="goals-left">${done[current] ? '' : 'Open both goals to continue.'}</p>`;
-  // the 12 pieces (two rows of six), each tagged with its letter
-  const size = phone ? 6 : 10;
-  TWELVE.forEach(([color, cells], i)=>{ const s = pieceSvg(cells, color, size); s.dataset.name = 'FILNPTUVWXYZ'[i]; $('twelve').appendChild(s); });
-  // the grid the six pieces drop onto (the words slide's example board)
+  // the grid the six pieces are dragged onto (the words slide's example board)
   const tiles = termBoardPieces();
+  // the 12 pieces (two rows of six), each tagged with its letter; the six
+  // that go onto the grid drawn the way their drag starts (SLIDE1_MOVES)
+  const size = phone ? 6 : 10;
+  TWELVE.forEach(([color, cells], i)=>{
+    const name = 'FILNPTUVWXYZ'[i], tile = tiles.find(t=>t.name === name);
+    const s = pieceSvg(tile ? slide1Icon(name, tile.cells) : cells, color, size);
+    s.dataset.name = name; $('twelve').appendChild(s);
+  });
   const board = miniBoard({ rows: 6, cols: 6, cell: phone ? 11 : 17, pieces: tiles });
   $('goal-board').appendChild(board);
   const drops = [...board.querySelectorAll('.mb-piece')];
   drops.forEach(hideForAnim);
+  drops.forEach(g=>g.classList.add('no-drop'));     // (they appear where the dragged copy lands)
   // the rules' three pictures
   const cell = phone ? 8 : 13, ex = PARITY_EXAMPLE;
   const pics = [
@@ -1319,13 +1357,15 @@ function renderGoals(){
     if(REDUCED_MOTION){ animated[n].forEach(reveal); if(n === 1) tiles.forEach(t=>{ const u = $('twelve').querySelector(`svg[data-name="${t.name}"]`); if(u) u.classList.add('used'); }); onDone(); return; }
     let t = INTRO.start;
     if(n === 1){
-      // the pieces drop onto the grid, one at a time
-      drops.forEach((g, i)=>at(t + i * INTRO.dropEach, ()=>{
-        reveal(g);
-        const used = $('twelve').querySelector(`svg[data-name="${tiles[i].name}"]`);
-        if(used) used.classList.add('used');
-      }));
-      t += drops.length * INTRO.dropEach + 300;
+      // the pieces are dragged onto the grid, one after another
+      clearDragGhosts();
+      const alive = ()=>goalRun[n] === run && animRun === slide;
+      const next = i=>{
+        if(i >= drops.length){ at(300, onDone); return; }
+        dragOnto(i, alive, ()=>at(INTRO.dragGap, ()=>next(i + 1)));
+      };
+      at(t, ()=>next(0));
+      return;
     } else {
       // rows, then columns, then the solved board's rows and columns, all
       // at the same pace (user, 2026-11-15: the last one was twice as fast).
@@ -1352,7 +1392,58 @@ function renderGoals(){
     g.classList.toggle('open', open);
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.querySelector('.lbl').textContent = open ? 'Hide' : 'Show me';
-    if(!open) goalRun[n]++;               // (stops its animation)
+    if(!open){ goalRun[n]++; if(n === 1) clearDragGhosts(); }    // (stops its animation)
+  }
+  /* One piece dragged from the set of 12 onto the grid (user, 2026-11-16:
+     "look like the pieces are actually being dragged"): a copy of the
+     grid's piece lifts off its picture (drawn the way it starts), travels
+     with a pointer on it (a fingertip on phones), turns or flips on the way
+     if it must (SLIDE1_MOVES), and is put down in its place. */
+  function dragOnto(i, alive, onLanded){
+    const g = drops[i], tile = tiles[i], move = SLIDE1_MOVES[tile.name] || '';
+    const icon = $('twelve').querySelector(`svg[data-name="${tile.name}"]`);
+    // where the piece ends (screen px), from the grid's own coordinates
+    const ctm = g.parentNode.getScreenCTM(), bb = g.getBBox(), k = ctm.a;
+    const W = bb.width * k, H = bb.height * k, m = 6;
+    const end = [ctm.e + (bb.x + bb.width / 2) * k, ctm.f + (bb.y + bb.height / 2) * k];
+    const ir = icon.getBoundingClientRect();
+    const start = [ir.left + ir.width / 2, ir.top + ir.height / 2];
+    const small = (ir.width - 4) / (move === 'turn' ? H : W);       // (its picture's size)
+    // the copy: the grid's piece in a little svg of its own
+    const outer = document.createElement('div'); outer.className = 'drag-ghost';
+    const inner = document.createElement('div'); inner.className = 'drag-piece';
+    inner.style.cssText = `width:${W + 2*m}px; height:${H + 2*m}px; margin:${-(H/2 + m)}px 0 0 ${-(W/2 + m)}px`;
+    const svg = svgEl('svg', { width: W + 2*m, height: H + 2*m, viewBox: `${bb.x - m/k} ${bb.y - m/k} ${bb.width + 2*m/k} ${bb.height + 2*m/k}`, 'aria-hidden': 'true' }, inner);
+    const copy = g.cloneNode(true); copy.removeAttribute('class'); svg.appendChild(copy);
+    const pointer = document.createElement('div'); pointer.className = 'drag-pointer' + (PHONE_LAYOUT.matches ? ' finger' : '');
+    if(!PHONE_LAYOUT.matches) pointer.innerHTML = '<svg viewBox="0 0 16 22" width="16" height="22" aria-hidden="true"><path d="M1 1 L1 17 L5.2 13.2 L8.2 20 L11 18.8 L8 12.2 L14 12.2 Z"/></svg>';
+    outer.append(inner, pointer);
+    document.body.appendChild(outer);
+    // the stages: picked up → part of the way → (turn / flip) → over its place → put down
+    const turned = move === 'turn' ? 'rotate(-90deg) scaleX(1)' : move === 'flip' ? 'rotate(0deg) scaleX(-1)' : 'rotate(0deg) scaleX(1)';
+    const upright = 'rotate(0deg) scaleX(1)';
+    const mid = [start[0] + (end[0] - start[0]) * 0.5, start[1] + (end[1] - start[1]) * 0.5 - 24];
+    const lift = 'drop-shadow(0 8px 10px rgba(0,0,0,0.28))', flat = 'drop-shadow(0 0 0 rgba(0,0,0,0))';
+    const stages = [
+      { ms: 0,               at: start, look: `scale(${small}) ${turned}`,        shadow: flat },
+      { ms: INTRO.pickUp,    at: start, look: `scale(${small * 1.18}) ${turned}`, shadow: lift },
+      { ms: INTRO.dragMove,  at: mid,   look: `scale(1.06) ${turned}`,            shadow: lift },
+      ...(move ? [{ ms: INTRO.dragTurn, at: mid, look: `scale(1.06) ${upright}`, shadow: lift }] : []),
+      { ms: INTRO.dragMove,  at: end,   look: `scale(1.06) ${upright}`,           shadow: lift },
+      { ms: INTRO.dragLand,  at: end,   look: `scale(1) ${upright}`,              shadow: flat },
+    ];
+    const total = stages.reduce((s, x)=>s + x.ms, 0);
+    let sum = 0;
+    const offs = stages.map(x=>(sum += x.ms) / total);
+    const opts = { duration: total, fill: 'forwards' };
+    outer.animate(stages.map((x, j)=>({ offset: offs[j], transform: `translate(${x.at[0]}px, ${x.at[1]}px)`, easing: 'ease-in-out' })), opts);
+    const a = inner.animate(stages.map((x, j)=>({ offset: offs[j], transform: x.look, filter: x.shadow, easing: 'ease-in-out' })), opts);
+    later(INTRO.pickUp * 0.5, ()=>{ if(alive()) icon.classList.add('used'); });      // (it leaves the set)
+    a.finished.then(()=>{
+      if(!alive()){ outer.remove(); return; }
+      reveal(g);                                   // (the grid's own piece, exactly under the copy)
+      requestAnimationFrame(()=>{ outer.remove(); onLanded(); });
+    }).catch(()=>outer.remove());
   }
   [1, 2].forEach(n=>{
     $('goal' + n).querySelector('.showme').onclick = ()=>{
@@ -1509,6 +1600,7 @@ function markDone(){ done[current] = true; renderDots(); updateNext(); }
 function showSlide(i){
   current = i;
   animRun++;
+  clearDragGhosts();
   const s = SLIDES[i];
   $('intro').hidden = s.kind !== 'goals' && s.kind !== 'words';
   $('dont-slide').hidden = s.kind !== 'dont';

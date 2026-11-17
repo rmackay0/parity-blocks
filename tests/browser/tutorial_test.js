@@ -79,8 +79,10 @@ async function placePiece(page, frame, name, target, touch){
     // ── Slide 1: the two goals, each opened with "Show me" ──
     check(label, 'slide 1: both goals start closed, Next not ready', !(await nextReady()) && await F(()=>!document.querySelector('.goal.open')));
     await tap('#goal1 .showme');
-    await page.waitForTimeout(8000);
-    check(label, 'slide 1: Tiling open, all six pieces dropped in', await F(()=>document.querySelectorAll('#goal-board .mb-piece.ia-on').length) === 6);
+    // (2026-11-16: the pieces are dragged in one by one, ~14 s; wait for all six)
+    await page.waitForFunction(()=>document.querySelectorAll('#goal-board .mb-piece.ia-on').length === 6, null, { timeout: 20000 }).catch(()=>{});
+    await page.waitForTimeout(500);
+    check(label, 'slide 1: Tiling open, all six pieces dragged in, no copies left', await F(()=>document.querySelectorAll('#goal-board .mb-piece.ia-on').length === 6 && !document.querySelector('.drag-ghost')));
     check(label, 'slide 1: one goal seen is not enough for Next', !(await nextReady()));
     await tap('#goal2 .showme');
     const open2 = await F(()=>[1, 2].filter(n=>document.getElementById('goal' + n).classList.contains('open')).join('+'));

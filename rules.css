@@ -19,7 +19,7 @@
   --rules-text-size:     1rem;
   --rules-caption-size:  0.9rem;     /* labels under pictures */
   --rules-count-font:    'Nunito', system-ui, sans-serif;  /* row/column counts */
-  --rules-count-size:    19px;
+  --rules-count-size:    21px;      /* (was 19: bigger numbers, mock-up B) */
 
   /* [COLORS] Woodblock, light mode (default); dark mode is the html.dark
      block below. Same colors as game.css. */
@@ -29,8 +29,10 @@
   --rules-title:         #1F2330;    /* headings */
   --rules-text:          #1F2330;
   --rules-text-dim:      #5E6270;    /* hint line, picture captions */
-  --rules-even:          #5E8A3E;    /* green highlighter: even row/column */
-  --rules-odd:           #D23A2F;    /* red highlighter: odd row/column, "not allowed" mark */
+  /* (brighter since 2026-11-16, user picked counting mock-up B; the same as
+     game.css --color-count-even / -odd) */
+  --rules-even:          #3E9B3A;    /* green highlighter: even row/column */
+  --rules-odd:           #E2483D;    /* red highlighter: odd row/column, "not allowed" mark */
   --rules-highlight-opacity: 0.4;    /* red highlighter strength */
   --rules-highlight-even-opacity: 0.4;   /* green highlighter strength */
   --rules-board:         #DCDFE6;    /* frame behind picture boards (as on the board) */
@@ -62,8 +64,8 @@ html.dark {
   --rules-title:         #EDEAE3;
   --rules-text:          #EDEAE3;
   --rules-text-dim:      #A3A6B0;
-  --rules-even:          #9CC57A;
-  --rules-odd:           #F06A5E;
+  --rules-even:          #A8E07E;
+  --rules-odd:           #FF6B5E;
   --rules-board:         #0B0E15;
   --rules-cell:          #1F2533;
   --rules-dotted:        #F06A5E;

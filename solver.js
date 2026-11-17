@@ -45,10 +45,10 @@ function ParitySolverModule(root){
    two the same; this copy is for the analyzer, which doesn't load shapes.js).
    ─────────────────────────────────────────────────────────────────────── */
 const PENTOMINOES = [
-  { name:'F', color:'#EC8A3D', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] },   // persimmon
+  { name:'F', color:'#8E6FB0', cells:[[0,1],[0,2],[1,0],[1,1],[2,1]] },   // wisteria (swapped with N, 2026-11-16)
   { name:'I', color:'#2B4C7E', cells:[[0,0],[0,1],[0,2],[0,3],[0,4]] },   // indigo
   { name:'L', color:'#E2483D', cells:[[0,0],[1,0],[2,0],[3,0],[3,1]] },   // vermilion
-  { name:'N', color:'#8E6FB0', cells:[[0,1],[1,1],[2,0],[2,1],[3,0]] },   // wisteria
+  { name:'N', color:'#EC8A3D', cells:[[0,1],[1,1],[2,0],[2,1],[3,0]] },   // persimmon (swapped with F, 2026-11-16)
   { name:'P', color:'#A0507A', cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] },   // plum
   { name:'T', color:'#3E8E9E', cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] },   // asagi
   { name:'U', color:'#E8B33B', cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] },   // gold

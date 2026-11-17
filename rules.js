@@ -203,8 +203,8 @@ function build(){
     figure(pieceOnly(rotateCells(F_PIECE.cells), F_PIECE.color, 22)),
   ]);
   // Half inside the dotted line, half outside
-  // (four blocks, T-shaped: the T's color)
-  const crossing = { color:PIECE_COLOR.T, cells:[[0,0],[0,1],[0,2],[1,1]], row:2, col:1 };
+  // (the T pentomino, five blocks: it was a four-block T until 2026-11-16, user)
+  const crossing = { color:PIECE_COLOR.T, cells:[[0,0],[0,1],[0,2],[1,1],[2,1]], row:2, col:1 };
   item(popup, [[T.dotted]], [
     figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],
       dotted:[[1,1],[1,2],[2,1],[2,2]], noMarkOn: crossing })),
