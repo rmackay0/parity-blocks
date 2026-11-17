@@ -181,10 +181,20 @@ What came of it (2026-11-17):
 - DECLINED counts beside the board (user): busier to look at; classic
   pentomino puzzles don't have them; in practice you count the grid once
   and then watch the six empty squares. Don't suggest it again.
-- OPEN: celebrate the solve a little longer (Claude's idea: ~1 s on the
-  real solved board first, then the popup + jingle); a "Skip ▸▸" to
-  finish a tutorial animation at once, and trim the slowest (slide 1's
-  drags ~14 s).
+- NOTED, low priority (user, 2026-11-17): celebrate the solve longer?
+  The user keeps the popup coming at once on purpose: players fixate on
+  their time, and an instant popup shows the clock has stopped (most
+  newspaper games do this). Also the last move is often a guess, so the
+  player wants to see the grid. Two ways the user is weighing: (a) roughly
+  today's, plus a way to close the popup and look at the solved grid
+  (careful: a button worded / placed like the NYT's "admire" one would
+  copy their flow, see the no-copying rule; ours would need its own
+  wording and look); (b) a "Solved" message above the board with the win
+  animation on the grid itself, so the solved work stays in view.
+- Next up (user, 2026-11-17): "Skip ▸▸" to finish a tutorial animation at
+  once, and trim the slowest parts (slide 1's drags ~14 s). Slide 7
+  should be easier, with animations that act out what its note says; only
+  the final slide should be a real struggle.
 
 **Ask the user next time (2026-11-16):**
 - How slides 1 and 2 feel on a real phone (speed, "Show me").

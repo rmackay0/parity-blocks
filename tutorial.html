@@ -639,6 +639,15 @@
     transition: background 0.2s, color 0.2s, transform 0.1s, box-shadow 0.2s;
   }
   .foot-btn.back { min-width: 0; background: transparent; }
+  /* Skip ▸▸ (2026-11-17): quiet, in the middle of the bar, only while
+     something is playing */
+  .foot-btn.skip { min-width: 0; height: 38px; padding: 0 16px; font-size: 1.1rem; background: transparent;
+                   border: 1.5px solid var(--color-cell-border); color: var(--color-text-dim); }
+  .foot-btn.skip:hover { color: var(--color-text); border-color: var(--color-text-dim); }
+  .foot-btn.skip[hidden] { display: none; }
+  .foot-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  /* while skipping, everything jumps straight to its end */
+  html.skipping *, html.skipping *::before, html.skipping *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; }
   .foot-btn.back:hover { color: var(--color-text); }
   .foot-btn.next[aria-disabled="true"] { cursor: default; }
   .foot-btn.next.ready { background: var(--color-next-ready); color: #fff; box-shadow: 0 0 0 4px rgba(123, 160, 91, 0.25), inset 0 -3px 0 rgba(0,0,0,0.15); }
@@ -811,6 +820,8 @@
 
   <footer class="tut-foot">
     <button class="foot-btn back" id="back-btn">&larr; Back</button>
+    <!-- (shown only while an animation is playing: skipAnimation) -->
+    <button class="foot-btn skip" id="skip-btn" type="button" hidden>Skip &#9656;&#9656;</button>
     <button class="foot-btn next" id="next-btn" aria-disabled="true">Next</button>
   </footer>
 </div>
@@ -1237,7 +1248,8 @@ const INTRO = {      // [BEHAVIOR] timings (ms): "significantly slower" than the
   start: 800,
   dropEach: 950,     // (old: slide 1's pieces dropped in; unused since the drags)
   // slide 1: each piece dragged from the set of 12 onto the grid (2026-11-16)
-  pickUp: 280, dragMove: 520, dragTurn: 480, dragLand: 220, dragGap: 260,
+  // (trimmed 2026-11-17, ~14 s → ~10 s for all six: was 280 / 520 / 480 / 220 / 260)
+  pickUp: 220, dragMove: 420, dragTurn: 400, dragLand: 180, dragGap: 160,
   afterTiling: 1200,
   checkEach: 600,    // a row / column checked
   between: 700,      // rows → columns → the solved board
@@ -1347,7 +1359,7 @@ function renderGoals(){
   // when that goal is closed or opened again)
   function playGoal(n, onDone){
     const run = ++goalRun[n], slide = animRun;
-    const at = (ms, fn)=>setTimeout(()=>{ if(goalRun[n] === run && animRun === slide) fn(); }, ms);
+    const at = (ms, fn)=>schedule(ms, ()=>{ if(goalRun[n] === run && animRun === slide) fn(); });   // (schedule: Skip ▸▸ can play it out)
     animated[n].forEach(el=>el.classList.remove('ia-on'));
     if(n === 1) usedIcons().forEach(el=>el.classList.remove('used'));
     if(REDUCED_MOTION){ animated[n].forEach(reveal); if(n === 1) tiles.forEach(t=>{ const u = $('twelve').querySelector(`svg[data-name="${t.name}"]`); if(u) u.classList.add('used'); }); onDone(); return; }
@@ -1442,6 +1454,7 @@ function renderGoals(){
     a.finished.then(()=>{
       if(!alive()){ outer.remove(); return; }
       reveal(g);                                   // (the grid's own piece, exactly under the copy)
+      if(skipping){ outer.remove(); onLanded(); return; }   // (Skip ▸▸: no waiting for a frame)
       requestAnimationFrame(()=>{ outer.remove(); onLanded(); });
     }).catch(()=>outer.remove());
   }
@@ -1598,7 +1611,60 @@ function updateNext(){
    and every timed step checks it first, so leaving a slide mid-animation
    stops that animation. */
 let animRun = 0;
-function later(ms, fn){ const run = animRun; setTimeout(()=>{ if(run === animRun) fn(); }, ms); }
+function later(ms, fn){ const run = animRun; schedule(ms, ()=>{ if(run === animRun) fn(); }); }
+
+/* ── Skip ▸▸ (2026-11-17, a tester: "even I didn't want to sit through
+   it") ── Every timed step goes through schedule(), which keeps a list of
+   what's still to come. While a step is due within SKIP_HORIZON_MS, a
+   "Skip ▸▸" button shows in the bottom bar; pressing it plays every step
+   due in that window at once, in order (steps they schedule too), finishes
+   any running animations (slide 1's drags), with CSS transitions off for a
+   moment: the slide ends up exactly as if it had been watched. Later steps
+   (e.g. a hint after 90 s) are left alone. */
+const SKIP_HORIZON_MS = 30000;
+let pending = [];                  // { due, fn, id }
+let skipping = false, skipClock = 0;
+function schedule(ms, fn){
+  if(skipping){ pending.push({ due: skipClock + ms, fn, id: 0 }); return; }
+  const t = { due: performance.now() + ms, fn };
+  t.id = setTimeout(()=>{ pending = pending.filter(x=>x !== t); fn(); updateSkip(); }, ms);
+  pending.push(t);
+  updateSkip();
+}
+function animationSoon(){
+  const now = performance.now();
+  return pending.some(t=>t.due - now <= SKIP_HORIZON_MS) || document.querySelector('.drag-ghost') !== null;
+}
+function updateSkip(){ const b = $('skip-btn'); if(b) b.hidden = !animationSoon(); }
+async function skipAnimation(){
+  if(skipping) return;
+  const realStart = performance.now(), end = realStart + SKIP_HORIZON_MS;
+  skipping = true; skipClock = realStart;
+  document.documentElement.classList.add('skipping');
+  // (leave the far-off steps on their real timers)
+  pending.forEach(t=>{ if(t.due <= end){ clearTimeout(t.id); t.id = 0; } });
+  for(let guard = 0; guard < 2000; guard++){
+    const anims = document.getAnimations().filter(a=>a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity);
+    anims.forEach(a=>{ try { a.finish(); } catch(e){} });
+    await null; await null;                      // (let finished animations' follow-ups run)
+    const due = pending.filter(t=>!t.id && t.due <= end).sort((a, b)=>a.due - b.due);
+    if(!due.length && !anims.length) break;
+    if(!due.length) continue;
+    const t = due[0];
+    pending = pending.filter(x=>x !== t);
+    skipClock = Math.max(skipClock, t.due);
+    t.fn();
+  }
+  skipping = false;
+  // anything scheduled while skipping, but beyond the window: real timers again
+  pending.filter(t=>!t.id).forEach(t=>{
+    const wait = Math.max(0, t.due - skipClock);
+    t.due = performance.now() + wait;
+    t.id = setTimeout(()=>{ pending = pending.filter(x=>x !== t); t.fn(); updateSkip(); }, wait);
+  });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('skipping')));
+  updateSkip();
+}
 
 function markDone(){ done[current] = true; renderDots(); updateNext(); }
 
@@ -1606,6 +1672,8 @@ function showSlide(i){
   current = i;
   animRun++;
   clearDragGhosts();
+  pending.forEach(t=>clearTimeout(t.id)); pending = [];   // (the old slide's steps: Skip ▸▸ hides)
+  updateSkip();
   const s = SLIDES[i];
   $('intro').hidden = s.kind !== 'goals' && s.kind !== 'words';
   $('dont-slide').hidden = s.kind !== 'dont';
@@ -2766,6 +2834,7 @@ $('next-btn').onclick = ()=>{
   else showSlide(current + 1);
 };
 $('back-btn').onclick = ()=>{ if(current > 0) showSlide(current - 1); };
+$('skip-btn').onclick = ()=>skipAnimation();
 $('close-x').onclick = ()=>closeTutorial(false);
 document.addEventListener('keydown', e=>{
   if(e.key !== 'Escape') return;

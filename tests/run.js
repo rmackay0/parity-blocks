@@ -50,6 +50,7 @@ const TESTS = {
   // Tutorial
   'tutorial_test':         { covers: ['tutorial.html', 'shapes.js', 'game.js', 'celebrate.js'] },
   'hl_hint_test':          { covers: ['tutorial.html', 'game.js'] },
+  'skip_test':             { covers: ['tutorial.html'] },
   'glow_clip_test':        { covers: ['tutorial.html', 'scroll-hint.js', 'game.css'] },
   'phone_layout_check':    { covers: ['tutorial.html', 'game.js', 'game.css', 'shapes.js', 'rules.css'] },
   'scroll_hint_test':      { covers: ['scroll-hint.js', 'tutorial.html', 'rules.js', 'rules.css'] },
