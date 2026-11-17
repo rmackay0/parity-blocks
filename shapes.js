@@ -503,7 +503,9 @@ function miniBoard(opts){
 // (not the "Blocks" in the game's name, Parity Blocks. "square" is a term:
 // slide 5's 36 squares = 30 blocks + 6 empty squares depends on it; slide
 // 2 defines it, "The grid is made of squares": user, 2026-11-15)
-const TERM_RE = /\b(?<!Parity )(empty squares?|squares?|blocks?|pieces?|pentominoes|pentomino|grids?|Tilings?|Solving for Parity)\b/gi;
+// (2026-11-16: the second goal is "Parity" now, was "Solving for Parity";
+// like "tiling" it's teal in any case, but never in the game's name)
+const TERM_RE = /\b(?<!Parity )(empty squares?|squares?|blocks?|pieces?|pentominoes|pentomino|grids?|Tilings?|parity(?! Blocks))\b/gi;
 function markTerms(root){
   if(!root) return;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode(n){

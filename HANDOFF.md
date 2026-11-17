@@ -28,10 +28,45 @@ off-centre / too close); feel, sandbox_dotted, solved_state, theme_toggle
 now set exit codes. Not tests (screenshots / data tools, run by hand):
 look_screens, dotted_squares_screens, make_icons, make_puzzles,
 puzzle_stats, puzzle4_tilings.
+New tests: `large_text_test` (every slide, rules, puzzle page: reading
+text must be bigger in Large text, or already ≥ 24px; titles and buttons
+stay the same by design) and `piece_colors_test` (one color per letter
+in the sandbox while pieces are added / removed, each level, every slide).
 
-**Status: committed AND pushed 2026-11-16** (the user asked: "rigorous
-testing and then commit and pushing"). Everything below up to "Ask the
-user next time (2026-11-13)" is this session's work.
+**Later 2026-11-16 (committed, NOT pushed yet):**
+- Welcome popup (slide 2) and slide 3's ask / success: the user's wording;
+  the "exit with the ×" line removed.
+- Large text now reaches slides 1–3's reading text, the rules' picture
+  captions, slide 5's "Counting the squares".
+- Example board (`TERM_BOARD`, slides 1–2 + the rules' Tiling picture)
+  now achieves parity (rows / columns 4 or 6); picked from solver.js's
+  187 parity tilings of I V U Y L P (P stays last: slide 2 counts it).
+- Slide 1: the pieces are DRAGGED onto the grid (`dragOnto`: a copy lifts
+  off its picture, a pointer / fingertip rides on it, put down in place);
+  `SLIDE1_MOVES`: I and U turn, Y and L flip, V and P go straight (their
+  pictures in slide 1's set of 12 are drawn the way they start).
+  Timings `INTRO.pickUp / dragMove / dragTurn / dragLand / dragGap`.
+- Rules: the dotted-line picture's T has 5 blocks (was a tetromino).
+- F is wisteria purple, N persimmon (swapped; shapes.js + solver.js copy).
+- Counting colors: the user picked mock-up B ("Parity Blocks Counting
+  Colors", scratch page, 8 options): `--color-count-even / -odd` (game.css,
+  brighter moss green / vermilion), tint ~0.88, bigger numbers; rules
+  `--rules-even / -odd` the same; slide 1's small check pictures 15px.
+- Words: the second goal is now just **Parity** (was "Solving for
+  Parity"). Capitals + underline only when NAMING a goal ("Before moving
+  on to Tiling"); lowercase for an arrangement ("this tiling", "two
+  different tilings", "achieves parity"). "parity" is a teal term in any
+  case, never in "Parity Blocks" (TERM_RE).
+- Sandbox colors: the user saw colors change when adding / removing
+  pieces (live site, 2026-11-16). Not reproducible locally or on the live
+  code (one color per letter since 11-14); likely a cached old game.js.
+  Told them Cmd+Shift+R; piece_colors_test now guards it. Dead
+  `PAIR_COLOR` table removed from tutorial.html.
+
+**Status (end of 2026-11-16, second session): committed, NOT pushed.**
+The test runner, the fixed tests and "Later 2026-11-16" below are local
+commits; ask before pushing. (The first 2026-11-16 session's work was
+pushed.)
 
 **The tutorial now: 10 slides** (list at the top of tutorial.html):
 1 the two goals, each opened with a "Show me ▾" button (phones: one open at
@@ -107,12 +142,13 @@ easy to redo: solver.js analyzePuzzle with the fixed pieces as prefilled).
 - How slides 1 and 2 feel on a real phone (speed, "Show me").
 - Slide 2 still plays by itself: "Show me" there too?
 - The welcome popup now sits on slide 2 (they asked); OK?
-- Whether "parity" (lowercase, slide 6) should be a teal term.
+- (Done 2026-11-16: "parity" is a teal term now.)
+- Did the sandbox colors still change after a hard refresh (Cmd+Shift+R)?
+- How the slide 1 drags feel (speed: `INTRO.drag*`), on a real phone too.
 - Whether the rules should also drop the block / piece pictures.
 - Slide 7: add "(3 of them go where no piece fits)" to the "2 ways"
   sentence? Should its two messages be two separate boxes on laptops?
-- Fix the 4 tests that were already failing (next_level, play, progress,
-  share).
+- (Done 2026-11-16: the 4 failing tests are fixed; every test passes.)
 
 **Earlier status: everything is committed AND pushed** (2026-11-13, with the
 user's OK): the tutorial revamp, the Firefox light / dark fix, slide 1

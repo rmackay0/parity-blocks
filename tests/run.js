@@ -46,6 +46,7 @@ const TESTS = {
   'share_test':            { covers: ['play.html', 'published.js'] },
   'progress_test':         { covers: ['progress.js', 'play.html', 'index.html'] },
   'claude_puzzles_test':   { covers: ['puzzles.js', 'sandbox.html', 'play.html'] },
+  'piece_colors_test':     { covers: ['shapes.js', 'game.js', 'sandbox.html', 'tutorial.html', 'solver.js', 'play.html'] },
   // Tutorial
   'tutorial_test':         { covers: ['tutorial.html', 'shapes.js', 'game.js', 'celebrate.js'] },
   'hl_hint_test':          { covers: ['tutorial.html', 'game.js'] },

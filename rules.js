@@ -29,7 +29,7 @@ const RULES_TEXT = {
   // official terms are colored by markTerms, shapes.js)
   goal1Title: 'Tiling',
   goal1: 'Fit the pieces onto the grid.',
-  goal2Title: 'Solving for Parity',
+  goal2Title: 'Parity',            // (was "Solving for Parity" until 2026-11-16, user)
   goal2: 'Every row and every column must contain an even number of blocks.',
   checkRows: 'Check rows',
   checkCols: 'Check columns',
