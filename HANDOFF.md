@@ -140,6 +140,33 @@ two-part phone popup; all tutorial tests pass, 60 phone screens 0 scroll.
 If the board changes again, re-count the tilings (the scratch script is
 easy to redo: solver.js analyzePuzzle with the fixed pieces as prefilled).
 
+**Tester feedback, 2026-11-17 (a friend of the user's, a talented
+engineer and mathematician; pasted by the user, word for word):**
+> The tutorial is the main thing that could use some work. I understand
+> wanting the animations to fully run so that people actually watch it,
+> but it takes a while for them to run, and even I didn't want to sit
+> through it
+> I think having the option to have the block counts on the side would
+> help. In the same way the counts are in the tutorial
+> Also, small thing in the tutorial, clarify that all pieces need to be
+> used. In the tiling section of the tutorial, there are 10 pieces and it
+> places 5. I honestly thought you might not need to use all blocks. I
+> think cutting it down to 5 pieces and saying "fit all pieces onto the
+> grid" would be enough. For the reset, I think rather than reseting the
+> timer, it should just clear the board. Or more directly, I'd want a
+> button to clear the board. I did that a lot. I didn't really care about
+> the timer, I just needed a way to reset the board.
+> When the board is solved, hang there for a bit, or celebrate it a little
+> more. I think it goes to the green check too quickly. Doesn't need to be
+> long, just longer than it currently is
+
+The user: the "all pieces must be used" note is very good and needs
+fixing; the tutorial is the main thing to improve. (Facts at the time:
+slide 1 shows the set of 12 and places 6; Reset ("Start over?") clears
+the board AND restarts the timer; the green check comes 1.46 s after
+solving, on the jingle's big note, `WIN_BIG` in celebrate.js; live
+counts exist only in the sandbox, `gameSettings.liveCounts`.)
+
 **Ask the user next time (2026-11-16):**
 - How slides 1 and 2 feel on a real phone (speed, "Show me").
 - Slide 2 still plays by itself: "Show me" there too?
