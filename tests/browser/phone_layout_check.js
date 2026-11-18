@@ -23,12 +23,14 @@ let failures = 0;
       // (2026-11-15, the 10-slide tutorial) slide 1: open its bigger goal;
       // slide 2: press Continue on the welcome popup; slide 7: close its popup;
       // slide 9: its pictures take ~7.3 s
-      await page.waitForTimeout({ 8: 7500 }[i] || 500);
+      await page.waitForTimeout(500);
       if (i === 0) { await page.tap('#goal2 .showme'); await page.waitForTimeout(800); }
       // (slide 7's popup has two parts on phones since 2026-11-16)
       // (2026-11-17: slide 7's popup ends in a choice between two ways: pick Way 2)
-      if (i === 1 || i === 6) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) {
-        if (await page.locator('#way-choices .way-btn').count()) { await page.tap('#way-choices .way-btn:nth-child(2)'); await page.waitForTimeout(1600); break; }
+      // (2026-11-18: slide 7's first popup closes onto the grid with the
+      // "17 ways" message and Show me beside it: that's what's checked)
+      // (2026-11-18: 8 slides; the 17 ways slide is the 6th)
+      if (i === 1 || i === 5) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) {
         await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
       const r = await page.evaluate(() => {
         const W = document.documentElement.clientWidth;

@@ -621,16 +621,34 @@ function tilingPieces(cell){
 /* The rules' example board (6×6, P U T V), for the "check rows / check
    columns / all even" pictures in the rules popup and on the tutorial's
    first slide. Made up, not a real puzzle, so it gives nothing away. */
+// (2026-11-18, user: a full 6 × 6 example, six pentominoes, like a real
+// puzzle; found with solver.js. Only U differs between the two:)
+//    wrong      solved
+//   TTTNNN     TTTNNN
+//   VTNN..     VTNNUU
+//   VT.LUU     VT.L.U      wrong: rows 3 and 4 odd (5, 5),
+//   VVVLU.     VVVLUU             columns 5 and 6 odd (5, 3)
+//   PPPLUU     PPPL..
+//   PP.LL.     PP.LL.
+// (The rules' captions name those rows and columns: rules.js checkRows / checkCols)
 const PARITY_EXAMPLE = (()=>{
-  const P = { color:PIECE_COLOR.P, cells:[[0,0],[0,1],[1,0],[1,1],[2,0]] };
-  const U = { color:PIECE_COLOR.U, cells:[[0,0],[0,2],[1,0],[1,1],[1,2]] };
-  const T = { color:PIECE_COLOR.T, cells:[[0,0],[0,1],[0,2],[1,1],[2,1]] };
-  const V = { color:PIECE_COLOR.V, cells:[[0,0],[0,1],[0,2],[1,0],[2,0]] };
+  // a piece from its squares on the board: { name, color, cells from 0,0, row, col }
+  const at = (name, squares)=>{
+    const r0 = Math.min(...squares.map(s=>s[0])), c0 = Math.min(...squares.map(s=>s[1]));
+    return { name, color: PIECE_COLOR[name], cells: squares.map(([r, c])=>[r - r0, c - c0]), row: r0, col: c0 };
+  };
+  const same = [
+    at('T', [[0,0],[0,1],[0,2],[1,1],[2,1]]),
+    at('N', [[0,3],[0,4],[0,5],[1,2],[1,3]]),
+    at('V', [[1,0],[2,0],[3,0],[3,1],[3,2]]),
+    at('L', [[2,3],[3,3],[4,3],[5,3],[5,4]]),
+    at('P', [[4,0],[4,1],[4,2],[5,0],[5,1]]),
+  ];
   return {
     // every row and column has an even number of blocks
-    solved: [ {...P, row:0, col:4}, {...U, row:4, col:0}, {...T, row:3, col:2}, {...V, row:2, col:1} ],
-    // the same, V one square up and left: rows 2 and 5, columns 1 and 4 go odd
-    wrong:  [ {...P, row:0, col:4}, {...U, row:4, col:0}, {...T, row:3, col:2}, {...V, row:1, col:0} ],
+    solved: same.concat([ at('U', [[1,4],[1,5],[2,5],[3,4],[3,5]]) ]),
+    // U turned the other way and one row lower: rows 3, 4 and columns 5, 6 go odd
+    wrong:  same.concat([ at('U', [[2,4],[2,5],[3,4],[4,4],[4,5]]) ]),
   };
 })();
 

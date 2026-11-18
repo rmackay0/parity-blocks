@@ -36,7 +36,7 @@ const { BASE, check, finish } = require('./lib');
     await page.click('#goal1 .showme'); await page.waitForTimeout(1000);
     check(`${device} slide 1: ▸▸ shows beside the pieces while they move`, [await shown(), await beside('#goal-board')], [true, true]);
     const s1 = await fastForward();
-    check(`${device} slide 1: fast forward plays the rest quickly (< 3.5 s)`, s1 < 3.5, true);
+    check(`${device} slide 1: fast forward plays the rest quickly (< 2.5 s)`, s1 < 2.5, true);
     check(`${device} slide 1: then all six pieces on the grid, no copies left, ▸▸ gone`,
       [await page.evaluate(() => document.querySelectorAll('#goal-board .mb-piece.ia-on').length), await page.evaluate(() => document.querySelectorAll('.drag-ghost').length), await shown()], [6, 0, false]);
     check(`${device} slide 1: no pointer on the moving pieces`, await page.evaluate(() => !document.querySelector('.drag-pointer')), true);
@@ -44,28 +44,44 @@ const { BASE, check, finish } = require('./lib');
     await fastForward();
     check(`${device} slide 1: both goals played: Next ready`, await nextReady(), true);
 
-    // Slide 2: the words animation (≈25 s at normal speed)
-    await page.goto(BASE + 'tutorial.html?slide=2'); await page.waitForTimeout(500);
-    await page.click('#spot-ok'); await page.waitForTimeout(1200);
-    check(`${device} slide 2: ▸▸ beside the picture while it plays`, [await shown(), await beside('#words-pic')], [true, true]);
-    const s2 = await fastForward();
-    check(`${device} slide 2: fast forward plays it quickly (< 10 s)`, s2 < 10, true);
-    check(`${device} slide 2: then six empty squares numbered, Next ready, ▸▸ gone`,
-      [await page.evaluate(() => document.querySelectorAll('#words-pic .term-num:not(.on-piece).ia-on').length), await nextReady(), await shown()], [6, true, false]);
+    // (2026-11-18, user: ▸▸ only on animations over 5 s that people wait
+    // through, not ones they learn from)
+    // Slide 2: the words animation is read, not waited through: no ▸▸
+    await page.goto(BASE + 'tutorial.html?slide=2'); await page.waitForTimeout(500);   // (no welcome popup since 2026-11-18)
+    let seen2 = false;
+    for (let k = 0; k < 8; k++) { await page.waitForTimeout(500); seen2 = seen2 || await shown(); }
+    check(`${device} slide 2: no ▸▸ while the words play`, seen2, false);
 
-    // Slide 3: picking the right grid starts its count
+    // Slide 3: the wrong grid's count (stops at its first odd line): no ▸▸;
+    // then the right grid's full count: ▸▸ beside the grids
     await page.goto(BASE + 'tutorial.html?slide=3'); await page.waitForTimeout(500);
-    await page.evaluate(() => PICK_BOARDS.find(b => b.right).btn.click()); await page.waitForTimeout(600);
-    check(`${device} slide 3: ▸▸ shows while the grid is counted`, await shown(), true);
-    await fastForward();
+    await page.evaluate(() => PICK_BOARDS.find(b => !b.right).btn.click()); await page.waitForTimeout(600);
+    check(`${device} slide 3: no ▸▸ while the wrong grid is counted`, await shown(), false);
+    await page.waitForFunction(() => !document.getElementById('ff-btn').hidden, null, { timeout: 15000 }).catch(() => {});
+    check(`${device} slide 3: ▸▸ beside the grids while the right one is counted`, [await shown(), await beside('#pick-boards > :last-child')], [true, true]);
+    const s3 = await fastForward();
+    check(`${device} slide 3: fast forward is quick (< 3 s)`, s3 < 3, true);
     check(`${device} slide 3: then Next ready, ▸▸ gone`, [await nextReady(), await shown()], [true, false]);
 
-    // Slide 9 ("don't place a piece over"): its pictures play by themselves
-    await page.goto(BASE + 'tutorial.html?slide=9'); await page.waitForTimeout(800);
-    if (await shown()) {
-      await fastForward();
-      check(`${device} slide 9: then Next ready, ▸▸ gone`, [await nextReady(), await shown()], [true, false]);
+    // Slide 7 (2026-11-18): "Show me" plays the 17 ways (≈ 9 s): ▸▸ just
+    // right of the count; the popup demos after it go with words: no ▸▸
+    await page.goto(BASE + 'tutorial.html?slide=6'); await page.waitForTimeout(500);   // (8 slides since 2026-11-18)
+    await page.click('#spot-ok'); await page.waitForTimeout(1800);
+    check(`${device} slide 6: no ▸▸ before Show me`, await shown(), false);
+    await page.click('#ways-btn'); await page.waitForTimeout(800);
+    check(`${device} slide 6: ▸▸ beside the count while the ways play`, [await shown(), await beside('#demo-count')], [true, true]);
+    const s7 = await fastForward();
+    check(`${device} slide 6: fast forward is quick (< 3 s), then Continue`,
+      [s7 < 3, await page.evaluate(() => /Continue/.test(document.getElementById('ways-btn').textContent))], [true, true]);
+    await page.click('#ways-btn');
+    let seen7 = false;
+    for (let k = 0; k < 2; k++) {
+      for (let j = 0; j < 4; j++) { await page.waitForTimeout(400); seen7 = seen7 || await shown(); }
+      if (await page.isVisible('#spot-ok')) await page.click('#spot-ok');
     }
+    check(`${device} slide 6: no ▸▸ during the popup demos`, seen7, false);
+
+    // (the "don't place a piece over" slide was removed 2026-11-18)
     await ctx.close();
   }
   await browser.close();

@@ -54,7 +54,7 @@
     <div class="top-right">
       <!-- Clears the board at once (Undo for a few seconds); the timer keeps
            going. On a solved board it asks "Play again?". (2026-11-17) -->
-      <button type="button" class="reset-btn" id="reset-btn" aria-label="Clear the board">Clear</button>
+      <button type="button" class="reset-btn" id="reset-btn" aria-label="Clear the board"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9.5 A8 8 0 1 1 5 15.5"/><path d="M4 4.5 V9.8 H9.3"/></svg>Clear</button>
       <!-- Opens the rules popup (rules.js); styled by rules.css -->
       <button type="button" class="rules-btn" data-open-rules>Rules</button>
     </div>
@@ -158,9 +158,9 @@ const playtestId = params.get('playtest');
 const wantedPuzzle = level ? (PUBLISHED[level] && PUBLISHED[level].puzzle) : PUZZLES[params.get('puzzle')];
 
 /* ── Tutorial popup ──
-   Opens automatically once per browser (remembered in localStorage as
-   'pb_tutorialSeen' when it's closed or finished). rules.js shows a
-   "Play the tutorial" button whenever window.openTutorial exists. */
+   (Until 2026-11-18 it opened by itself on a first visit; now the rules do,
+   see startPuzzle.) 'pb_tutorialSeen' is set when it's closed or finished.
+   rules.js shows a "Play the tutorial" button whenever window.openTutorial exists. */
 const TUTORIAL_SEEN_KEY = 'pb_tutorialSeen';
 const tutorialOverlay = document.getElementById('tutorial-overlay');
 const tutorialFrame = document.getElementById('tutorial-frame');
@@ -274,7 +274,10 @@ function timerTick(){
   lastTick = now;
   if(!wasCounting) startTime += gap;               // paused the whole time since the last tick
   else if(gap > 5000) startTime += gap - 1000;     // asleep: count just one second of it
-  wasCounting = !document.hidden && tutorialOverlay.hidden;
+  // (paused while the tutorial or the rules are open: 2026-11-18, the rules
+  // open by themselves on a first visit)
+  const rules = document.querySelector('.rules-backdrop');
+  wasCounting = !document.hidden && tutorialOverlay.hidden && (!rules || rules.hidden);
 }
 setInterval(timerTick, 1000);
 document.addEventListener('visibilitychange', timerTick);
@@ -347,7 +350,13 @@ function startPuzzle(p, tabName){
   // placed after Clear ends the chance to Undo it)
   gameHooks.onChange = ()=>{ saveBoard(); if(clearedPieces && myPieces().length) dropUndo(); };
   window.addEventListener('pagehide', saveBoard);      // keep the time right if they leave without moving anything
-  if(!tutorialSeen || tutorialInProgress) window.openTutorial();
+  // (2026-11-18, user: the tutorial isn't forced. First visit: the RULES open
+  // by themselves (they end with a pointer to the tutorial); a refresh in the
+  // middle of the tutorial still comes back to it)
+  if(tutorialInProgress) window.openTutorial();
+  else if(!tutorialSeen && !rulesSeen() && window.ParityRules) ParityRules.open();
+}
+function rulesSeen(){ try { return localStorage.getItem('pb_rulesSeen') === '1'; } catch(e){ return false; }
 }
 function puzzleMissing(){
   document.querySelector('.game').hidden = true;

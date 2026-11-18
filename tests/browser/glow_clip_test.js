@@ -16,9 +16,14 @@ const GLOWS = [
   [3, '#step0', 14, null],
   [3, '.hl-pencil', 21, ()=>{ document.getElementById('hl-tool').classList.add('glowing'); }],
   // (slide 7's highlighter glow is gone: 2026-11-17, that slide ends in a choice now)
-  [7, '#step0', 14, null],
-  [8, '.dont-slide h2', 14, null],
-  [9, '#hint-btn', 19, ()=>{ document.getElementById('hint-btn').classList.add('shown', 'lit'); }],
+  // (2026-11-18: 8 slides now: 4+5 merged, the "don't" slide gone.
+  // 5 = the 17 ways, 6 = rotate + reflect, 7 = the final puzzle)
+  // (slide 6's glowing "Show me" beside the grid)
+  [5, '#ways-btn', 19, ()=>{ document.getElementById('ways-btn').classList.add('shown', 'lit'); }],
+  // (the final slide's highlighter glows twice after the hint)
+  [7, '.hl-pencil', 21, ()=>{ document.getElementById('hl-tool').classList.add('glow-twice'); }],
+  [6, '#step0', 14, null],
+  [7, '#hint-btn', 19, ()=>{ document.getElementById('hint-btn').classList.add('shown', 'lit'); }],
 ];
 
 (async () => {
@@ -35,7 +40,7 @@ const GLOWS = [
         await page.waitForTimeout(400);
         // (slide 7 opens with a popup: close it)
         // (phones: two parts since 2026-11-16)
-        if (slide === 6) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) { await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
+        if (slide === 5) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) { await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
         if (setup) { await page.evaluate(setup); await page.waitForTimeout(400); }
         const r = await page.evaluate(([sel, reach]) => {
           const el = document.querySelector(sel);

@@ -28,21 +28,30 @@ const RULES_TEXT = {
   // animation: each goal's name as a heading, one line under it. The
   // official terms are colored by markTerms, shapes.js)
   goal1Title: 'Tiling',
-  goal1: 'Fit all of the pieces onto the grid.',   // ("all of": user, 2026-11-17, after a tester's note)
+  // ("all of": user, 2026-11-17, after a tester's note; 2026-11-18, user: the
+  // overlap and dotted-line rules are part of this goal now, and its picture
+  // has a dotted line round U and Y; the separate dotted-line rule is gone)
+  goal1: 'Fit all of the pieces onto the grid. Pieces cannot be placed on another piece or a dotted line.',
   goal2Title: 'Parity',            // (was "Solving for Parity" until 2026-11-16, user)
   goal2: 'Every row and every column must contain an even number of blocks.',
-  checkRows: 'Check rows',
-  checkCols: 'Check columns',
-  allEven: 'All even: solved!',
-  rulesHeading: 'Rules',
-  reflect: TOUCH ? 'Pieces can be reflected: tap one twice.' : 'Pieces can be reflected: double-click one.',
-  rotate: TOUCH ? 'Pieces can be rotated: tap one.' : 'Pieces can be rotated: click one.',
-  // (One dotted rule only since 2026-11-03: the "dotted square" rule is gone.
-  // A puzzle's dotted squares are still kept clear by this one, since no
-  // piece fits inside a line round one or two squares.)
-  dotted: 'You can’t place a piece across a dotted line.',
+  // (2026-11-18: the line that leads into the block / piece pictures)
+  parityLead: 'Parity counts blocks:',
+  // (2026-11-18: the captions say which lines are odd: PARITY_EXAMPLE's
+  // wrong board (shapes.js) has 5 in rows 3 and 4, 5 in column 5 and 3 in column 6)
+  checkRows: 'Rows 3 and 4 are odd',
+  checkCols: 'Columns 5 and 6 are odd',
+  allEven: 'All even: parity!',
+  // (2026-11-18, user: "Controls": place, rotate, reflect, then the highlighter)
+  rulesHeading: 'Controls',
+  place: 'To place a piece: drag it onto the grid.',
+  rotate: TOUCH ? 'To rotate a piece: tap it.' : 'To rotate a piece: click it.',
+  reflect: TOUCH ? 'To reflect a piece: tap it twice.' : 'To reflect a piece: double-click it.',
+  highlight: TOUCH ? 'To mark a square: turn on the highlighter (✎), then tap the square.'
+                   : 'To mark a square: turn on the highlighter (✎), then click the square.',
   ok: 'Got it',
   tutorial: 'Play the tutorial',
+  // (2026-11-18, user: the rules open first now; this points to the tutorial)
+  tutorialTip: 'For helpful tips on solving Medium and Hard puzzles, play the tutorial.',
 };
 
 // [BEHAVIOR] Remembers that this visitor has seen the rules, so the popup
@@ -69,9 +78,11 @@ function pieceOnly(cells, color, cell){
 function arrowSvg(curved){
   const svg = svgEl('svg', { width:60, height:44, viewBox:'0 0 60 44', 'aria-hidden':'true' });
   if(curved){
-    // clockwise arc with an arrowhead at its end
-    svgEl('path', { d:'M12 30 A18 18 0 1 1 46 28', class:'rb-arrow' }, svg);
-    svgEl('path', { d:'M38 24 L46 28 L49 19', class:'rb-arrow' }, svg);
+    // clockwise, from lower left over the top to the far right, where it
+    // heads straight down into a V tip: the straight arrow's tip turned down
+    // (2026-11-18, the user's pick "F": the old tip looked bent)
+    svgEl('path', { d:'M19.28 31 A14 14 0 1 1 44 22 L44 26', class:'rb-arrow' }, svg);
+    svgEl('path', { d:'M51 19 L44 26 L37 19', class:'rb-arrow' }, svg);
   } else {
     svgEl('path', { d:'M8 22 H50 M41 13 L50 22 L41 31', class:'rb-arrow' }, svg);
   }
@@ -117,6 +128,7 @@ function goalItem(parent, n, title, text, visuals, rowClass){
   visuals.forEach(v=>row.appendChild(v));
   div.appendChild(row);
   parent.appendChild(div);
+  return div;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -172,47 +184,55 @@ function build(){
   const arrow = document.createElement('span');
   arrow.className = 'rules-goal-arrow';
   arrow.textContent = '→';
+  // (2026-11-18, user) a dotted line round U and Y on the tiled grid: the
+  // pieces fit inside dotted lines, never across them
+  const tiled = termBoardPieces();
+  const dottedUY = tiled.filter(p=>p.name === 'U' || p.name === 'Y')
+    .flatMap(p=>p.cells.map(([r, c])=>[p.row + r, p.col + c]));
   goalItem(popup, 1, T.goal1Title, T.goal1, [
     tilingPieces(phone ? 7 : 11), arrow,
-    miniBoard({ rows:6, cols:6, cell: phone ? 11 : 16, pieces: termBoardPieces() }),
+    miniBoard({ rows:6, cols:6, cell: phone ? 11 : 16, pieces: tiled, dotted: dottedUY }),
   ], 'tiling');
-  // 2 Solving for Parity: the counts beside the rows, then the columns, then
-  // all even (numbers only, no lines across the pieces: user 2026-11-15)
-  goalItem(popup, 2, T.goal2Title, T.goal2, [
+  // 2 Parity: what a block and a piece are first (the tutorial's pictures,
+  // without the empty squares), then the goal's line, then the counts
+  // beside the rows, the columns, and all even (2026-11-18, user: this order)
+  const goal2 = goalItem(popup, 2, T.goal2Title, T.goal2, [
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'rows', noStrokes: true }), T.checkRows),
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.wrong,  show:'cols', noStrokes: true }), T.checkCols),
     figure(miniBoard({ rows:6, cols:6, cell:17, pieces:EXAMPLE.solved, show:'solved' }), T.allEven),
   ], 'three');
-  // What a block and a piece are (the tutorial's pictures, without the
-  // empty squares: user 2026-11-15)
   const terms = termPictures(phone ? 15 : 20, false, false);
   terms.classList.add('rules-terms');
-  popup.appendChild(terms);
+  const lead = document.createElement('p');
+  lead.className = 'rules-parity-lead';
+  lead.textContent = T.parityLead;
+  goal2.querySelector('.rules-goal-title').after(lead, terms);
 
-  // Rules
   const rules = document.createElement('h3');
   rules.textContent = T.rulesHeading;
   popup.appendChild(rules);
-  item(popup, [[T.reflect]], [
-    figure(pieceOnly(F_PIECE.cells, F_PIECE.color, 22)),
-    figure(arrowSvg(false)),
-    figure(pieceOnly(reflectCells(F_PIECE.cells), F_PIECE.color, 22)),
-  ]);
+  // (2026-11-18, user: place, rotate, reflect, then the highlighter (it was
+  // a tip); the dotted-line picture that ended the rules is gone: goal 1
+  // says it now)
+  item(popup, [[T.place]], []);
   item(popup, [[T.rotate]], [
     figure(pieceOnly(F_PIECE.cells, F_PIECE.color, 22)),
     figure(arrowSvg(true)),
     figure(pieceOnly(rotateCells(F_PIECE.cells), F_PIECE.color, 22)),
   ]);
-  // Half inside the dotted line, half outside
-  // (the T pentomino, five blocks: it was a four-block T until 2026-11-16, user)
-  const crossing = { color:PIECE_COLOR.T, cells:[[0,0],[0,1],[0,2],[1,1],[2,1]], row:2, col:1 };
-  item(popup, [[T.dotted]], [
-    figure(miniBoard({ rows:5, cols:5, cell:26, pieces:[crossing],
-      dotted:[[1,1],[1,2],[2,1],[2,2]], noMarkOn: crossing })),
+  item(popup, [[T.reflect]], [
+    figure(pieceOnly(F_PIECE.cells, F_PIECE.color, 22)),
+    figure(arrowSvg(false)),
+    figure(pieceOnly(reflectCells(F_PIECE.cells), F_PIECE.color, 22)),
   ]);
+  item(popup, [[T.highlight]], []);
 
   // On the puzzle page, offer the interactive tutorial (play.html defines window.openTutorial)
   if(typeof window.openTutorial === 'function'){
+    const tip = document.createElement('p');
+    tip.className = 'rules-tutorial-tip';
+    tip.textContent = T.tutorialTip;
+    popup.appendChild(tip);
     const tut = document.createElement('button');
     tut.type = 'button';
     tut.className = 'rules-ok rules-tutorial';

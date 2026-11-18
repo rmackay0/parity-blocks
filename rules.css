@@ -264,6 +264,7 @@ html.large-text .rules-popup .term-fig figcaption { font-size: var(--rules-capti
   align-items: center;
   gap: 14px;
 }
+.rules-visuals:empty { display: none; }   /* (text-only controls: place, highlight) */
 .rules-figure {
   display: flex;
   flex-direction: column;
@@ -316,6 +317,9 @@ html.large-text .rules-popup .term-fig figcaption { font-size: var(--rules-capti
 .rules-ok:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14); }
 /* "Play the tutorial" button (puzzle page only): plain grey */
 .rules-tutorial { background: var(--rules-btn-bg); color: var(--rules-text); margin-bottom: 8px; }
+/* the line above it (2026-11-18) */
+.rules-tutorial-tip { margin: 14px 0 8px; font-size: 1rem; line-height: 1.45; color: var(--rules-text); text-align: center; }
+html.large-text .rules-tutorial-tip { font-size: 1.3rem; }
 .rules-ok:focus-visible, .rules-close:focus-visible { outline: 3px solid #2443d6; outline-offset: 2px; }
 
 /* ── Picture parts (SVG classes used by rules.js) ── */

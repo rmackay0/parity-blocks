@@ -32,9 +32,12 @@ const row = p=>p.evaluate(()=>{
       page.on('pageerror', e=>errors.push(e.message));
       const tap = async loc=>{ if(touch) await loc.tap(); else await loc.click(); };
 
-      // 1. The tutorial over the puzzle page (first visit)
+      // 1. The tutorial over the puzzle page (2026-11-18: a first visit opens
+      // the rules now; the tutorial is opened from them)
       await page.goto(BASE + 'play.html?level=easy');
       await page.waitForTimeout(700);
+      await page.evaluate(()=>{ ParityRules.close(); window.openTutorial(); });
+      await page.waitForTimeout(800);
       const frame = page.frames().find(f=>f.url().includes('tutorial.html'));
       const r = await row(frame);
       check(r.firstIsToggle && r.icon && r.leftOf && r.noWords, `tutorial: moon / sun far left, "${r.secondText}" to its right, no words`);

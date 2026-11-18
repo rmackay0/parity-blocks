@@ -67,11 +67,15 @@ in the sandbox while pieces are added / removed, each level, every slide).
   out as soon as the second block appears; slide 1's drags show no
   fingertip circle on phones (laptops keep the mouse pointer).
 
-**Status: committed AND pushed 2026-11-17** (cc42c72, with the user's
-OK): everything below, including the slide 1 trap fix, slide 7's choice,
-fast forward ▸▸, Clear + Undo. Only this notes line is newer.
+**Status: committed AND pushed 2026-11-18** (with the user's OK, the night
+before showing the app to a potential buyer): the three 2026-11-18 batches
+(see "2026-11-18" entries further down: ▸▸ opt-in, slide 7 flow, popups
+only close with their buttons, Clear restyled + on the last slide, rules
+open first, 8 slides, full-screen tutorial, 13" laptop fit).
 
-**The tutorial now: 10 slides** (list at the top of tutorial.html):
+**The tutorial now: 8 slides** (since 2026-11-18: 1 goals, 2 words, 3 pick,
+4 highlight → sum, 5 pick by empty squares, 6 the 17 ways + choice, 7
+rotate + reflect, 8 final puzzle). The 10-slide list below is history:
 1 the two goals, each opened with a "Show me ▾" button (phones: one open at
 a time; laptops: both; Next once both have played): Tiling (pieces drop
 onto a grid, each fading in the set of 12) and Solving for Parity (the
@@ -213,6 +217,100 @@ What came of it (2026-11-17):
   `fastForward`: waiting steps re-timed ×4, new ones ×4, every running
   animation's playbackRate 4 (CSS ones too); off again when it's over.
   Every timed step goes through `schedule()` / `later()`. Test: ff_test.
+  2026-11-18 (user: faster; it showed with nothing playing, on slide 2's
+  words, in odd places): now ×8 and OPT-IN. Rule: ▸▸ only on animations
+  over 5 s that people wait through, not ones they learn from. An
+  animation starts inside `ffWatch(region, fn)`; its steps (and the steps
+  they schedule) carry that tag, ▸▸ shows only while a tagged step waits,
+  beside that region. Tagged: slide 1's two goals (beside the open goal's
+  pictures), a full grid count on slides 3 / 6 (not the wrong grid's
+  count, which stops at the odd line), `drawCounts` when over 5 s,
+  slide 7's pieces dropping in. No ▸▸: slide 2, slide 7's demos, the
+  "don't" pictures, explainers, turn/flip lessons. (The stray one was the
+  90 s hint timer: within the old 30 s window, it lit ▸▸ with nothing moving.)
+- 2026-11-18 batch (user):
+  - Slide 7 new flow: first popup → closes; beside the grid "There are 17
+    different ways to tile the remaining two pieces." → glowing "Show me"
+    after 1.5 s → the 17 tilings drawn as the game's own pieces
+    (buildPieceShape), 550 ms each, ▸▸ beside the count → Continue → popup
+    steps (3 squares, 2 ways) → "Which of these achieves parity?" → right:
+    "Parity achieved!", L and P drawn into that picture, Next in the
+    popup's bottom right (slide done; the pieces-drop-in / count ending was
+    removed, with its overview and hint).
+  - Popups: tapping the dark area no longer counts as Got it / OK; Esc no
+    longer closes a popup (its button is focused, so Enter works).
+  - Slide 10: "To complete the tutorial, solve this puzzle." beside the
+    grid; the grid glows twice as it opens; after the hint's last Got it
+    the highlighter glows twice, then stops.
+  - MAYBE (future): ▸▸ on slide 9's "don't" pictures.
+- 2026-11-18 second batch (user's PDF notes, before a demo to a potential buyer):
+  - Slide 4: popup "Next, we'll examine…" 150 ms after the last highlight
+    (was 800); slide 5 starts 400 ms after Next (was 1400); slide 5's
+    "Since this grid is 6 × 6…" follows the numbering almost at once.
+  - Slide 6 wording: "…also means that you have achieved parity."
+  - Slide 7 popup steps sit RIGHT of the grid on laptops (`side: true` in
+    placeSpotCard, when ≥ 340 px of room), with the two remaining pieces lit
+    (`litTray`): no scroll bar on a 13" laptop (checked in Firefox at
+    1440×780 and 1280×680). Pictures centred. Question: "Which of these
+    layouts allows you to fit the remaining two pieces?" Right answer: the
+    grid below gets the six highlights and L and P too.
+  - Clear: more noticeable (Rules' size, full-strength text, ↺ icon;
+    game.css .reset-btn: also the sandbox's Counts / Clear). The tutorial's
+    last slide has the same Clear, with "Board cleared · Undo".
+- 2026-11-18 third batch (user: cut the fluff; tutorial not forced):
+  - 8 SLIDES now: goals, words, pick, highlight → sum (old 4 + 5 merged:
+    the last highlight starts the explainer, no "examine this grid" popup),
+    pick (empty squares), the 17 ways + choice, rotate + reflect (with the
+    line "A piece can't go over a dotted line, the edge of the grid, or
+    another piece." — the "don't place" slide is gone; showDontSlide /
+    playDont are unused), the final puzzle.
+  - Slide 1's Parity counting half as long (checkEach 300, between 400).
+  - First visit to a puzzle: the RULES open (not the tutorial); the timer
+    pauses while they're open. Rules end: "For helpful tips on solving
+    Medium and Hard puzzles, play the tutorial." + Play the tutorial.
+    Clicking outside the rules closes them (it already did).
+  - Tiling goal (rules + tutorial): "Fit all of the pieces onto the grid
+    without overlapping." (the rules never said pieces can't overlap)
+  - No scrolling on any slide at 13" laptop sizes (Firefox 1440×780 and
+    1280×680): laptops cap the grid at 100vh − 480px (min 200px); slide 1
+    puts its two goals side by side on wide, short windows.
+  - The tutorial on the puzzle page is FULL SCREEN again (was a 1000 × 860
+    window: slide 4's pieces wrapped and the grid jumped mid-animation, the
+    measuring line was cut off). × goes back to the puzzle.
+  - Slide 2's welcome popup is gone (the rules come first now); slide 2
+    plays straight away.
+  - Tiling goal: "…without overlapping them."
+  - Rules: "Tip: Use the highlighter (✎) to mark squares you think will
+    stay empty." between the goals and the Rules heading (the tutorial is
+    optional now, so the pencil needs a word somewhere).
+  - Rules' rotate arrow: option "F" from a comparison page: the circle
+    ends at its far right heading straight down, with a V tip like the
+    reflect arrow's (the old tip looked bent).
+  - Rules reordered (user): 1 Tiling "Fit all of the pieces onto the grid.
+    Pieces cannot be placed on another piece or a dotted line." (same on
+    tutorial slide 1), its grid with a dotted line round U and Y; 2 Parity:
+    block / piece pictures, then "Every row and every column…", then the
+    three counting pictures; the highlighter tip; "Controls" (was "Rules"):
+    "To rotate a piece: click it." then "To reflect a piece: double-click
+    it." (tap / tap twice on phones). The dotted-line rule and picture at
+    the end are gone.
+  - Then (user OK'd all four suggestions): Controls = place ("drag it onto
+    the grid", text only), rotate, reflect, highlighter ("To mark a square:
+    turn on the highlighter (✎), then click / tap the square"; the separate
+    Tip is gone). Parity opens with "Parity counts blocks:". Captions name
+    the odd lines.
+  - PARITY_EXAMPLE (shapes.js; rules + tutorial slide 1) is a full 6×6 with
+    six pentominoes P U T V L N; only U differs between wrong and solved.
+    Wrong: rows 3, 4 and columns 5, 6 odd. Rules captions "Rows 3 and 4
+    are odd" / "Columns 5 and 6 are odd" / "All even: parity!". Slide 1:
+    "Check rows:" + the result below it, shown once that grid is counted
+    (narrow phones: "Rows 3, 4 odd" / "Columns 5, 6 odd"). If the example
+    changes, these captions must change with it.
+  - NEW TEST laptop_fit_test: no tutorial slide scrolls at Firefox
+    1440×780 / 1280×680 and Chromium 1280×800 (phones: phone_layout_check). Clear's icon: a clean ↺ (circle + squared arrowhead).
+  - (A tutorial_window_test was written, then dropped by the user: the
+    tutorial is always full screen, so tutorial.html's own tests cover it.
+    No scrolling at 13" Firefox sizes is still wanted.)
 - Slide 1's drags: no pointer at all now (user: "just want to see the
   pieces"), and faster: ~14 → ~7 s for the six.
 - Slide 5's highlights no longer blink when coming from slide 4's "Next,

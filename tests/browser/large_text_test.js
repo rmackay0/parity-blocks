@@ -79,6 +79,19 @@ const SCOPE = ['.tut-body', '#spot', '.rules-popup', '#status', '#solved-popup']
         // Get past popups so the text under them is seen too
         await both(async p => { if (await p.isVisible('#spot-ok')) await p.click('#spot-ok'); });
       }
+      // (2026-11-18) slide 7: Show me (the count), Continue, the popup steps,
+      // then the right way ("Parity achieved!" and its Next)
+      if (await pages[0].isVisible('#ways-btn')) {
+        await both(p => p.click('#ways-btn')); await pages[0].waitForTimeout(1500);
+        compared += await compare(`slide ${n} the ways playing`);
+        await both(async p => { if (await p.isVisible('#ff-btn')) await p.click('#ff-btn'); });
+        await pages[0].waitForTimeout(2500);
+        await both(p => p.click('#ways-btn')); await pages[0].waitForTimeout(500);
+        for (let k = 0; k < 2; k++) { await both(p => p.click('#spot-ok')); await pages[0].waitForTimeout(500); }
+        compared += await compare(`slide ${n} the choice`);
+        await both(p => p.click('#way-choices .way-btn:nth-child(2)')); await pages[0].waitForTimeout(800);
+        compared += await compare(`slide ${n} parity achieved`);
+      }
       // Pick slides: pick the right grid, then see the message
       if (await pages[0].evaluate(() => SLIDES[current].kind === 'pick')) {
         await both(p => p.evaluate(() => PICK_BOARDS.find(b => b.right).btn.click()));
