@@ -191,10 +191,24 @@ What came of it (2026-11-17):
   copy their flow, see the no-copying rule; ours would need its own
   wording and look); (b) a "Solved" message above the board with the win
   animation on the grid itself, so the solved work stays in view.
-- Next up (user, 2026-11-17): "Skip ▸▸" to finish a tutorial animation at
-  once, and trim the slowest parts (slide 1's drags ~14 s). Slide 7
-  should be easier, with animations that act out what its note says; only
-  the final slide should be a real struggle.
+- DONE "Skip ▸▸" (bottom bar, middle; only while something plays):
+  every timed step goes through `schedule()` / `later()`; `skipAnimation`
+  plays the steps due in the next 30 s at once (CSS transitions off a
+  moment, running animations finished). Slide 1's drags trimmed ~14 → ~10 s.
+  Test: skip_test.
+- DONE slide 7 easier (user: only the final slide should be a real
+  struggle): after the first popup, four more "Got it" steps, each acted
+  out on the grid (`HL_STEPS`, `playDemo`, drawn in `#hl-demo`): the 17
+  ways flick past with a counter (`HL_ALL_TILINGS`, solver.js); the 3
+  squares no piece fits pulse and are then highlighted and LOCKED for the
+  player (`HL_NEVER`); the 2 even placements of the other 3 show in turn
+  (`HL_EVEN_WAYS`, the 2nd is the answer); "Only one of them leaves room
+  for both pieces…". Then a short overview beside the board (laptops,
+  `HL_OVERVIEW`; phones keep just the step). The player highlights the
+  other 3 (user: keep highlighting, it's the habit to teach). Hint now
+  "Find a row or column with only one highlighted square…". Wording of
+  the new sentences is Claude's (marked in the code): confirm with the
+  user. Short phones (SE): popups compacted so "Got it" stays in view.
 
 **Ask the user next time (2026-11-16):**
 - How slides 1 and 2 feel on a real phone (speed, "Show me").

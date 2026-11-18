@@ -26,7 +26,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
     await page.clock.runFor(500);
     // (the opening popup: one part on a laptop, two on phones, the second
     // being the "17 ways" text; the hint's clock starts once it's closed)
-    for(let k = 0; k < 3 && await page.evaluate(()=>!document.getElementById('spot').hidden); k++){ await page.click('#spot-ok'); await page.clock.runFor(300); }
+    for(let k = 0; k < 8 && await page.evaluate(()=>!document.getElementById('spot').hidden); k++){ await page.click('#spot-ok'); await page.clock.runFor(300); }
     await page.clock.runFor(1000);
     const text = await page.innerText('#n-boardr');     // (only the text you can see)
     check(!/only one highlighted/.test(text), 'at first the note has no hint sentence');

@@ -509,6 +509,15 @@
   @media (max-width: 760px) { .eq-banner { font-size: 1.35rem; padding: 6px 14px; } }
   /* the first step gets a check once it's done */
   .empty-card p.step-done::after { content: ' \2713'; color: var(--color-valid); font-weight: 700; }
+  /* Slide 7's demos over the grid (playDemo, 2026-11-17) */
+  #hl-demo { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+  .demo-sq { position: absolute; border-radius: 4px; box-sizing: border-box; }
+  .demo-sq.piece { background: var(--demo-color); opacity: 0.85; border: 1.5px solid rgba(0, 0, 0, 0.25); }
+  .demo-sq.pulse { background: var(--hl-0); animation: demoPulse 0.5s ease-in-out 3 alternate both; }
+  @keyframes demoPulse { from { opacity: 0.25; transform: scale(0.85); } to { opacity: 1; transform: scale(1.06); } }
+  .demo-sq.way { background: var(--hl-0); opacity: 0.9; outline: 2.5px dashed var(--color-text-dim); outline-offset: -4px; animation: demoIn 0.2s ease both; }
+  @keyframes demoIn { from { opacity: 0; } to { opacity: 0.9; } }
+  .hl-pop .demo-count { color: var(--color-text-dim); font-size: 0.95em; font-variant-numeric: tabular-nums; }
   /* Phones: on slide 6 the note comes first (it's read before anything
      else), then the pieces and the board */
   @media (max-width: 760px) {
@@ -746,6 +755,11 @@
     .play .lead { margin-bottom: 2px; font-size: 0.95rem; }
     .dont-slide { padding-top: 0; }
     .dont-slide h2 { font-size: 1.3rem; margin-bottom: 6px; }
+    /* (2026-11-17) slide 7's demo popups sit above the grid: compact, so
+       "Got it" stays in the card */
+    .spot-card { padding: 10px 14px; }
+    .spot-card .hl-pop p { font-size: 0.95rem; line-height: 1.35; margin-bottom: 6px; }
+    .spot-card .ok-btn { height: 36px; font-size: 1.1rem; }
   }
 
   [hidden] { display: none !important; }
@@ -1611,7 +1625,7 @@ function updateNext(){
    and every timed step checks it first, so leaving a slide mid-animation
    stops that animation. */
 let animRun = 0;
-function later(ms, fn){ const run = animRun; schedule(ms, ()=>{ if(run === animRun) fn(); }); }
+function later(ms, fn){ const run = animRun; return schedule(ms, ()=>{ if(run === animRun) fn(); }); }
 
 /* ── Skip ▸▸ (2026-11-17, a tester: "even I didn't want to sit through
    it") ── Every timed step goes through schedule(), which keeps a list of
@@ -1625,10 +1639,17 @@ const SKIP_HORIZON_MS = 30000;
 let pending = [];                  // { due, fn, id }
 let skipping = false, skipClock = 0;
 function schedule(ms, fn){
-  if(skipping){ pending.push({ due: skipClock + ms, fn, id: 0 }); return; }
+  if(skipping){ const t = { due: skipClock + ms, fn, id: 0 }; pending.push(t); return t; }
   const t = { due: performance.now() + ms, fn };
   t.id = setTimeout(()=>{ pending = pending.filter(x=>x !== t); fn(); updateSkip(); }, ms);
   pending.push(t);
+  updateSkip();
+  return t;
+}
+// Drop scheduled steps that are no longer wanted (so Skip ▸▸ doesn't wait on them)
+function unschedule(list){
+  list.forEach(t=>{ if(t){ clearTimeout(t.id); t.id = -1; } });
+  pending = pending.filter(t=>!list.includes(t));
   updateSkip();
 }
 function animationSoon(){
@@ -1673,6 +1694,7 @@ function showSlide(i){
   animRun++;
   clearDragGhosts();
   pending.forEach(t=>clearTimeout(t.id)); pending = [];   // (the old slide's steps: Skip ▸▸ hides)
+  if(typeof stopDemo === 'function') stopDemo();          // (slide 7's drawings over the grid)
   updateSkip();
   const s = SLIDES[i];
   $('intro').hidden = s.kind !== 'goals' && s.kind !== 'words';
@@ -1898,6 +1920,9 @@ function showHint(steps, step, onClose){
   }
   card.scrollTop = 0;                               // start at the first sentence
   $('spot-ok').focus({ preventScroll: true });
+  // (2026-11-17) a step can start something on the grid as it appears
+  if(typeof stopDemo === 'function') stopDemo();
+  if(s.onShow) s.onShow();
 }
 function hideHint(){ $('spot').hidden = true; $('spot').classList.remove('instant', 'quick'); $('spot-card').style.visibility = ''; }
 // "Got it": the next part of the popup, or (after the last) close it.
@@ -2121,18 +2146,59 @@ const HL_POPUP = [  // [CONTENT] (one "Got it" each; "The first four will be eas
   // (user, 2026-11-15: say WHY they're highlighting)
   '<p>This is a partially solved puzzle. To narrow down where the pieces can go, highlight where the six empty squares have to go.</p>',
 ];
-const HL_NOTE = [   // [CONTENT] the note beside the board (the step must stay 2nd: it becomes "✓ All 6 empty squares found!")
-  // (user, 2026-11-16, shorter: say why, with the numbers. even_empties:
-  // with the 3 squares no piece fits counted as empty, 2 placements of the
-  // six are even; only 1 of those can be tiled)
-  // (two messages, split before "Use the highlighter": user, 2026-11-16)
-  `There are ${HL_TILINGS} different ways to tile the remaining two pieces. There are 2 ways to place the empty squares so that every row and every column has an even number of empty squares.`,
-  `Use the highlighter to highlight where the 6 empty squares have to go. This rules out the ${HL_TILINGS - 1} wrong ways.`,   // (user, 2026-11-16)
-  '<b>Highlight</b> the 6 empty squares.',
+/* (2026-11-17, user: slide 7 a little easier, with animations that act out
+   the note; only the final slide should be a real struggle. The note became
+   "Got it" steps, each with its own animation on the grid (HL_STEPS), then a
+   short overview stays beside the board (HL_OVERVIEW).) solver.js, for this
+   board: 17 ways to fit L and P; (0,0), (5,0), (5,1) are never covered;
+   with those empty, only 2 ways to place the other 3 empty squares keep every
+   row and column even, and only the second leaves room for both pieces. */
+const HL_NEVER = [[0,0],[5,0],[5,1]];                    // no piece fits: always empty
+const HL_EVEN_WAYS = [ [[0,2],[2,1],[2,2]], [[0,3],[2,1],[2,3]] ];   // (the 2nd is the answer)
+// The 17 ways to fit L and P (solver.js analyzePuzzle, fixed pieces as prefilled)
+const HL_ALL_TILINGS = [
+  [[[0,2],[1,2],[2,2],[3,2],[3,3]], [[0,4],[0,5],[1,3],[1,4],[1,5]]],
+  [[[0,2],[1,2],[2,2],[3,2],[3,3]], [[0,3],[0,4],[0,5],[1,3],[1,4]]],
+  [[[0,2],[1,2],[2,2],[3,2],[3,3]], [[0,3],[0,4],[1,3],[1,4],[1,5]]],
+  [[[0,2],[1,2],[2,2],[3,2],[3,3]], [[0,3],[0,4],[1,3],[1,4],[2,3]]],
+  [[[0,2],[1,2],[2,2],[3,2],[3,3]], [[0,3],[0,4],[0,5],[1,4],[1,5]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,2]], [[2,1],[2,2],[2,3],[3,2],[3,3]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,2]], [[1,3],[2,2],[2,3],[3,2],[3,3]]],
+  [[[0,5],[1,2],[1,3],[1,4],[1,5]], [[2,1],[2,2],[2,3],[3,2],[3,3]]],
+  [[[0,2],[1,2],[1,3],[1,4],[1,5]], [[2,1],[2,2],[2,3],[3,2],[3,3]]],
+  [[[0,2],[0,3],[1,2],[2,2],[3,2]], [[0,4],[0,5],[1,3],[1,4],[1,5]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[1,2],[1,3],[2,1],[2,2],[2,3]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[1,2],[2,2],[2,3],[3,2],[3,3]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[1,2],[1,3],[1,4],[2,2],[2,3]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[1,2],[1,3],[2,2],[2,3],[3,3]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[1,2],[1,3],[2,2],[2,3],[3,2]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[2,1],[2,2],[2,3],[3,2],[3,3]]],
+  [[[0,2],[0,3],[0,4],[0,5],[1,5]], [[1,3],[2,2],[2,3],[3,2],[3,3]]],
 ];
-const HL_WHY = HL_NOTE.slice(0, 2);   // the two messages (phones: popup parts instead)
-const HL_HINT =    // [CONTENT] (2026-11-16, for the new board)
-  '<b>Hint:</b> Three empty squares are in spots where no piece fits. Then find a row or column with only one highlighted square: it needs one more. (0 counts as an even number.)';
+// [CONTENT] the steps after HL_POPUP, one "Got it" each, each acting itself
+// out on the grid (demo: 'tilings' | 'never' | 'ways'). Wording: the user's
+// note of 2026-11-16 split up; the sentences marked (Claude) are new: confirm.
+const HL_STEPS = [
+  { demo: 'tilings', html: `<p>There are ${HL_TILINGS} different ways to tile the remaining two pieces.</p>`
+      + `<p class="demo-count">Way <b id="demo-n">1</b> of ${HL_TILINGS}</p>` },
+  { demo: 'never', html: '<p>No piece fits in these 3 squares, so they have to be empty. They&rsquo;re highlighted for you.</p>' },   // (Claude)
+  { demo: 'ways', html: '<p>That leaves only 2 ways to place the other 3 empty squares so every row and column has an even number of them.</p>'
+      + '<p class="demo-count"><b id="demo-way">Way 1</b> of 2</p>' },   // (Claude, from the user's line)
+  // (its own step: on an iPhone SE the two together pushed "Got it" out of sight)
+  { demo: 'ways', html: `<p>Only one of them leaves room for both pieces. Use the highlighter to find it. This rules out the ${HL_TILINGS - 1} wrong ways.</p>` },   // (Claude, from the user's line)
+];
+// [CONTENT] the overview beside the board (laptops; phones show only the
+// step). The last line is the step: it becomes "✓ All 6 empty squares found!"
+const HL_OVERVIEW = [
+  '<b>No piece fits</b> in 3 squares, so they&rsquo;re empty.',   // (Claude)
+  'Every row and column needs an <b>even</b> number of empty squares.',   // (Claude)
+  '<b>Highlight</b> the other 3 empty squares.',
+];
+const HL_HINT =    // [CONTENT] (2026-11-17: the 3 squares no piece fits are given now)
+  '<b>Hint:</b> Find a row or column with only one highlighted square: it needs one more. (0 counts as an even number.)';
+const HL_NEVER_KEYS = HL_NEVER.map(([r,c])=>r + ',' + c);
+// demo timings (ms)
+const DEMO = { tilingEach: 380, pulse: 1500, wayShow: 1300, wayGap: 250, wayRounds: 2 };
 const HL_SIX = HL_EMPTY.map(([r,c])=>r + ',' + c);   // all six empty squares
 const PLACE_GAP_MS = 600;     // between the two pieces dropping in
 const FLY_MS = 800;           // a piece flying from the top onto the grid (was 650; slower: user 2026-11-13)
@@ -2243,7 +2309,9 @@ function showHighlighterLesson(){
   // (laptops: the two messages; the 2nd, "Use the highlighter…", is the
   // step that becomes "✓ All 6 … found!" (user, 2026-11-16: no empty room
   // kept for it; the box only gets smaller then, so nothing moves))
-  const noteLines = PHONE_LAYOUT.matches ? HL_NOTE.slice(2) : HL_WHY;
+  // (2026-11-17: the long note is now popup steps with animations; beside
+  // the board stays a short overview, laptops; phones keep just the step)
+  const noteLines = PHONE_LAYOUT.matches ? HL_OVERVIEW.slice(-1) : HL_OVERVIEW;
   card.innerHTML = noteLines.map((t, i)=>`<p class="note${i === noteLines.length - 1 ? ' hl-step' : ''}">${t}</p>`).join('')
     + `<p class="note hl-hint" id="hl-hint" hidden>${HL_HINT}</p>`;
   $('n-boardr').appendChild(card);
@@ -2253,16 +2321,80 @@ function showHighlighterLesson(){
   requestAnimationFrame(()=>{
     if(!SLIDES[current].highlighterLesson) return;
     const lit = [...boardEl.querySelectorAll('.board-cell')].map(el=>[+el.dataset.r, +el.dataset.c]);
-    const over = PHONE_LAYOUT.matches;     // (phones: over the grid, like their other popups)
+    const phone = PHONE_LAYOUT.matches;
     $('spot').classList.add('instant');
-    const parts = over ? HL_POPUP.concat(HL_WHY.map(t=>`<p>${t}</p>`)) : HL_POPUP;
-    showHint(parts.map(p=>({ lit, over, html: `<div class="hl-pop">${p}</div>` })), 0, afterHighlighterPopup);
+    // the first part over the grid on phones (nothing to watch yet); the
+    // demo steps never over it, so their animation on the grid shows
+    const parts = HL_POPUP.map(p=>({ lit, over: phone, html: `<div class="hl-pop">${p}</div>` }))
+      .concat(HL_STEPS.map(s=>({ lit, over: false, html: `<div class="hl-pop">${s.html}</div>`, onShow: ()=>playDemo(s.demo) })));
+    showHint(parts, 0, afterHighlighterPopup);
   });
+}
+/* Slide 7's demos, drawn over the grid while their popup step shows
+   (2026-11-17). Each step stops the one before (demoRun). */
+let demoRun = 0, demoSteps = [];
+function demoLayer(){
+  let layer = $('hl-demo');
+  if(!layer){ layer = document.createElement('div'); layer.id = 'hl-demo'; $('board-outer').appendChild(layer); }
+  return layer;
+}
+function stopDemo(){
+  demoRun++;
+  if(demoSteps.length){ unschedule(demoSteps); demoSteps = []; }
+  const l = $('hl-demo'); if(l) l.replaceChildren();
+}
+// Squares drawn over the grid: cells [[r,c]…], class (look), color
+function demoSquares(cells, cls, color){
+  const layer = demoLayer(), outer = $('board-outer').getBoundingClientRect();
+  cells.forEach(([r,c])=>{
+    const cell = cellEl(r + ',' + c); if(!cell) return;
+    const b = cell.getBoundingClientRect(), d = document.createElement('div');
+    d.className = 'demo-sq ' + cls;
+    d.style.cssText = `left:${b.left - outer.left}px; top:${b.top - outer.top}px; width:${b.width}px; height:${b.height}px;` + (color ? `--demo-color:${color};` : '');
+    layer.appendChild(d);
+  });
+}
+function playDemo(kind){
+  stopDemo();
+  const run = demoRun, alive = ()=>run === demoRun && SLIDES[current].highlighterLesson;
+  const at = (ms, fn)=>{ demoSteps.push(later(ms, ()=>{ if(alive()) fn(); })); };
+  const layer = demoLayer();
+  if(kind === 'tilings'){
+    // the 17 ways flick past, L and P in their own colors, counted
+    HL_ALL_TILINGS.forEach(([L, P], i)=>at(i * DEMO.tilingEach, ()=>{
+      layer.replaceChildren();
+      demoSquares(L, 'piece', PIECE_COLOR.L); demoSquares(P, 'piece', PIECE_COLOR.P);
+      const n = $('demo-n'); if(n) n.textContent = i + 1;
+    }));
+  } else if(kind === 'never'){
+    // the 3 squares pulse, then are highlighted for good (locked: given)
+    demoSquares(HL_NEVER, 'pulse');
+    at(DEMO.pulse, ()=>{ layer.replaceChildren(); giveNeverSquares(); });
+  } else if(kind === 'ways'){
+    // the two even placements, one after the other, twice
+    giveNeverSquares();
+    const step = DEMO.wayShow + DEMO.wayGap;
+    for(let k = 0; k < DEMO.wayRounds * 2; k++) at(k * step, ()=>{
+      layer.replaceChildren();
+      demoSquares(HL_EVEN_WAYS[k % 2], 'way');
+      const w = $('demo-way'); if(w) w.textContent = 'Way ' + (k % 2 + 1);
+      at(DEMO.wayShow, ()=>layer.replaceChildren());
+    });
+  }
+}
+// The 3 squares no piece fits: highlighted and locked (the player can't clear them)
+function giveNeverSquares(){
+  const m = getMarks();
+  HL_NEVER_KEYS.forEach(k=>{ m[k] = 0; });
+  setMarks(m);
+  setLockedMarks(HL_NEVER_KEYS);
 }
 // After the last "Got it": the reminder fades in, the highlighter glows,
 // and the hint's clock starts
 function afterHighlighterPopup(){
   if(!SLIDES[current].highlighterLesson) return;
+  stopDemo();
+  giveNeverSquares();              // (in case the steps were clicked through quickly)
   $('n-boardr').querySelector('.empty-card').classList.remove('waiting');
   $('n-boardr').querySelectorAll('.empty-card p:not(.hl-hint)').forEach((p, i)=>later(i * HL_NOTE_STAGGER_MS, ()=>p.classList.add('shown')));
   later(HL_HINT_MS, showHighlightHint);

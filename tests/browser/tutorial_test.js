@@ -141,18 +141,24 @@ async function placePiece(page, frame, name, target, touch){
     check(label, 'slide 7: the popup says why ("To narrow down where the pieces can go")', /To narrow down where the pieces can go/.test(await popupText()));
     await frame.click('#spot-ok');
     await page.waitForTimeout(400);
-    // (2026-11-16) the "17 ways to tile this grid" text: beside the board on
-    // a laptop; on phones a second popup part
-    if(touch){
-      check(label, 'slide 7: phones: the "17 ways" text is the popup\'s second part', /There are 17 different ways to tile/.test(await popupText()));
-      await frame.click('#spot-ok'); await page.waitForTimeout(400);
-      check(label, 'slide 7: phones: "Use the highlighter…" is its third part', /^Use the highlighter/.test(await popupText()));
-      await frame.click('#spot-ok');
-    } else check(label, 'slide 7: laptops: the "17 ways" text is beside the board', /There are 17 different ways to tile/.test(await F(()=>document.getElementById('n-boardr').innerText)));
+    // (2026-11-17) the note is now four popup steps, each acted out on the grid
+    check(label, 'slide 7: step 2, the 17 ways, counted on the grid', /There are 17 different ways to tile/.test(await popupText()));
+    await page.waitForTimeout(1500);
+    check(label, 'slide 7: the ways flick past (counter moving, pieces drawn)', await F(()=>+document.getElementById('demo-n').textContent > 1 && document.querySelectorAll('#hl-demo .demo-sq').length === 10));
+    await frame.click('#spot-ok'); await page.waitForTimeout(400);
+    check(label, 'slide 7: step 3, no piece fits in 3 squares', /No piece fits in these 3 squares/.test(await popupText()));
+    await page.waitForTimeout(1800);
+    check(label, 'slide 7: those 3 are given (highlighted, locked)', await F(()=>Object.keys(getMarks()).sort().join(' ')) === '0,0 5,0 5,1');
+    await frame.click('#spot-ok'); await page.waitForTimeout(400);
+    check(label, 'slide 7: step 4, the 2 even ways, shown on the grid', /only 2 ways/.test(await popupText()) && await F(()=>document.querySelectorAll('#hl-demo .demo-sq.way').length) === 3);
+    await frame.click('#spot-ok'); await page.waitForTimeout(400);
+    check(label, 'slide 7: step 5, only one leaves room', /Only one of them leaves room/.test(await popupText()));
+    await frame.click('#spot-ok');
     await page.waitForTimeout(1200);
+    if(!touch) check(label, 'slide 7: laptops: the short overview beside the board', /No piece fits in 3 squares/.test(await F(()=>document.getElementById('n-boardr').innerText)));
     check(label, 'slide 7: the highlighter glows until tapped', await F(()=>document.getElementById('hl-tool').classList.contains('glowing')));
     await tap('.hl-pencil');
-    for(const k of await F(()=>HL_SIX)){ const [r, c] = k.split(','); await tap(`.board-cell[data-r="${r}"][data-c="${c}"]`); await page.waitForTimeout(150); }
+    for(const k of await F(()=>HL_SIX.filter(k=>!HL_NEVER_KEYS.includes(k)))){ const [r, c] = k.split(','); await tap(`.board-cell[data-r="${r}"][data-c="${c}"]`); await page.waitForTimeout(150); }
     await page.waitForTimeout(800);
     check(label, 'slide 7: all six found: "✓ All 6 empty squares found!"', /All 6 empty squares found/.test(await F(()=>document.getElementById('n-boardr').innerText)));
     check(label, 'slide 7: N and P drop in by themselves, then the count', await playThrough(30, false));

@@ -35,7 +35,7 @@ const GLOWS = [
         await page.waitForTimeout(400);
         // (slide 7 opens with a popup: close it)
         // (phones: two parts since 2026-11-16)
-        if (slide === 6) { for (let k = 0; k < 3 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) { await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
+        if (slide === 6) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) { await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
         if (setup) { await page.evaluate(setup); await page.waitForTimeout(400); }
         const r = await page.evaluate(([sel, reach]) => {
           const el = document.querySelector(sel);
