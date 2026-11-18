@@ -15,7 +15,7 @@ let failures = 0;
 const GLOWS = [
   [3, '#step0', 14, null],
   [3, '.hl-pencil', 21, ()=>{ document.getElementById('hl-tool').classList.add('glowing'); }],
-  [6, '.hl-pencil', 21, null],
+  // (slide 7's highlighter glow is gone: 2026-11-17, that slide ends in a choice now)
   [7, '#step0', 14, null],
   [8, '.dont-slide h2', 14, null],
   [9, '#hint-btn', 19, ()=>{ document.getElementById('hint-btn').classList.add('shown', 'lit'); }],

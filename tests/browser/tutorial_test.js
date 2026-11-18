@@ -152,13 +152,16 @@ async function placePiece(page, frame, name, target, touch){
     await frame.click('#spot-ok'); await page.waitForTimeout(400);
     check(label, 'slide 7: step 4, the 2 even ways, shown on the grid', /only 2 ways/.test(await popupText()) && await F(()=>document.querySelectorAll('#hl-demo .demo-sq.way').length) === 3);
     await frame.click('#spot-ok'); await page.waitForTimeout(400);
-    check(label, 'slide 7: step 5, only one leaves room', /Only one of them leaves room/.test(await popupText()));
-    await frame.click('#spot-ok');
-    await page.waitForTimeout(1200);
+    // (2026-11-17) step 5 is a choice between the two ways: no "Got it",
+    // tapping the dark area doesn't close it, no highlighter on this slide
+    check(label, 'slide 7: step 5, the choice: two pictures, no "Got it"', /Which one\?/.test(await popupText())
+      && await F(()=>document.querySelectorAll('#way-choices .way-btn').length) === 2 && await F(()=>document.querySelector('#spot-card .spot-btns').hidden));
+    check(label, 'slide 7: no highlighter button on this slide', await F(()=>document.getElementById('hl-tool').hidden));
+    await tap('#way-choices .way-btn:nth-child(1)'); await page.waitForTimeout(400);
+    check(label, 'slide 7: Way 1 → "Not that one", the red space on the grid', /Not that one/.test(await popupText()) && await F(()=>document.querySelectorAll('#hl-demo .demo-sq.nofit').length) > 0);
+    await tap('#way-choices .way-btn:nth-child(2)'); await page.waitForTimeout(2000);
+    check(label, 'slide 7: Way 2 → the popup closes, the six are highlighted', await F(()=>document.getElementById('spot').hidden && Object.keys(getMarks()).length === 6));
     if(!touch) check(label, 'slide 7: laptops: the short overview beside the board', /No piece fits in 3 squares/.test(await F(()=>document.getElementById('n-boardr').innerText)));
-    check(label, 'slide 7: the highlighter glows until tapped', await F(()=>document.getElementById('hl-tool').classList.contains('glowing')));
-    await tap('.hl-pencil');
-    for(const k of await F(()=>HL_SIX.filter(k=>!HL_NEVER_KEYS.includes(k)))){ const [r, c] = k.split(','); await tap(`.board-cell[data-r="${r}"][data-c="${c}"]`); await page.waitForTimeout(150); }
     await page.waitForTimeout(800);
     check(label, 'slide 7: all six found: "✓ All 6 empty squares found!"', /All 6 empty squares found/.test(await F(()=>document.getElementById('n-boardr').innerText)));
     check(label, 'slide 7: N and P drop in by themselves, then the count', await playThrough(30, false));

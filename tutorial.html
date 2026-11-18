@@ -256,8 +256,6 @@
   .drag-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; }
   .drag-piece { position: absolute; left: 0; top: 0; transform-origin: center; }
   .drag-piece svg { display: block; overflow: visible; }
-  .drag-pointer { position: absolute; left: -2px; top: -2px; }
-  .drag-pointer svg path { fill: #fff; stroke: #1F2330; stroke-width: 1.3; stroke-linejoin: round; }
   svg .rb-frame.ia:not(.ia-on), svg .rb-cell.ia:not(.ia-on), svg .rb-hl.ia:not(.ia-on) { transform: none; }
   .words-list li.ia:not(.ia-on) { transform: translateY(8px); }
   /* slide 1's small check pictures: a row every 16px, so the counts fit that */
@@ -512,12 +510,28 @@
   /* Slide 7's demos over the grid (playDemo, 2026-11-17) */
   #hl-demo { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
   .demo-sq { position: absolute; border-radius: 4px; box-sizing: border-box; }
+  #board.no-fade .board-cell { transition: none; }   /* (slide 5's highlights stay put: showFindEmpty) */
   .demo-sq.piece { background: var(--demo-color); opacity: 0.85; border: 1.5px solid rgba(0, 0, 0, 0.25); }
   .demo-sq.pulse { background: var(--hl-0); animation: demoPulse 0.5s ease-in-out 3 alternate both; }
   @keyframes demoPulse { from { opacity: 0.25; transform: scale(0.85); } to { opacity: 1; transform: scale(1.06); } }
   .demo-sq.way { background: var(--hl-0); opacity: 0.9; outline: 2.5px dashed var(--color-text-dim); outline-offset: -4px; animation: demoIn 0.2s ease both; }
   @keyframes demoIn { from { opacity: 0; } to { opacity: 0.9; } }
   .hl-pop .demo-count { color: var(--color-text-dim); font-size: 0.95em; font-variant-numeric: tabular-nums; }
+  .demo-sq.nofit { background: var(--color-count-odd); opacity: 0.55; animation: demoIn 0.25s ease both; }
+  /* slide 7's choice between the two ways (setupWayChoice, 2026-11-17) */
+  .way-choices { display: flex; justify-content: center; gap: 18px; margin: 4px 0 6px; }
+  .way-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; cursor: pointer;
+             background: var(--color-panel); border: 2px solid var(--color-cell-border); border-radius: 12px;
+             transition: border-color 0.2s, box-shadow 0.2s, opacity 0.3s; }
+  .way-btn:hover:not(:disabled) { border-color: var(--color-accent); box-shadow: 0 0 0 4px rgba(var(--glow), 0.15); }
+  .way-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .way-btn svg { display: block; max-width: 100%; height: auto; }
+  .way-btn .way-label { font-family: var(--font-display); font-size: 1rem; color: var(--color-text); }
+  .way-btn.wrong { border-color: var(--color-count-odd); opacity: 0.55; cursor: default; }
+  .way-btn.right { border-color: var(--color-count-even); box-shadow: 0 0 0 4px rgba(62, 155, 58, 0.25); }
+  .way-btn:disabled { cursor: default; }
+  .way-msg.bad { color: var(--color-status); font-weight: 700; }
+  .way-msg.good { color: var(--color-valid); font-weight: 700; }
   /* Phones: on slide 6 the note comes first (it's read before anything
      else), then the pieces and the board */
   @media (max-width: 760px) {
@@ -561,7 +575,7 @@
                         to   { box-shadow: 0 0 0 5px rgba(var(--glow),0.9), 0 0 28px rgba(var(--glow),0.7); } }
   @media (max-width: 760px) { .hint-btn { margin-left: auto; margin-right: auto; } }
   .spot { position: fixed; inset: 0; z-index: 90; animation: fadeIn 0.4s ease both; }
-  .spot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .spot > svg { position: absolute; inset: 0; width: 100%; height: 100%; }   /* (only the dark layer: not pictures inside the card) */
   .spot-ring { fill: none; stroke: var(--color-accent); stroke-width: 3; filter: drop-shadow(0 0 8px rgba(var(--glow),0.9)); }
   .spot-card {
     position: absolute; left: 50%; transform: translateX(-50%);
@@ -648,15 +662,18 @@
     transition: background 0.2s, color 0.2s, transform 0.1s, box-shadow 0.2s;
   }
   .foot-btn.back { min-width: 0; background: transparent; }
-  /* Skip ▸▸ (2026-11-17): quiet, in the middle of the bar, only while
-     something is playing */
-  .foot-btn.skip { min-width: 0; height: 38px; padding: 0 16px; font-size: 1.1rem; background: transparent;
-                   border: 1.5px solid var(--color-cell-border); color: var(--color-text-dim); }
-  .foot-btn.skip:hover { color: var(--color-text); border-color: var(--color-text-dim); }
-  .foot-btn.skip[hidden] { display: none; }
   .foot-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
-  /* while skipping, everything jumps straight to its end */
-  html.skipping *, html.skipping *::before, html.skipping *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; }
+  /* Fast forward ▸▸ (2026-11-17): a round button just right of what's
+     playing, above the popup's dark layer; filled while it's on */
+  .ff-btn { position: fixed; z-index: 95; width: 44px; height: 44px; border-radius: 50%; padding: 0;
+            display: grid; place-items: center; cursor: pointer;
+            background: var(--color-panel); border: 2px solid var(--color-accent); color: var(--color-accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18); transition: background 0.2s, color 0.2s; }
+  .ff-btn svg path { fill: currentColor; }
+  .ff-btn:hover { background: rgba(var(--glow), 0.1); }
+  .ff-btn.active { background: var(--color-accent); color: var(--color-panel); }
+  @media (max-width: 600px) { .ff-btn { width: 36px; height: 36px; } .ff-btn svg { width: 18px; height: 18px; } }   /* (phones: fits beside slide 1's grid) */
+  .ff-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
   .foot-btn.back:hover { color: var(--color-text); }
   .foot-btn.next[aria-disabled="true"] { cursor: default; }
   .foot-btn.next.ready { background: var(--color-next-ready); color: #fff; box-shadow: 0 0 0 4px rgba(123, 160, 91, 0.25), inset 0 -3px 0 rgba(0,0,0,0.15); }
@@ -834,14 +851,17 @@
 
   <footer class="tut-foot">
     <button class="foot-btn back" id="back-btn">&larr; Back</button>
-    <!-- (shown only while an animation is playing: skipAnimation) -->
-    <button class="foot-btn skip" id="skip-btn" type="button" hidden>Skip &#9656;&#9656;</button>
     <button class="foot-btn next" id="next-btn" aria-disabled="true">Next</button>
   </footer>
 </div>
 
 <!-- The final slide's hint: darkens the page except the dotted area,
      with an explanation (drawn by showHint; wording in SLIDES) -->
+<!-- Fast forward (2026-11-17): beside whatever is playing, only while
+     something plays (fastForward / placeFF). Above the popup's dark layer. -->
+<button type="button" class="ff-btn" id="ff-btn" aria-label="Fast forward" title="Fast forward" hidden>
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 5 L12 12 L3 19 Z M12 5 L21 12 L12 19 Z"/></svg>
+</button>
 <div class="spot" id="spot" hidden role="dialog" aria-label="Hint">
   <svg id="spot-svg" aria-hidden="true"></svg>
   <div class="spot-card" id="spot-card">
@@ -1209,7 +1229,10 @@ const SLIDES = [
     pickIntro: '',
     // (the user's wording, 2026-11-15)
     pickAsk: 'Count the empty squares in every row and column. In a 6 &times; 6 grid like this, an even number of empty squares in every row and column also means that you have parity. Select the grid that has achieved parity.' },
-  { kind: 'play', puzzle: PUZZLE_HL, highlighter: true, highlighterLesson: true,
+  // (2026-11-17, user: players got frustrated highlighting here and
+  // guessed; now steps lead to a choice between the 2 ways, so no
+  // highlighter button on this slide: the chosen way is highlighted for them)
+  { kind: 'play', puzzle: PUZZLE_HL, highlighter: false, highlighterLesson: true,
     countAnimation: true, countEmpty: true,
     solvedTitle: 'Solved!', solvedNote: 'Every row and column has an even number of empty squares, so every row and column has an even number of blocks.' },
   // (2026-11-13, user: rotate and reflect on one slide; the rotate slide's
@@ -1262,8 +1285,9 @@ const INTRO = {      // [BEHAVIOR] timings (ms): "significantly slower" than the
   start: 800,
   dropEach: 950,     // (old: slide 1's pieces dropped in; unused since the drags)
   // slide 1: each piece dragged from the set of 12 onto the grid (2026-11-16)
-  // (trimmed 2026-11-17, ~14 s → ~10 s for all six: was 280 / 520 / 480 / 220 / 260)
-  pickUp: 220, dragMove: 420, dragTurn: 400, dragLand: 180, dragGap: 160,
+  // (faster 2026-11-17, user: ~14 s → ~10 s → ~7 s for all six; was
+  // 280 / 520 / 480 / 220 / 260, then 220 / 420 / 400 / 180 / 160)
+  pickUp: 160, dragMove: 300, dragTurn: 320, dragLand: 140, dragGap: 90,
   afterTiling: 1200,
   checkEach: 600,    // a row / column checked
   between: 700,      // rows → columns → the solved board
@@ -1437,13 +1461,8 @@ function renderGoals(){
     inner.style.cssText = `width:${W + 2*m}px; height:${H + 2*m}px; margin:${-(H/2 + m)}px 0 0 ${-(W/2 + m)}px`;
     const svg = svgEl('svg', { width: W + 2*m, height: H + 2*m, viewBox: `${bb.x - m/k} ${bb.y - m/k} ${bb.width + 2*m/k} ${bb.height + 2*m/k}`, 'aria-hidden': 'true' }, inner);
     const copy = g.cloneNode(true); copy.removeAttribute('class'); svg.appendChild(copy);
-    // (laptops: a mouse pointer rides on the piece; phones: nothing, user 2026-11-17)
+    // (no pointer or fingertip on it: user 2026-11-17, "just want to see the pieces")
     outer.append(inner);
-    if(!PHONE_LAYOUT.matches){
-      const pointer = document.createElement('div'); pointer.className = 'drag-pointer';
-      pointer.innerHTML = '<svg viewBox="0 0 16 22" width="16" height="22" aria-hidden="true"><path d="M1 1 L1 17 L5.2 13.2 L8.2 20 L11 18.8 L8 12.2 L14 12.2 Z"/></svg>';
-      outer.append(pointer);
-    }
     document.body.appendChild(outer);
     // the stages: picked up → part of the way → (turn / flip) → over its place → put down
     const turned = move === 'turn' ? 'rotate(-90deg) scaleX(1)' : move === 'flip' ? 'rotate(0deg) scaleX(-1)' : 'rotate(0deg) scaleX(1)';
@@ -1468,7 +1487,6 @@ function renderGoals(){
     a.finished.then(()=>{
       if(!alive()){ outer.remove(); return; }
       reveal(g);                                   // (the grid's own piece, exactly under the copy)
-      if(skipping){ outer.remove(); onLanded(); return; }   // (Skip ▸▸: no waiting for a frame)
       requestAnimationFrame(()=>{ outer.remove(); onLanded(); });
     }).catch(()=>outer.remove());
   }
@@ -1479,10 +1497,14 @@ function renderGoals(){
       if(opening && PHONE_LAYOUT.matches) setOpen(n === 1 ? 2 : 1, false);
       setOpen(n, opening);
       if(!opening) return;
-      playGoal(n, ()=>{
-        goalSeen.add(n);
-        if(goalSeen.size === 2 && !done[current]){ $('goals-left').textContent = ''; markDone(); }
-      });
+      // (2026-11-17, a tester stuck on an iPhone: a goal only counted once its
+      // animation had played to the end (Parity ~17 s), and on phones opening
+      // the other goal closes this one and stops it, so switching early meant
+      // Next never lit, even after a reload. Now opening a goal is enough;
+      // the animation still plays, but nothing waits on it.)
+      goalSeen.add(n);
+      if(goalSeen.size === 2 && !done[current]){ $('goals-left').textContent = ''; markDone(); }
+      playGoal(n, ()=>{});
     };
   });
 }
@@ -1627,26 +1649,27 @@ function updateNext(){
 let animRun = 0;
 function later(ms, fn){ const run = animRun; return schedule(ms, ()=>{ if(run === animRun) fn(); }); }
 
-/* ── Skip ▸▸ (2026-11-17, a tester: "even I didn't want to sit through
-   it") ── Every timed step goes through schedule(), which keeps a list of
-   what's still to come. While a step is due within SKIP_HORIZON_MS, a
-   "Skip ▸▸" button shows in the bottom bar; pressing it plays every step
-   due in that window at once, in order (steps they schedule too), finishes
-   any running animations (slide 1's drags), with CSS transitions off for a
-   moment: the slide ends up exactly as if it had been watched. Later steps
-   (e.g. a hint after 90 s) are left alone. */
-const SKIP_HORIZON_MS = 30000;
+/* ── Fast forward ▸▸ (2026-11-17; a tester: "even I didn't want to sit
+   through it"; the user: a ▸▸ button beside the animation that speeds it
+   up, not a "Skip" at the bottom that jumps to the end) ── Every timed
+   step goes through schedule(), which keeps a list of what's still to
+   come. While a step is due within FF_HORIZON_MS, a round ▸▸ button sits
+   just right of what's playing (ffRegion). Pressing it plays the rest FF_RATE
+   times faster: the waiting steps are re-timed, new ones come sooner, and
+   every running animation (CSS ones too) speeds up. It switches itself off
+   when the animation ends. Later steps (a hint after 90 s) aren't touched. */
+const FF_HORIZON_MS = 30000, FF_RATE = 4;
 let pending = [];                  // { due, fn, id }
-let skipping = false, skipClock = 0;
+let ffRate = 1;
 function schedule(ms, fn){
-  if(skipping){ const t = { due: skipClock + ms, fn, id: 0 }; pending.push(t); return t; }
-  const t = { due: performance.now() + ms, fn };
-  t.id = setTimeout(()=>{ pending = pending.filter(x=>x !== t); fn(); updateSkip(); }, ms);
+  const wait = ms / ffRate;
+  const t = { due: performance.now() + wait, fn };
+  t.id = setTimeout(()=>{ pending = pending.filter(x=>x !== t); fn(); updateSkip(); }, wait);
   pending.push(t);
   updateSkip();
   return t;
 }
-// Drop scheduled steps that are no longer wanted (so Skip ▸▸ doesn't wait on them)
+// Drop scheduled steps that are no longer wanted (so ▸▸ doesn't wait on them)
 function unschedule(list){
   list.forEach(t=>{ if(t){ clearTimeout(t.id); t.id = -1; } });
   pending = pending.filter(t=>!list.includes(t));
@@ -1654,36 +1677,66 @@ function unschedule(list){
 }
 function animationSoon(){
   const now = performance.now();
-  return pending.some(t=>t.due - now <= SKIP_HORIZON_MS) || document.querySelector('.drag-ghost') !== null;
+  return pending.some(t=>t.due - now <= FF_HORIZON_MS) || document.querySelector('.drag-ghost') !== null;
 }
-function updateSkip(){ const b = $('skip-btn'); if(b) b.hidden = !animationSoon(); }
-async function skipAnimation(){
-  if(skipping) return;
-  const realStart = performance.now(), end = realStart + SKIP_HORIZON_MS;
-  skipping = true; skipClock = realStart;
-  document.documentElement.classList.add('skipping');
-  // (leave the far-off steps on their real timers)
-  pending.forEach(t=>{ if(t.due <= end){ clearTimeout(t.id); t.id = 0; } });
-  for(let guard = 0; guard < 2000; guard++){
-    const anims = document.getAnimations().filter(a=>a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity);
-    anims.forEach(a=>{ try { a.finish(); } catch(e){} });
-    await null; await null;                      // (let finished animations' follow-ups run)
-    const due = pending.filter(t=>!t.id && t.due <= end).sort((a, b)=>a.due - b.due);
-    if(!due.length && !anims.length) break;
-    if(!due.length) continue;
-    const t = due[0];
-    pending = pending.filter(x=>x !== t);
-    skipClock = Math.max(skipClock, t.due);
-    t.fn();
+// What's playing now, so ▸▸ can sit beside it
+function ffRegion(){
+  if(!$('spot').hidden && $('spot-card').offsetParent) return $('spot-card');
+  const s = SLIDES[current];
+  if(s.kind === 'goals'){
+    const open = [...document.querySelectorAll('.goal.open .goal-pics')];
+    return open[open.length - 1] || $('intro');
   }
-  skipping = false;
-  // anything scheduled while skipping, but beyond the window: real timers again
-  pending.filter(t=>!t.id).forEach(t=>{
-    const wait = Math.max(0, t.due - skipClock);
-    t.due = performance.now() + wait;
+  if(s.kind === 'words') return $('words-pic') || $('intro');
+  if(s.kind === 'pick') return $('pick-boards') || $('pick');
+  if(s.kind === 'dont') return $('dont-slide');
+  return $('board-outer');
+}
+function placeFF(){
+  const b = $('ff-btn'); if(!b || b.hidden) return;
+  const region = ffRegion(), size = b.offsetWidth || 44, gap = PHONE_LAYOUT.matches ? 6 : 12;
+  // (what's actually drawn: a row of pictures can sit in a much wider box)
+  const kids = [...region.children].map(k=>k.getBoundingClientRect()).filter(k=>k.width && k.height);
+  const r = kids.length && region !== $('spot-card') && region !== $('board-outer')
+    ? { left: Math.min(...kids.map(k=>k.left)), right: Math.max(...kids.map(k=>k.right)), top: Math.min(...kids.map(k=>k.top)), bottom: Math.max(...kids.map(k=>k.bottom)) }
+    : region.getBoundingClientRect();
+  const counts = region === $('board-outer') ? COUNT_ROOM : 0;   // (past the row counts beside the board)
+  let left = r.right + counts + gap, top = (r.top + r.bottom) / 2 - size / 2;
+  // (no room on the right, e.g. phones: astride its bottom edge, at the right)
+  if(left + size > innerWidth - 4){ left = r.right - size - 10; top = r.bottom - size / 2; }
+  b.style.left = Math.max(8, left) + 'px';
+  b.style.top = Math.max(8, Math.min(innerHeight - size - 8, top)) + 'px';
+}
+function updateSkip(){
+  const b = $('ff-btn'); if(!b) return;
+  const on = animationSoon();
+  if(!on && ffRate !== 1) ffRate = 1;              // (the animation is over: normal speed again)
+  b.hidden = !on;
+  b.classList.toggle('active', ffRate !== 1);
+  if(on) placeFF();
+}
+function fastForward(){
+  if(ffRate !== 1) return;
+  ffRate = FF_RATE;
+  const now = performance.now();
+  // re-time what's waiting (only what's coming soon)
+  pending.forEach(t=>{
+    if(t.id < 0 || t.due - now > FF_HORIZON_MS) return;
+    clearTimeout(t.id);
+    const wait = Math.max(0, (t.due - now) / FF_RATE);
+    t.due = now + wait;
     t.id = setTimeout(()=>{ pending = pending.filter(x=>x !== t); t.fn(); updateSkip(); }, wait);
   });
-  requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('skipping')));
+  // speed up what's moving now, and anything that starts while it's on
+  const speed = ()=>{
+    if(ffRate === 1){ document.getAnimations().forEach(a=>{ if(a.playbackRate !== 1) a.playbackRate = 1; }); return; }
+    document.getAnimations().forEach(a=>{
+      const finite = a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().iterations !== Infinity;
+      if(finite && a.playbackRate !== ffRate) a.playbackRate = ffRate;
+    });
+    requestAnimationFrame(speed);
+  };
+  speed();
   updateSkip();
 }
 
@@ -1840,6 +1893,7 @@ function showHint(steps, step, onClose){
   const s = hintList[hintStep];
   if($('hint-btn')) $('hint-btn').classList.remove('lit');
   $('spot-text').innerHTML = s.html || `<p>${s.text}</p>`;
+  if(s.onBuild) s.onBuild();       // (adds to the card before it's measured and placed: slide 7's choice)
   $('spot').hidden = false;
   const W = innerWidth, H = innerHeight, pad = 5;
   // A square this step highlights (in the highlighter's first color) and
@@ -1888,12 +1942,25 @@ function showHint(steps, step, onClose){
     // them; never round an area or the highlighted square: user, 2026-11-05)
     + (s.lit === 'area' && puzzle.blocked.length ? holes.map(b=>`<rect ${box(b, 'class="spot-ring"')}/>`).join('') : '');
   $('spot-ok').textContent = s.ok || 'Got it';
+  // (2026-11-17) a step that's answered inside the card (slide 7's choice) has no buttons
+  document.querySelector('#spot-card .spot-btns').hidden = !!s.noButtons;
   // (alt: { label, run }: a second, plain button to the left of the main one)
   $('spot-alt').hidden = !s.alt;
   $('spot-alt').textContent = s.alt ? s.alt.label : '';
   $('spot-alt').onclick = s.alt ? (()=>{ hideHint(); hintOnClose = null; s.alt.run(); }) : null;
   $('spot-card').style.visibility = '';
   $('spot-card').classList.toggle('glow', !!s.glow);
+  placeSpotCard(s);
+  if(!s.noButtons) $('spot-ok').focus({ preventScroll: true });
+  // (2026-11-17) a step can start something on the grid as it appears
+  if(typeof stopDemo === 'function') stopDemo();
+  if(s.onShow) s.onShow();
+}
+// Where the popup's card goes. Again whenever its content grows (slide 7's
+// choice adds a message), so nothing is cut off. (2026-11-17: split out)
+function placeSpotCard(s){
+  s = s || hintList[hintStep] || {};
+  const W = innerWidth, H = innerHeight;
   // The explanation goes above or below the whole board, whichever has
   // more room, never over it: the hint asks them to look at rows and
   // columns (if it's too tall for that room, it scrolls inside)
@@ -1919,10 +1986,6 @@ function showHint(steps, step, onClose){
     card.style.maxHeight = ((below ? H - bottom : top) - 2*gapPx) + 'px';
   }
   card.scrollTop = 0;                               // start at the first sentence
-  $('spot-ok').focus({ preventScroll: true });
-  // (2026-11-17) a step can start something on the grid as it appears
-  if(typeof stopDemo === 'function') stopDemo();
-  if(s.onShow) s.onShow();
 }
 function hideHint(){ $('spot').hidden = true; $('spot').classList.remove('instant', 'quick'); $('spot-card').style.visibility = ''; }
 // "Got it": the next part of the popup, or (after the last) close it.
@@ -1944,7 +2007,10 @@ function closeHint(){
 // (The Hint button is created with its slide, so listen on the page)
 document.addEventListener('click', e=>{ if(e.target.closest('#hint-btn')) showHint(SLIDES[current].hintSteps, 0); });
 $('spot-ok').onclick = nextHint;
-$('spot').onclick = e=>{ if(!$('spot-card').contains(e.target)) nextHint(); };
+$('spot').onclick = e=>{
+  if((hintList[hintStep] || {}).noButtons) return;   // (slide 7's choice must be answered)
+  if(!$('spot-card').contains(e.target)) nextHint();
+};
 
 // A tutorial puzzle got solved: freeze it (the uncovered squares stay as
 // they are); then run the counting animation, or show the solved note and
@@ -2144,7 +2210,8 @@ gameHooks.onMark = ()=>{
 // drop in by themselves, then the empty squares are counted)
 const HL_POPUP = [  // [CONTENT] (one "Got it" each; "The first four will be easy…" removed, user 2026-11-13)
   // (user, 2026-11-15: say WHY they're highlighting)
-  '<p>This is a partially solved puzzle. To narrow down where the pieces can go, highlight where the six empty squares have to go.</p>',
+  // (2026-11-17: "highlight" → "find": the slide ends in a choice now)
+  '<p>This is a partially solved puzzle. To narrow down where the pieces can go, find where the six empty squares have to go.</p>',
 ];
 /* (2026-11-17, user: slide 7 a little easier, with animations that act out
    the note; only the final slide should be a real struggle. The note became
@@ -2184,15 +2251,22 @@ const HL_STEPS = [
   { demo: 'never', html: '<p>No piece fits in these 3 squares, so they have to be empty. They&rsquo;re highlighted for you.</p>' },   // (Claude)
   { demo: 'ways', html: '<p>That leaves only 2 ways to place the other 3 empty squares so every row and column has an even number of them.</p>'
       + '<p class="demo-count"><b id="demo-way">Way 1</b> of 2</p>' },   // (Claude, from the user's line)
-  // (its own step: on an iPhone SE the two together pushed "Got it" out of sight)
-  { demo: 'ways', html: `<p>Only one of them leaves room for both pieces. Use the highlighter to find it. This rules out the ${HL_TILINGS - 1} wrong ways.</p>` },   // (Claude, from the user's line)
+  // (2026-11-17, user: a multiple choice instead of highlighting, which
+  // frustrated players. No "Got it": they pick one of the two pictures)
+  // (the answer's message replaces the question, so the card never grows)
+  { choice: true, html: '<p class="way-msg" id="way-msg">Only one of them leaves room for both pieces. Which one?</p>'   // (Claude)
+      + '<div class="way-choices" id="way-choices"></div>' },
 ];
+const HL_ANSWER_WAY = 1;     // (HL_EVEN_WAYS[1] is the one that can be tiled)
+const HL_WAY_WRONG = 'Not that one: both pieces can&rsquo;t fit in the red space. Try the other way.';   // [CONTENT] (Claude; short, so the card doesn't grow)
+const HL_WAY_RIGHT = `&#10003; Way 2! This rules out the ${HL_TILINGS - 1} wrong ways.`;   // [CONTENT] (Claude, from the user's line)
 // [CONTENT] the overview beside the board (laptops; phones show only the
-// step). The last line is the step: it becomes "✓ All 6 empty squares found!"
+// last line), shown once the way is chosen. The last line becomes
+// "✓ All 6 empty squares found!"
 const HL_OVERVIEW = [
   '<b>No piece fits</b> in 3 squares, so they&rsquo;re empty.',   // (Claude)
   'Every row and column needs an <b>even</b> number of empty squares.',   // (Claude)
-  '<b>Highlight</b> the other 3 empty squares.',
+  'Only <b>one way</b> leaves room for both pieces.',   // (Claude)
 ];
 const HL_HINT =    // [CONTENT] (2026-11-17: the 3 squares no piece fits are given now)
   '<b>Hint:</b> Find a row or column with only one highlighted square: it needs one more. (0 counts as an even number.)';
@@ -2326,7 +2400,8 @@ function showHighlighterLesson(){
     // the first part over the grid on phones (nothing to watch yet); the
     // demo steps never over it, so their animation on the grid shows
     const parts = HL_POPUP.map(p=>({ lit, over: phone, html: `<div class="hl-pop">${p}</div>` }))
-      .concat(HL_STEPS.map(s=>({ lit, over: false, html: `<div class="hl-pop">${s.html}</div>`, onShow: ()=>playDemo(s.demo) })));
+      .concat(HL_STEPS.map(s=>({ lit, over: false, html: `<div class="hl-pop">${s.html}</div>`,
+        noButtons: !!s.choice, onBuild: s.choice ? setupWayChoice : null, onShow: s.choice ? giveNeverSquares : ()=>playDemo(s.demo) })));
     showHint(parts, 0, afterHighlighterPopup);
   });
 }
@@ -2382,6 +2457,57 @@ function playDemo(kind){
     });
   }
 }
+/* Slide 7's choice (2026-11-17, user): two small pictures of the board,
+   Way 1 and Way 2, each with its six empty squares highlighted; tap one.
+   Wrong: the space it leaves for L and P lights up red on the grid, try
+   again. Right: the popup closes, the six become real highlights on the
+   grid, and the pieces drop in (checkEmptySpacesFound). */
+let wayChosen = false;
+function setupWayChoice(){
+  stopDemo();
+  giveNeverSquares();
+  wayChosen = false;
+  const box = $('way-choices'); if(!box) return;
+  const cell = PHONE_LAYOUT.matches ? 9 : 15, gap = 3, pad = 6, step = cell + gap;
+  HL_EVEN_WAYS.forEach((way, i)=>{
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'way-btn';
+    btn.setAttribute('aria-label', 'Way ' + (i + 1));
+    const svg = miniBoard({ rows: 6, cols: 6, cell, pieces: PUZZLE_HL.fixedPieces });
+    const layer = svg.firstElementChild;
+    HL_NEVER.concat(way).forEach(([r,c])=>squareHighlight(layer, pad + c*step, pad + r*step, cell));
+    btn.appendChild(svg);
+    const lab = document.createElement('span'); lab.className = 'way-label'; lab.textContent = 'Way ' + (i + 1);
+    btn.appendChild(lab);
+    btn.onclick = ()=>chooseWay(i, btn);
+    box.appendChild(btn);
+  });
+}
+function chooseWay(i, btn){
+  if(wayChosen) return;
+  const msg = $('way-msg');
+  if(i !== HL_ANSWER_WAY){
+    btn.classList.add('wrong'); btn.disabled = true;
+    msg.className = 'way-msg bad'; msg.innerHTML = HL_WAY_WRONG;
+    // on the grid: that way's empty squares, and the space left for L and P in red
+    stopDemo();
+    const empty = new Set(HL_NEVER.concat(HL_EVEN_WAYS[i]).map(c=>c + ''));
+    const fixed = new Set(PUZZLE_HL.fixedPieces.flatMap(p=>p.cells.map(([r,c])=>[p.row + r, p.col + c] + '')));
+    const left = [];
+    for(let r = 0; r < 6; r++) for(let c = 0; c < 6; c++) if(!empty.has(r + ',' + c) && !fixed.has(r + ',' + c)) left.push([r, c]);
+    demoSquares(HL_EVEN_WAYS[i], 'way');
+    demoSquares(left, 'nofit');
+    placeSpotCard();
+    return;
+  }
+  wayChosen = true;
+  btn.classList.add('right');
+  $('way-choices').querySelectorAll('.way-btn').forEach(b=>{ b.disabled = true; });
+  msg.className = 'way-msg good'; msg.innerHTML = HL_WAY_RIGHT;
+  stopDemo();
+  placeSpotCard();
+  later(1200, ()=>closeHint());          // → afterHighlighterPopup
+}
 // The 3 squares no piece fits: highlighted and locked (the player can't clear them)
 function giveNeverSquares(){
   const m = getMarks();
@@ -2394,18 +2520,15 @@ function giveNeverSquares(){
 function afterHighlighterPopup(){
   if(!SLIDES[current].highlighterLesson) return;
   stopDemo();
-  giveNeverSquares();              // (in case the steps were clicked through quickly)
+  giveNeverSquares();
   $('n-boardr').querySelector('.empty-card').classList.remove('waiting');
   $('n-boardr').querySelectorAll('.empty-card p:not(.hl-hint)').forEach((p, i)=>later(i * HL_NOTE_STAGGER_MS, ()=>p.classList.add('shown')));
-  later(HL_HINT_MS, showHighlightHint);
-  // it glows until they tap it (user, 2026-11-06; was twice)
-  if(!highlighting) $('hl-tool').classList.add('glowing');
-  // Phones: scroll gently until the whole board shows, keeping the
-  // highlighter on screen
-  const body = $('play').parentElement, bodyBox = visibleArea();
-  const over = $('board-outer').getBoundingClientRect().bottom - bodyBox.bottom + 8;
-  const room = $('hl-tool').getBoundingClientRect().top - bodyBox.top - 4;
-  if(over > 0 && room > 0) body.scrollBy({ top: Math.min(over, room), behavior: 'smooth' });
+  // (2026-11-17) the way was chosen in the popup: its six empty squares
+  // become highlights on the grid, and the pieces drop in
+  const m = {};
+  HL_SIX.forEach(k=>{ m[k] = 0; });
+  setMarks(m);
+  later(HL_NOTE_STAGGER_MS * HL_OVERVIEW.length + 300, checkEmptySpacesFound);
 }
 // The hint, unless they've found the square (or solved it) by now.
 // Phones: it pops up over the grid and they close it with "Got it"; then
@@ -2553,6 +2676,10 @@ function showFindEmpty(){
   // Slides 3, 3b and 3c (the right grid) keep room above the grid for the
   // pieces, so all three look exactly the same
   const sameGrid = SLIDES[current].puzzle === PAIR_GOOD;
+  // (2026-11-17, user: going from slide 4 to 5 the highlights blinked:
+  // the rebuilt squares faded in from white. No fade while they're put back)
+  boardEl.classList.add('no-fade');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>boardEl.classList.remove('no-fade')));
   $('play').classList.toggle('explainer', sameGrid);
   document.documentElement.classList.toggle('compact-tray', sameGrid && PHONE_LAYOUT.matches);
   if(sameGrid){ setupBoard(); renderAll(); reserveTrayRoom(); setupBoard(); renderAll(); }
@@ -2966,11 +3093,13 @@ $('next-btn').onclick = ()=>{
   else showSlide(current + 1);
 };
 $('back-btn').onclick = ()=>{ if(current > 0) showSlide(current - 1); };
-$('skip-btn').onclick = ()=>skipAnimation();
+$('ff-btn').onclick = ()=>fastForward();
+// (▸▸ follows what's playing as the layout shifts: goals opening, scrolling, resizing)
+(function followFF(){ placeFF(); requestAnimationFrame(followFF); })();
 $('close-x').onclick = ()=>closeTutorial(false);
 document.addEventListener('keydown', e=>{
   if(e.key !== 'Escape') return;
-  if(!$('spot').hidden) closeHint();     // Esc closes the hint first
+  if(!$('spot').hidden){ if(!(hintList[hintStep] || {}).noButtons) closeHint(); }   // Esc closes the hint first (not slide 7's choice)
   else closeTutorial(false);
 });
 

@@ -26,7 +26,10 @@ let failures = 0;
       await page.waitForTimeout({ 8: 7500 }[i] || 500);
       if (i === 0) { await page.tap('#goal2 .showme'); await page.waitForTimeout(800); }
       // (slide 7's popup has two parts on phones since 2026-11-16)
-      if (i === 1 || i === 6) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) { await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
+      // (2026-11-17: slide 7's popup ends in a choice between two ways: pick Way 2)
+      if (i === 1 || i === 6) { for (let k = 0; k < 8 && await page.evaluate(() => !document.getElementById('spot').hidden); k++) {
+        if (await page.locator('#way-choices .way-btn').count()) { await page.tap('#way-choices .way-btn:nth-child(2)'); await page.waitForTimeout(1600); break; }
+        await page.click('#spot-ok'); await page.waitForTimeout(400); } await page.waitForTimeout(800); }
       const r = await page.evaluate(() => {
         const W = document.documentElement.clientWidth;
         const box = el => el.getBoundingClientRect();

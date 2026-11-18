@@ -140,6 +140,18 @@ two-part phone popup; all tutorial tests pass, 60 phone screens 0 scroll.
 If the board changes again, re-count the tilings (the scratch script is
 easy to redo: solver.js analyzePuzzle with the fixed pieces as prefilled).
 
+**FIXED 2026-11-17, highest priority (user): slide 1 could trap people.**
+A tester on an iPhone couldn't get past slide 1, even after reloading. A
+goal only counted once its animation had played to the END (Parity ~17 s,
+Tiling 7–14 s), and on phones opening one goal closes the other, which
+stops its animation; so switching early meant Next never lit, and every
+reopen restarted it. Now OPENING a goal counts (`goalSeen.add` in the
+Show me handler); the animations still play but nothing waits on them.
+Test: `slide1_test.js` (WebKit + Chromium, phones + laptop: both opened
+quickly, back and forth, open-hide-open, reload; it fails on the old
+code). Rule for the future: never make Next wait on an animation the
+player can interrupt.
+
 **Tester feedback, 2026-11-17 (a friend of the user's, a talented
 engineer and mathematician; pasted by the user, word for word):**
 > The tutorial is the main thing that could use some work. I understand
@@ -191,11 +203,20 @@ What came of it (2026-11-17):
   copy their flow, see the no-copying rule; ours would need its own
   wording and look); (b) a "Solved" message above the board with the win
   animation on the grid itself, so the solved work stays in view.
-- DONE "Skip ▸▸" (bottom bar, middle; only while something plays):
-  every timed step goes through `schedule()` / `later()`; `skipAnimation`
-  plays the steps due in the next 30 s at once (CSS transitions off a
-  moment, running animations finished). Slide 1's drags trimmed ~14 → ~10 s.
-  Test: skip_test.
+- DONE fast forward ▸▸ (was a "Skip ▸▸" in the bottom bar; user: put it
+  right beside the animation, a two-triangle button, and speed it up rather
+  than jump to the end). A round button (`#ff-btn`, fixed, above the
+  popup layer) just right of what's playing (`ffRegion` / `placeFF`;
+  beside the game board it clears the row counts; no room = astride the
+  bottom edge at the right); only while a step is due within 30 s. Press =
+  `fastForward`: waiting steps re-timed ×4, new ones ×4, every running
+  animation's playbackRate 4 (CSS ones too); off again when it's over.
+  Every timed step goes through `schedule()` / `later()`. Test: ff_test.
+- Slide 1's drags: no pointer at all now (user: "just want to see the
+  pieces"), and faster: ~14 → ~7 s for the six.
+- Slide 5's highlights no longer blink when coming from slide 4's "Next,
+  we'll examine this grid further." (the rebuilt squares faded in from
+  white; `#board.no-fade` for two frames).
 - DONE slide 7 easier (user: only the final slide should be a real
   struggle): after the first popup, four more "Got it" steps, each acted
   out on the grid (`HL_STEPS`, `playDemo`, drawn in `#hl-demo`): the 17
@@ -203,12 +224,21 @@ What came of it (2026-11-17):
   squares no piece fits pulse and are then highlighted and LOCKED for the
   player (`HL_NEVER`); the 2 even placements of the other 3 show in turn
   (`HL_EVEN_WAYS`, the 2nd is the answer); "Only one of them leaves room
-  for both pieces…". Then a short overview beside the board (laptops,
-  `HL_OVERVIEW`; phones keep just the step). The player highlights the
-  other 3 (user: keep highlighting, it's the habit to teach). Hint now
-  "Find a row or column with only one highlighted square…". Wording of
+  for both pieces. Which one?" Then a short overview beside the board
+  (laptops, `HL_OVERVIEW`; phones keep just the last line). Wording of
   the new sentences is Claude's (marked in the code): confirm with the
   user. Short phones (SE): popups compacted so "Got it" stays in view.
+- CHANGED the same day (user: players don't read, try to drag, get
+  frustrated with the highlighter and guess): slide 7 now ends in a
+  MULTIPLE CHOICE, no highlighting. The last step shows two small
+  pictures, Way 1 / Way 2 (`setupWayChoice`, built before the card is
+  placed: `onBuild`); no "Got it", the dark area and Esc don't close it.
+  Way 1 → "Not that one: both pieces can't fit in the red space…" and that
+  space lights up red on the grid; Way 2 → "✓ Way 2! This rules out the 16
+  wrong ways.", the popup closes, the six become highlights on the grid,
+  the pieces drop in, the count. No highlighter button on slide 7
+  (`highlighter: false`), no 90 s hint (hl_hint_test retired). The answer's
+  message replaces the question so the card never grows (SE).
 
 **Ask the user next time (2026-11-16):**
 - How slides 1 and 2 feel on a real phone (speed, "Show me").

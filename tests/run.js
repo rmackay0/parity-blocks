@@ -6,7 +6,7 @@
 //   node tests/run.js changed      QUICK + the tests that cover the files changed
 //                                  since the last push (committed or not)
 //   node tests/run.js full         EVERY test (~10 min): before a push
-//   node tests/run.js tutorial_test hl_hint_test     just these
+//   node tests/run.js tutorial_test ff_test          just these
 //
 // Options: --since <git ref> (for "changed"; default origin/main),
 //          --jobs <n> (tests at once; default 3), --list (show the map below).
@@ -49,8 +49,8 @@ const TESTS = {
   'piece_colors_test':     { covers: ['shapes.js', 'game.js', 'sandbox.html', 'tutorial.html', 'solver.js', 'play.html'] },
   // Tutorial
   'tutorial_test':         { covers: ['tutorial.html', 'shapes.js', 'game.js', 'celebrate.js'] },
-  'hl_hint_test':          { covers: ['tutorial.html', 'game.js'] },
-  'skip_test':             { covers: ['tutorial.html'] },
+  'ff_test':               { covers: ['tutorial.html'] },
+  'slide1_test':           { covers: ['tutorial.html', 'shapes.js'] },
   'glow_clip_test':        { covers: ['tutorial.html', 'scroll-hint.js', 'game.css'] },
   'phone_layout_check':    { covers: ['tutorial.html', 'game.js', 'game.css', 'shapes.js', 'rules.css'] },
   'scroll_hint_test':      { covers: ['scroll-hint.js', 'tutorial.html', 'rules.js', 'rules.css'] },
