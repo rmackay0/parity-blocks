@@ -67,8 +67,9 @@ in the sandbox while pieces are added / removed, each level, every slide).
   out as soon as the second block appears; slide 1's drags show no
   fingertip circle on phones (laptops keep the mouse pointer).
 
-**Status: committed AND pushed 2026-11-17** (8317300, with the user's
-OK): the test runner, the fixed tests and "Later 2026-11-16" below.
+**Status: committed AND pushed 2026-11-17** (cc42c72, with the user's
+OK): everything below, including the slide 1 trap fix, slide 7's choice,
+fast forward ▸▸, Clear + Undo. Only this notes line is newer.
 
 **The tutorial now: 10 slides** (list at the top of tutorial.html):
 1 the two goals, each opened with a "Show me ▾" button (phones: one open at
