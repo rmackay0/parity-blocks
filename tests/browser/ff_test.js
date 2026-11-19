@@ -3,12 +3,16 @@
 // plays; pressing it plays the rest faster (not a jump to the end): the
 // slide still finishes properly, ▸▸ goes away, Next is ready.
 // Laptop and phone. Run: node ff_test.js
-const { chromium } = require('playwright');
+const { chromium, webkit } = require('playwright');
 const { BASE, check, finish } = require('./lib');
 
 (async () => {
-  const browser = await chromium.launch(); const errors = [];
-  for (const [w, h, device, touch] of [[1280, 800, 'laptop', false], [390, 844, 'phone', true]]) {
+  const errors = [];
+  // (WebKit too, since 2026-11-19: Safari on iPhones and Macs)
+  for (const engine of [chromium, webkit]) {
+  const browser = await engine.launch();
+  for (const [w, h, dev, touch] of [[1280, 800, 'laptop', false], [390, 844, 'phone', true]]) {
+    const device = `${engine.name()} ${dev}`;
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch });
     const page = await ctx.newPage();
     page.on('pageerror', e => errors.push(`${device}: ${e.message}`));
@@ -22,13 +26,32 @@ const { BASE, check, finish } = require('./lib');
       return (b.left >= r.right - b.width - 14) && midY >= r.top - 4 && midY <= r.bottom + b.height;
     }, sel);
     // Press ▸▸ and wait for it to go (the animation over); seconds taken
+    // (2026-11-19, user: on slide 1's Tiling ▸▸ "turns on for a second and
+    // then turns itself off". So every frame after the press is watched:
+    // ▸▸ must stay on until it goes for good, never flick back to normal
+    // speed or hide and come back. `states` = each change seen, in order;
+    // the right answer is ['on', 'hidden'].)
+    let states = [];
     const fastForward = async () => {
       const t0 = Date.now();
       await page.click('#ff-btn');
-      await page.waitForFunction(() => document.getElementById('ff-btn').hidden, null, { timeout: 30000 }).catch(() => {});
-      await page.waitForTimeout(300);
-      return (Date.now() - t0) / 1000;
+      states = await page.evaluate(() => new Promise(done => {
+        const b = document.getElementById('ff-btn'), seen = [];
+        let hiddenSince = null;
+        const tick = () => {
+          const s = b.hidden ? 'hidden' : b.classList.contains('active') ? 'on' : 'off';
+          if (seen[seen.length - 1] !== s) seen.push(s);
+          const now = performance.now();
+          hiddenSince = s === 'hidden' ? (hiddenSince || now) : null;
+          if (hiddenSince && now - hiddenSince > 1200) return done(seen);    // (gone for good)
+          if (seen.length > 8) return done(seen);
+          requestAnimationFrame(tick);
+        };
+        tick();
+      }));
+      return (Date.now() - t0 - 1200) / 1000;
     };
+    const steady = label => check(`${device} ${label}: ▸▸ stays on until the end`, states, ['on', 'hidden']);
 
     // Slide 1: the Tiling drags (≈7 s at normal speed)
     await page.goto(BASE + 'tutorial.html?slide=1'); await page.waitForTimeout(400);
@@ -36,12 +59,14 @@ const { BASE, check, finish } = require('./lib');
     await page.click('#goal1 .showme'); await page.waitForTimeout(1000);
     check(`${device} slide 1: ▸▸ shows beside the pieces while they move`, [await shown(), await beside('#goal-board')], [true, true]);
     const s1 = await fastForward();
+    steady('slide 1 Tiling');
     check(`${device} slide 1: fast forward plays the rest quickly (< 2.5 s)`, s1 < 2.5, true);
     check(`${device} slide 1: then all six pieces on the grid, no copies left, ▸▸ gone`,
       [await page.evaluate(() => document.querySelectorAll('#goal-board .mb-piece.ia-on').length), await page.evaluate(() => document.querySelectorAll('.drag-ghost').length), await shown()], [6, 0, false]);
     check(`${device} slide 1: no pointer on the moving pieces`, await page.evaluate(() => !document.querySelector('.drag-pointer')), true);
     await page.click('#goal2 .showme'); await page.waitForTimeout(800);
     await fastForward();
+    steady('slide 1 Parity');
     check(`${device} slide 1: both goals played: Next ready`, await nextReady(), true);
 
     // (2026-11-18, user: ▸▸ only on animations over 5 s that people wait
@@ -60,6 +85,7 @@ const { BASE, check, finish } = require('./lib');
     await page.waitForFunction(() => !document.getElementById('ff-btn').hidden, null, { timeout: 15000 }).catch(() => {});
     check(`${device} slide 3: ▸▸ beside the grids while the right one is counted`, [await shown(), await beside('#pick-boards > :last-child')], [true, true]);
     const s3 = await fastForward();
+    steady('slide 3');
     check(`${device} slide 3: fast forward is quick (< 3 s)`, s3 < 3, true);
     check(`${device} slide 3: then Next ready, ▸▸ gone`, [await nextReady(), await shown()], [true, false]);
 
@@ -71,6 +97,7 @@ const { BASE, check, finish } = require('./lib');
     await page.click('#ways-btn'); await page.waitForTimeout(800);
     check(`${device} slide 6: ▸▸ beside the count while the ways play`, [await shown(), await beside('#demo-count')], [true, true]);
     const s7 = await fastForward();
+    steady('slide 6');
     check(`${device} slide 6: fast forward is quick (< 3 s), then Continue`,
       [s7 < 3, await page.evaluate(() => /Continue/.test(document.getElementById('ways-btn').textContent))], [true, true]);
     await page.click('#ways-btn');
@@ -85,5 +112,6 @@ const { BASE, check, finish } = require('./lib');
     await ctx.close();
   }
   await browser.close();
+  }
   finish(errors);
 })();

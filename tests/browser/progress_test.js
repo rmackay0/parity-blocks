@@ -61,9 +61,11 @@ const { BASE, solution, check, finish } = require('./lib');
     await page.evaluate(() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); d.setDate(14);
       const list = loadSolves(); list.push({ date: localDay(d), level: 'medium', title: 'old', timeMs: 1, at: d.toISOString() }); writeJSON(COMPLETED_KEY, list); });
     await page.goto(BASE + 'index.html'); await page.waitForTimeout(300);
+    // (2026-11-19: under load, 300 ms wasn't always enough: the calendar came up empty)
+    await page.waitForFunction(() => typeof showMonth === 'function' && loadSolves().length >= 2, null, { timeout: 10000 }).catch(() => {});
     if (await page.locator('#archive-btn').count()) await page.click('#archive-btn');
     else await page.evaluate(() => { const n = new Date(); shownMonth = new Date(n.getFullYear(), n.getMonth(), 1); showMonth(); calPopup.hidden = false; });
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => document.querySelectorAll('.cal-day .stars svg').length > 0, null, { timeout: 5000 }).catch(() => {});
     const cal = () => page.evaluate(() => ({
       stars: [...document.querySelectorAll('.cal-day')].filter(d => d.querySelector('.stars svg')).map(d => d.firstChild.textContent + ':' + [...d.querySelectorAll('.stars path')].map(p => p.getAttribute('class').replace('star-', '')).join('+')),
       todayHasStar: !!document.querySelector('.cal-day.today .stars svg'), nextDisabled: document.getElementById('cal-next').disabled }));

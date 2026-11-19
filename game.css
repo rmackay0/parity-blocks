@@ -210,7 +210,7 @@ body {
 /* Puzzle page: the pieces' space */
 .tray-area { flex: 0 0 auto; position: relative; width: 100%; display: flex; justify-content: center; }
 .tray-area > .tray { flex: 0 1 auto; min-width: 0; }   /* (may shrink, so the pieces still wrap on phones) */
-.tray-area.has-hl { padding-top: 40px; }               /* room above the pieces for the highlighter (and 10px under it) */
+.tray-area.has-hl { padding-top: 44px; }               /* room above the pieces for the highlighter (and 10px under it; 44 = Safari's 40px button + 10 − a piece space's 6px padding; was 40: 6px gap on an iPhone mini with the I in the top row, 2026-11-19) */
 
 /* ── The highlighter (game.js HIGHLIGHTER) ──
    [POSITIONING] game.js puts it above and to the right of the rightmost
