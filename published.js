@@ -12,20 +12,33 @@
    ═══════════════════════════════════════════════════════════════════════ */
 const PUBLISHED = /*JSON*/{
   "easy": {
-    "archiveId": "amw3wdy0m2vhs",
-    "publishedAt": "2026-11-05T18:50:24.134Z",
+    "archiveId": "amwncb1vq6hv0",
+    "publishedAt": "2026-11-19T09:20:55.427Z",
     "puzzle": {
       "title": "Easy",
       "rows": 6,
       "cols": 6,
       "removed": [],
-      "blocked": [
+      "blocked": [],
+      "hintOutline": [
         [
           0,
-          3
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
         ],
         [
           2,
+          0
+        ],
+        [
+          3,
           0
         ],
         [
@@ -33,61 +46,71 @@ const PUBLISHED = /*JSON*/{
           1
         ],
         [
-          4,
-          1
+          2,
+          2
         ],
         [
-          4,
+          1,
+          2
+        ],
+        [
+          1,
           3
-        ]
-      ],
-      "hintOutline": [
+        ],
+        [
+          0,
+          3
+        ],
         [
           0,
           4
         ],
         [
           1,
-          3
-        ],
-        [
-          1,
           4
-        ],
-        [
-          2,
-          2
-        ],
-        [
-          2,
-          3
         ],
         [
           2,
           4
         ],
         [
-          3,
-          2
-        ],
-        [
-          3,
-          3
+          2,
+          5
         ],
         [
           3,
           4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
         ],
         [
           4,
           2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          4
         ]
       ],
-      "hintText": "No piece crosses the dotted line.",
+      "dottedLines": [
+        "v,1,2",
+        "v,3,5"
+      ],
+      "hintText": "",
       "pieces": [
         {
           "name": "P",
-          "color": "#b8923f",
+          "color": "#A0507A",
           "cells": [
             [
               0,
@@ -108,12 +131,38 @@ const PUBLISHED = /*JSON*/{
             [
               2,
               0
+            ]
+          ]
+        },
+        {
+          "name": "L",
+          "color": "#E2483D",
+          "cells": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              1
             ]
           ]
         },
         {
           "name": "W",
-          "color": "#a44e6b",
+          "color": "#86AED6",
           "cells": [
             [
               0,
@@ -138,8 +187,8 @@ const PUBLISHED = /*JSON*/{
           ]
         },
         {
-          "name": "I",
-          "color": "#5f9e8f",
+          "name": "T",
+          "color": "#3E8E9E",
           "cells": [
             [
               0,
@@ -152,28 +201,6 @@ const PUBLISHED = /*JSON*/{
             [
               0,
               2
-            ],
-            [
-              0,
-              3
-            ],
-            [
-              0,
-              4
-            ]
-          ]
-        },
-        {
-          "name": "Z",
-          "color": "#8a5a7a",
-          "cells": [
-            [
-              0,
-              0
-            ],
-            [
-              0,
-              1
             ],
             [
               1,
@@ -182,42 +209,38 @@ const PUBLISHED = /*JSON*/{
             [
               2,
               1
-            ],
-            [
-              2,
-              2
             ]
           ]
         },
         {
-          "name": "U",
-          "color": "#a85c4a",
+          "name": "V",
+          "color": "#7BA05B",
           "cells": [
             [
               0,
               0
             ],
             [
-              0,
-              2
-            ],
-            [
               1,
               0
             ],
             [
-              1,
+              2,
+              0
+            ],
+            [
+              2,
               1
             ],
             [
-              1,
+              2,
               2
             ]
           ]
         },
         {
           "name": "Y",
-          "color": "#8c6a4a",
+          "color": "#4E7D5B",
           "cells": [
             [
               0,
