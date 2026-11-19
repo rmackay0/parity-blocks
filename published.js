@@ -12,8 +12,8 @@
    ═══════════════════════════════════════════════════════════════════════ */
 const PUBLISHED = /*JSON*/{
   "easy": {
-    "archiveId": "amwncb1vq6hv0",
-    "publishedAt": "2026-11-19T09:20:55.427Z",
+    "archiveId": "amwnelql42tnb",
+    "publishedAt": "2026-11-19T10:25:01.324Z",
     "puzzle": {
       "title": "Easy",
       "rows": 6,
@@ -104,7 +104,9 @@ const PUBLISHED = /*JSON*/{
       ],
       "dottedLines": [
         "v,1,2",
-        "v,3,5"
+        "v,3,5",
+        "h,2,3",
+        "v,4,1"
       ],
       "hintText": "",
       "pieces": [
