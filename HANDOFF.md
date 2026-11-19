@@ -331,13 +331,22 @@ What came of it (2026-11-17):
     "Check rows:" + the result below it, shown once that grid is counted
     (narrow phones: "Rows 3, 4 odd" / "Columns 5, 6 odd"). If the example
     changes, these captions must change with it.
-  - 2026-11-19 later: the slide 4 part below was REVERTED (user, no time
-    to patch the tutorial tonight; commit 152df4c restores tutorial.html as
-    of d37c0e1; the old version is in 3cadedb if wanted again). The
-    homepage rules' tutorial button stays. User's bug report: slide 1's ▸▸
-    on the TILING animation turns on for a second, then turns itself off
-    (ff_test passes, so it doesn't catch it; probably older than today, as
-    today's tutorial edit only touched slide 4: not yet checked).
+  - 2026-11-19 later: the slide 4 part below was reverted (152df4c), then
+    put BACK (3e77903, user's request), with these fixes:
+    - FIXED (user's report, an older bug): slide 1's ▸▸ on the Tiling
+      animation switched itself off a second after pressing (Safari /
+      WebKit only). Each drag's `hold` ran out ~30 ms after its piece
+      landed at ▸▸ speed, before the next piece was scheduled: for a moment
+      nothing waited, so ffRate went back to 1. Now the hold is let go only
+      after onLanded has scheduled the next piece, and ▸▸ only switches off
+      after FF_GRACE_MS (400) with nothing waiting (`ffReset` on a slide
+      change). ff_test now watches every frame after the press (must be
+      exactly on → hidden) in Chromium AND WebKit; it failed on the old code.
+    - Highlighter: `.tray-area.has-hl` 40 → 44px (Safari's button is 40px:
+      6px from the I on an iPhone mini with the new Medium).
+    - progress_test waits for the calendar (flaky under load).
+    - Full run: all 36 pass. Slide 4 checked with Large text on SE / mini /
+      iPhone 14 (WebKit).
   - DONE 2026-11-19: (1) slide 4 phones: "36 squares" lights the grid +
     measuring lines only (`dims`), card ABOVE the grid; "30 blocks": the
     pieces' row drops the highlighter's room (`.explaining`) so the six sit
