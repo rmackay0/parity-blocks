@@ -115,7 +115,7 @@ function solvedCelebration(opts){
   const cell = Math.max(12, Math.floor((200 - 6 - (most - 1)*2) / most));
   const stage = document.createElement('div');
   stage.className = 'win-stage';
-  const board = miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], dotted:p.hintOutline || null,
+  const board = miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], dotted:p.hintOutline || null, lines:p.dottedLines || [],
                             removed:p.removed || [], pieces, show:'solved' });
   board.classList.add('win-board');
   stage.appendChild(board);

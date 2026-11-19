@@ -64,6 +64,7 @@ const TESTS = {
   'sandbox_analyze_test':  { covers: ['sandbox.html', 'solver.js'] },
   'sandbox_counts_test':   { covers: ['sandbox.html', 'game.js'] },
   'sandbox_dotted_test':   { covers: ['sandbox.html', 'shapes.js'] },
+  'sandbox_lines_test':    { covers: ['sandbox.html', 'shapes.js', 'game.js', 'solver.js'] },
   'cloud_test':            { covers: ['sandbox.html', 'playtest.html', 'playtest.json', 'play.html'], server: true },
 };
 for (const [name, t] of Object.entries(TESTS)) t.file = t.file || `tests/browser/${name}.js`;

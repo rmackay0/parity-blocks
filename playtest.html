@@ -86,7 +86,7 @@ fetch('playtest.json?t=' + Date.now(), { cache: 'no-store' })
       const cell = Math.max(10, Math.floor(150 / Math.max(p.rows, p.cols)) - 3);
       const pic = document.createElement('div');
       pic.className = 'pic';
-      pic.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], removed:p.removed || [], dotted:p.hintOutline || [] }));
+      pic.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], removed:p.removed || [], dotted:p.hintOutline || [], lines:p.dottedLines || [] }));
       const name = document.createElement('b');
       name.textContent = e.title;
       const when = document.createElement('small');

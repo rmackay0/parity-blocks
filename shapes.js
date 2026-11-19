@@ -311,6 +311,16 @@ function groupSquares(cells){
   return groups;
 }
 
+/* A straight dotted line (puzzle.dottedLines) is a list of edges, each the
+   gap between two squares side by side: 'h,R,C' = between rows R-1 and R
+   in column C; 'v,C,R' = between columns C-1 and C in row R. (The same
+   keys drawDottedLines uses.) A piece can't have squares on both sides
+   of one. Returns the two squares [[r,c],[r,c]]. */
+function dottedLineSquares(e){
+  const [dir, a, b] = e.split(',');
+  return dir === 'h' ? [[+a-1, +b], [+a, +b]] : [[+b, +a-1], [+b, +a]];
+}
+
 /* Dotted lines (the dotted area and the dotted squares), drawn so that:
    • each runs down the middle of the gap between squares, as wide as it;
    • where two dotted shapes touch they share ONE line, never two side by
@@ -327,8 +337,13 @@ function drawDottedLines(parent, regions, step, gap, ox, oy, look){
   // Each edge of a square is a unit edge on the grid lines: 'h,row line,col'
   // (horizontal) or 'v,col line,row' (vertical). A shape's border edges are
   // those whose neighbour isn't in the same shape (and is on the board).
+  // look.lines: straight dotted lines (puzzle.dottedLines), already edges.
   const edges = new Set();
   const on = look.onBoard || (()=>true);
+  (look.lines || []).forEach(e=>{
+    const [a, b] = dottedLineSquares(e);
+    if(on(a[0], a[1]) && on(b[0], b[1])) edges.add(e);
+  });
   regions.forEach(cells=>{
     const inside = new Set(cells.map(([r,c])=>r+','+c));
     const edge = (r, c, key)=>{ if(!inside.has(r+','+c) && on(r, c)) edges.add(key); };
@@ -360,8 +375,13 @@ function drawDottedLines(parent, regions, step, gap, ox, oy, look){
     const beyond = dir === 'h'
       ? [ on(line-1, along-1) || on(line, along-1), on(line-1, along+1) || on(line, along+1) ]
       : [ on(along-1, line-1) || on(along-1, line), on(along+1, line-1) || on(along+1, line) ];
-    const from = along*step - (beyond[0] ? gap : 0);
-    const to = along*step + cell + (beyond[1] ? gap : 0);
+    // Does another dotted edge meet this one at that crossing? If not (the
+    // free end of a straight line), it stops in the middle of the crossing.
+    const meets = (R, C)=>[`h,${R},${C-1}`, `h,${R},${C}`, `v,${C},${R-1}`, `v,${C},${R}`].some(k=>k !== e && edges.has(k));
+    const met = dir === 'h' ? [meets(line, along), meets(line, along+1)] : [meets(along, line), meets(along+1, line)];
+    const reach = i => !beyond[i] ? 0 : met[i] ? gap : gap/2;
+    const from = along*step - reach(0);
+    const to = along*step + cell + reach(1);
     const len = to - from;
     const n = Math.max(1, Math.round((len + space) / (dash + space)));
     const k = (len + space) / (n * (dash + space));
@@ -391,6 +411,7 @@ const PICTURE_DOTTED = { stroke: 'var(--rules-dotted, #fff)', dash: 5, space: 3 
                         (the Solved popup animates them one by one).
      markEmpty          true: draw a ring in every open square no piece covers
      dotted             [[r,c]] region to trace with a dotted line
+     lines              ['h,R,C' | 'v,C,R'] straight dotted lines (dottedLineSquares)
      noMarkOn           a piece that breaks a rule: draws the red "not allowed"
                         sign over the whole picture */
 function miniBoard(opts){
@@ -447,7 +468,8 @@ function miniBoard(opts){
   // The dotted area and the dotted squares (squares that share a side are one shape)
   const dottedShapes = (dotted && dotted.length ? [dotted] : []).concat(groupSquares(gaps));
   const onBoard = (r,c)=>r>=0 && c>=0 && r<rows && c<cols && !removed.has(r+','+c);
-  if(dottedShapes.length) drawDottedLines(svg, dottedShapes, step, gap, pad, pad, Object.assign({ onBoard }, PICTURE_DOTTED));
+  const lines = opts.lines || [];
+  if(dottedShapes.length || lines.length) drawDottedLines(svg, dottedShapes, step, gap, pad, pad, Object.assign({ onBoard, lines }, PICTURE_DOTTED));
 
   // Count filled blocks per row/column and mark each green (even) or red (odd)
   if(show){

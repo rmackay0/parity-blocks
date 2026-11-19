@@ -67,6 +67,26 @@ in the sandbox while pieces are added / removed, each level, every slide).
   out as soon as the second block appears; slide 1's drags show no
   fingertip circle on phones (laptops keep the mouse pointer).
 
+**2026-11-19 (committed, NOT pushed): sandbox highlighter + straight
+dotted lines** (user request)
+- Sandbox has the highlighter (same `#hl-tool` markup as play.html, in a
+  `.tray-area.has-hl`); it works in Play mode and is hidden in the others.
+  Highlights stay while editing; "Clear board" clears them too.
+- Mode buttons: Play | Shape | **Loop** (the old "Dotted": the dotted area,
+  `hintOutline`, still `data-mode="dotted"`) | **Line** (new). Line mode:
+  press on a gap between squares, drag straight along it; starting on an
+  existing line erases. Stored as `puzzle.dottedLines`: edge keys
+  `'h,R,C'` (between rows R-1 and R, column C) / `'v,C,R'` (between
+  columns C-1 and C, row R); `dottedLineSquares(e)` in shapes.js gives the
+  two squares. Rule: a piece can't cover both squares of an edge
+  (game.js `crossesDottedLine` / `dottedWalls`; solver.js `config.lines`,
+  `board.walls`, `crossesWall`). Drawn by `drawDottedLines` (`look.lines`);
+  a line's free end stops in the middle of the gap crossing. miniBoard
+  `lines`; passed along in celebrate.js, playtest.html, analyzer.html, the
+  sandbox (analyze, solution view, publish check, export, copyPuzzle).
+- Test: `sandbox_lines_test` (laptop + phone). sandbox_dotted_test's
+  button names updated.
+
 **Status: committed AND pushed 2026-11-18** (with the user's OK, the night
 before showing the app to a potential buyer): the three 2026-11-18 batches
 (see "2026-11-18" entries further down: ▸▸ opt-in, slide 7 flow, popups

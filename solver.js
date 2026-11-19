@@ -116,6 +116,13 @@ function makeBoard(config){
   const blocked = new Set((config.blocked || []).concat(config.removed || [], config.prefilled || []).map(([r,c])=>key(r,c)));
   const prefilled = (config.prefilled || []).map(rc=>rc.slice());
   const dotted  = new Set((config.dotted  || []).map(([r,c])=>key(r,c)));
+  // Straight dotted lines ('h,R,C' / 'v,C,R'): the two squares either side
+  // of each, as "key|key" (smaller first)
+  const walls = new Set((config.lines || []).map(e=>{
+    const [dir, a, b] = e.split(',');
+    const pair = dir === 'h' ? [key(+a-1, +b), key(+a, +b)] : [key(+b, +a-1), key(+b, +a)];
+    return pair[0] + '|' + pair[1];
+  }));
   const openIndex = new Map();     // cell key → open-cell index
   const openCells = [];            // open-cell index → [r,c]
   for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
@@ -123,7 +130,7 @@ function makeBoard(config){
     openIndex.set(key(r,c), openCells.length);
     openCells.push([r,c]);
   }
-  return { rows, cols, key, blocked, dotted, openIndex, openCells, prefilled };
+  return { rows, cols, key, blocked, dotted, walls, openIndex, openCells, prefilled };
 }
 
 /* ───────────────────────────────────────────────────────────────────────
@@ -132,6 +139,16 @@ function makeBoard(config){
    five cells are on the board and open, and (if the board has a dotted
    outline) it doesn't straddle it. Returns arrays of open-cell indices.
    ─────────────────────────────────────────────────────────────────────── */
+// Does a piece at (r, c) have squares on both sides of a straight dotted line?
+function crossesWall(board, r, c, shape){
+  const mine = new Set(shape.map(([dr,dc])=>board.key(r+dr, c+dc)));
+  for(const [dr,dc] of shape){
+    const k = board.key(r+dr, c+dc);
+    if(mine.has(k + 1) && board.walls.has(k + '|' + (k + 1))) return true;                     // right
+    if(mine.has(k + board.cols) && board.walls.has(k + '|' + (k + board.cols))) return true;   // below
+  }
+  return false;
+}
 function placementsFor(board, pieceCells){
   const out = [];
   for(const shape of orientations(pieceCells)){
@@ -149,6 +166,7 @@ function placementsFor(board, pieceCells){
       }
       if(!ok) continue;
       if(inside !== 0 && inside !== shape.length) continue;   // crosses the dotted line
+      if(board.walls.size && crossesWall(board, r, c, shape)) continue;   // crosses a straight dotted line
       out.push(idx);
     }
   }

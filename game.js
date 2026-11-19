@@ -107,6 +107,7 @@ function loadPuzzle(p, opts){
   p = Object.assign({}, p, { pieces: p.pieces.map(d=>Object.assign({}, d, { color: colors[d.name] })) });
   puzzle = p;
   dottedRegion = new Set((p.hintOutline || []).map(([r,c])=>r+','+c));
+  dottedWalls = new Set((p.dottedLines || []).map(e=>dottedLineSquares(e).map(s=>s.join(',')).join('|')));
   removedSet = new Set((p.removed || []).map(([r,c])=>r+','+c));
   const names = new Set(p.pieces.map(d=>d.name));
   const oldTray = trayCells;
@@ -177,7 +178,14 @@ let dottedRegion = new Set();   // set by loadPuzzle
 // Squares cut out of the board (puzzle.removed), for irregular shapes.
 // They aren't part of the board at all: a piece there is off the board.
 let removedSet = new Set();
+// Straight dotted lines (puzzle.dottedLines): pairs of squares "r,c|r,c"
+// that one piece can't cover both of (dottedLineSquares in shapes.js).
+let dottedWalls = new Set();   // set by loadPuzzle
 function crossesDottedLine(cells, row, col){
+  if(dottedWalls.size){
+    const mine = new Set(cells.map(([r,c])=>(row+r)+','+(col+c)));
+    for(const w of dottedWalls){ const [a, b] = w.split('|'); if(mine.has(a) && mine.has(b)) return true; }
+  }
   if(!dottedRegion.size) return false;
   const inside = cells.map(([r,c])=>dottedRegion.has((row+r)+','+(col+c)));
   return inside.some(Boolean) && !inside.every(Boolean);
@@ -310,12 +318,13 @@ function renderHint(){
   overlay.innerHTML = '';
   const shapes = (puzzle.hintOutline && puzzle.hintOutline.length ? [puzzle.hintOutline] : [])
     .concat(groupSquares(puzzle.blocked || []));
-  if(!shapes.length) return;
+  const lines = puzzle.dottedLines || [];
+  if(!shapes.length && !lines.length) return;
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('width', puzzle.cols*CELL + (puzzle.cols-1)*GAP);
   svg.setAttribute('height', puzzle.rows*CELL + (puzzle.rows-1)*GAP);
   Object.assign(svg.style, { position:'absolute', left:'0', top:'0', overflow:'visible' });
-  drawDottedLines(svg, shapes, CELL + GAP, GAP, 0, 0, BOARD_DOTTED);
+  drawDottedLines(svg, shapes, CELL + GAP, GAP, 0, 0, Object.assign({ lines }, BOARD_DOTTED));
   overlay.appendChild(svg);
 }
 

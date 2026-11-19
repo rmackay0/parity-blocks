@@ -31,7 +31,7 @@ function check(label, got, want){
   await page.goto(BASE + 'sandbox.html'); await page.waitForTimeout(500);
 
   check('no Dotted square button', await page.locator('#mode-seg [data-mode="block"]').count(), 0);
-  check('modes', await page.locator('#mode-seg button').allTextContents(), ['Play', 'Shape', 'Dotted']);
+  check('modes', await page.locator('#mode-seg button').allTextContents(), ['Play', 'Shape', 'Loop', 'Line']);   // (Dotted → Loop + Line, 2026-11-19)
   check('note mentions the old dotted squares', (await page.textContent('#board-note')).includes('2 old dotted squares'), true);
 
   await page.click('#mode-seg [data-mode="dotted"]');

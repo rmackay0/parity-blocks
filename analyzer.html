@@ -212,6 +212,7 @@ function solverConfig(p){
     blocked: p.blocked || [],
     removed: p.removed || [],
     dotted: p.hintOutline || [],
+    lines: p.dottedLines || [],
     pieces: p.pieces.map(d=>({ name: d.name, cells: d.cells })),
   };
 }
@@ -384,7 +385,7 @@ function showTiling(){
   });
   box.appendChild(miniBoard({
     rows: p.rows, cols: p.cols, cell: boardCellSize(p),
-    pieces, gaps: p.blocked, removed: p.removed, dotted: p.hintOutline,
+    pieces, gaps: p.blocked, removed: p.removed, dotted: p.hintOutline, lines: p.dottedLines,
     show: 'odd', markEmpty: true,
   }));
 
@@ -428,7 +429,7 @@ $('download-btn').onclick = ()=>{
 $('find-btn').onclick = ()=>{
   const base = puzzles[currentKey];
   const n = Math.max(1, Math.min(12, parseInt($('finder-n').value, 10) || 6));
-  const board = { rows: base.rows, cols: base.cols, blocked: base.blocked || [], removed: base.removed || [], dotted: base.hintOutline || [] };
+  const board = { rows: base.rows, cols: base.cols, blocked: base.blocked || [], removed: base.removed || [], dotted: base.hintOutline || [], lines: base.dottedLines || [] };
   $('finder-list').hidden = true;
   runJob({ type:'find', board, n }, findUI, result=>{
     findUI.end(`${result.qualifying.length} of ${result.combinationsChecked} combinations have exactly one parity solution · ${(result.solveTimeMs/1000).toFixed(1)} s`);
