@@ -18,7 +18,7 @@ const check = (ok, msg)=>{ console.log((ok ? '  ok   ' : '  FAIL ') + msg); if(!
 
 function solution(level){
   const p = PUB[level].puzzle;
-  const res = S.analyzePuzzle({ rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed, dotted:p.hintOutline,
+  const res = S.analyzePuzzle({ rows:p.rows, cols:p.cols, blocked:p.blocked, removed:p.removed, dotted:p.hintOutline, lines:p.dottedLines,
     pieces: p.pieces.map(d=>({ name:d.name, cells:d.cells })) });
   return res.tilings.find(t=>t.parity).placements.map(pl=>{
     const r0 = Math.min(...pl.cells.map(c=>c[0])), c0 = Math.min(...pl.cells.map(c=>c[1]));

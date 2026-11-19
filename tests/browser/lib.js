@@ -20,7 +20,7 @@ const PUB = JSON.parse(src.split('/*JSON*/')[1].split('/*END*/')[0]);
 function solution(level){
   const p = PUB[level].puzzle;
   const res = S.analyzePuzzle({ rows: p.rows, cols: p.cols, blocked: p.blocked, removed: p.removed,
-    dotted: p.hintOutline, pieces: p.pieces.map(d => ({ name: d.name, cells: d.cells })) });
+    dotted: p.hintOutline, lines: p.dottedLines, pieces: p.pieces.map(d => ({ name: d.name, cells: d.cells })) });
   const answer = res.tilings.find(t => t.parity);
   if(!answer) throw new Error(`published ${level} has no solution`);
   return answer.placements.map(pl => {
