@@ -419,6 +419,11 @@
 <!-- The rules popup: text and pictures in rules.js, which needs shapes.js -->
 <script src="shapes.js"></script>
 <script src="scroll-hint.js"></script>   <!-- (phones: a ▾ when the rules go on below) -->
+<script>
+// The rules end with "Play the tutorial" whenever this exists (rules.js),
+// as on the puzzle page. Here it goes to the tutorial page (user, 2026-11-18).
+window.openTutorial = ()=>{ location.href = ParityTheme.withTheme('tutorial.html'); };
+</script>
 <script src="rules.js"></script>
 <script src="progress.js"></script>
 <script>

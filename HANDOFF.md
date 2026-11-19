@@ -326,6 +326,13 @@ What came of it (2026-11-17):
     "Check rows:" + the result below it, shown once that grid is counted
     (narrow phones: "Rows 3, 4 odd" / "Columns 5, 6 odd"). If the example
     changes, these captions must change with it.
+  - DONE 2026-11-19: (1) slide 4 phones: "36 squares" lights the grid +
+    measuring lines only (`dims`), card ABOVE the grid; "30 blocks": the
+    pieces' row drops the highlighter's room (`.explaining`) so the six sit
+    centred in one row, card just under them (`phoneOff` in placeSpotCard;
+    falls back to over the grid if neither fits). (2) index.html defines
+    `window.openTutorial` (→ tutorial.html), so its rules end with "Play
+    the tutorial" too. The original note:
   - TO DO (user, 2026-11-18, after the push; "no need to fix now"):
     (1) slide 4 on phones: the "36 squares" and "30 blocks" popup steps:
     refine the placement and size of the lit areas and elements;
