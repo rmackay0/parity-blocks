@@ -786,9 +786,6 @@
     /* the highlighter sits at the right end of the pieces' row, not above
        it (game.js gameSettings.hlBeside): no row of its own */
     .play.with-hl .tray { margin-top: 0; padding-right: 76px; }   /* (the highlighter + its color dot: 68px, plus a gap) */
-    /* slide 4's sum: the highlighter has faded, so the pieces that fly up
-       sit centred (user, 2026-11-18) */
-    .play.with-hl.explaining .tray { padding-right: 0; }
     /* slide 1: the 12 pieces in two rows of six */
     .twelve { grid-template-columns: repeat(6, 1fr); gap: 10px 4px; padding: 10px 6px; }
     .intro h2 { margin-bottom: 4px; }
@@ -1879,7 +1876,7 @@ function showSlide(i){
   // up ahead of the popup: the glitch the user saw, 2026-11-05)
   LATER_IN.forEach(id=>{ $(id).classList.toggle('later-in', !!s.highlighterIntro); $(id).classList.remove('shown'); });
   $('play').hidden = !onBoard;
-  $('play').classList.remove('counting', 'explaining');
+  $('play').classList.remove('counting');
   $('play').classList.toggle('with-hl', !!s.highlighter);
   $('play').classList.toggle('hl-intro', !!s.highlighterIntro);
   $('play').classList.toggle('hl-lesson', !!s.highlighterLesson);
@@ -2048,16 +2045,12 @@ function showHint(steps, step, onClose){
   }
   // (2026-11-12) 'board': the whole board, plus room on every side for the
   // counts (top, right) and the measuring lines (bottom, left)
-  // dims (slide 4's "36 squares", user 2026-11-18): only the measuring
-  // lines' room (bottom, left), so the lit area doesn't reach the pieces
   if(s.lit === 'board'){
     const b = $('board-outer').getBoundingClientRect();
-    const up = s.dims ? 4 : COUNT_ROOM, right = COUNT_ROOM;    // (right: the same as the left, so the lit area is centred)
-    holes = [{ left: b.left - COUNT_ROOM, top: b.top - up, width: b.width + COUNT_ROOM + right, height: b.height + up + COUNT_ROOM }];
+    holes = [{ left: b.left - COUNT_ROOM, top: b.top - COUNT_ROOM, width: b.width + 2*COUNT_ROOM, height: b.height + 2*COUNT_ROOM }];
     holes[0].right = holes[0].left + holes[0].width;
     holes[0].bottom = holes[0].top + holes[0].height;
   }
-  spotHoles = holes.map(b=>({ top: b.top - pad, bottom: b.bottom + pad }));
   const box = (b, extra)=>`x="${b.left - pad}" y="${b.top - pad}" width="${b.width + 2*pad}" height="${b.height + 2*pad}" rx="8" ${extra}`;
   // (dark mode, only the pieces lit: the grid is darkened half as much, so
   // it can still be seen; at full strength a dark grid went black: user
@@ -2092,27 +2085,9 @@ function showHint(steps, step, onClose){
 }
 // Where the popup's card goes. Again whenever its content grows (slide 7's
 // choice adds a message), so nothing is cut off. (2026-11-17: split out)
-let spotHoles = [];   // the lit areas' tops and bottoms (showHint)
 function placeSpotCard(s){
   s = s || hintList[hintStep] || {};
   const W = innerWidth, H = innerHeight;
-  // phoneOff (slide 4's sum on phones, user 2026-11-18): the card goes
-  // next to the lit area instead of over it, above if it fits, else
-  // below; if neither fits, over it as before
-  if(s.phoneOff && PHONE_LAYOUT.matches && spotHoles.length){
-    const card = $('spot-card'), gapPx = 10;
-    const litTop = Math.min(...spotHoles.map(b=>b.top)), litBottom = Math.max(...spotHoles.map(b=>b.bottom));
-    card.style.left = card.style.transform = card.style.width = '';
-    card.style.overflowY = 'auto'; card.style.bottom = ''; card.style.maxHeight = (H - 2*gapPx) + 'px';
-    const h = card.offsetHeight;
-    // (lit = the grid: above it, over the darkened words and pieces;
-    // lit = the pieces: below them, over the darkened grid)
-    const order = s.lit === 'tray' ? ['below', 'above'] : ['above', 'below'];
-    for(const where of order){
-      if(where === 'above' && litTop - gapPx - h >= gapPx){ card.style.top = (litTop - gapPx - h) + 'px'; card.scrollTop = 0; return; }
-      if(where === 'below' && litBottom + gapPx + h <= H - gapPx){ card.style.top = (litBottom + gapPx) + 'px'; card.scrollTop = 0; return; }
-    }
-  }
   // The explanation goes above or below the whole board, whichever has
   // more room, never over it: the hint asks them to look at rows and
   // columns (if it's too tall for that room, it scrolls inside)
@@ -2909,7 +2884,6 @@ function glidePiece(big, bigRect, smallRect, up, target, ms, delay){
 const boardBoxOf = name=>{ const p = placedPieces.find(q=>q.name === name); const el = p && boardPieceEl(p.id); return el && el.querySelector('.piece-box'); };
 function runExplainer(onDone){
   $('hl-tool').classList.add('fading');
-  $('play').classList.add('explaining');     // (phones: the pieces' row drops the highlighter's room)
   // 1: the highlights clear, last first
   const keys = Object.keys(getMarks());
   keys.slice().reverse().forEach((k, i)=>later(i * EX.unmarkEach, ()=>{ const m = getMarks(); delete m[k]; setMarks(m); }));
@@ -2937,7 +2911,7 @@ function runExplainer(onDone){
     // step before a popup, user 2026-11-13)
     drawDimensions(()=>{
       $('eq-banner').classList.add('gone');
-      later(CLEAR_MS, ()=>showHint([{ lit: 'board', dims: true, over: true, phoneOff: true, keepDark: true,
+      later(CLEAR_MS, ()=>showHint([{ lit: 'board', over: true, keepDark: true,
         html: '<p class="ex-big">This grid is 6 &times; 6 squares, so it has <b>36 squares</b>.</p>' }], 0, explainPieces));
     });
   });
@@ -2945,7 +2919,7 @@ function runExplainer(onDone){
   function explainPieces(){
     clearLeftovers();
     later(CLEAR_MS, ()=>{
-      showHint([{ lit: 'tray', over: true, phoneOff: true,
+      showHint([{ lit: 'tray', over: true,
         html: '<p class="ex-big">There are <b>6 pentominoes</b>, with 5 blocks per piece.</p><p class="ex-big">That&rsquo;s <b>30 blocks</b> total.</p>' }], 0, retile);
       puzzle.pieces.forEach((d, i)=>later(400 + i * EX.bumpEach, ()=>{
         const el = trayPieceEl(d.name);
