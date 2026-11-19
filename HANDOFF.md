@@ -86,6 +86,11 @@ dotted lines** (user request)
   sandbox (analyze, solution view, publish check, export, copyPuzzle).
 - Test: `sandbox_lines_test` (laptop + phone). sandbox_dotted_test's
   button names updated.
+- LATER (user, 2026-11-19, "skip for now"): schedule a Publish for a set
+  date and time (Publish now must still work). Two ways offered, not yet
+  chosen: a queue in published.js that players' browsers switch to at the
+  time (exact, but peekable in the code), or a GitHub Actions timed job
+  (hidden until then, can run 5–30 min late).
 
 **Status: committed AND pushed 2026-11-18** (with the user's OK, the night
 before showing the app to a potential buyer): the three 2026-11-18 batches
