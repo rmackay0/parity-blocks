@@ -466,8 +466,8 @@ const PUBLISHED = /*JSON*/{
     }
   },
   "hard": {
-    "archiveId": "amwnfhkkdetoe",
-    "publishedAt": "2026-11-19T10:50:43.904Z",
+    "archiveId": "amwngkycc72cw",
+    "publishedAt": "2026-11-19T11:20:27.828Z",
     "puzzle": {
       "title": "Hard",
       "rows": 8,
@@ -566,7 +566,9 @@ const PUBLISHED = /*JSON*/{
         ]
       ],
       "dottedLines": [
-        "v,4,0"
+        "v,6,5",
+        "h,6,6",
+        "v,7,6"
       ],
       "hintText": "",
       "pieces": [
