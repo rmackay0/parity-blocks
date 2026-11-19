@@ -331,6 +331,13 @@ What came of it (2026-11-17):
     "Check rows:" + the result below it, shown once that grid is counted
     (narrow phones: "Rows 3, 4 odd" / "Columns 5, 6 odd"). If the example
     changes, these captions must change with it.
+  - 2026-11-19 later: the slide 4 part below was REVERTED (user, no time
+    to patch the tutorial tonight; commit 152df4c restores tutorial.html as
+    of d37c0e1; the old version is in 3cadedb if wanted again). The
+    homepage rules' tutorial button stays. User's bug report: slide 1's ▸▸
+    on the TILING animation turns on for a second, then turns itself off
+    (ff_test passes, so it doesn't catch it; probably older than today, as
+    today's tutorial edit only touched slide 4: not yet checked).
   - DONE 2026-11-19: (1) slide 4 phones: "36 squares" lights the grid +
     measuring lines only (`dims`), card ABOVE the grid; "30 blocks": the
     pieces' row drops the highlighter's room (`.explaining`) so the six sit
