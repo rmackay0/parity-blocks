@@ -306,6 +306,13 @@ What came of it (2026-11-17):
     "Check rows:" + the result below it, shown once that grid is counted
     (narrow phones: "Rows 3, 4 odd" / "Columns 5, 6 odd"). If the example
     changes, these captions must change with it.
+  - TO DO (user, 2026-11-18, after the push; "no need to fix now"):
+    (1) slide 4 on phones: the "36 squares" and "30 blocks" popup steps:
+    refine the placement and size of the lit areas and elements;
+    (2) the rules opened from the HOMEPAGE (and the first-visit rules)
+    should also offer the tutorial, as on the puzzle page (rules.js only
+    adds it when window.openTutorial exists: play.html defines it,
+    index.html doesn't).
   - NEW TEST laptop_fit_test: no tutorial slide scrolls at Firefox
     1440×780 / 1280×680 and Chromium 1280×800 (phones: phone_layout_check). Clear's icon: a clean ↺ (circle + squared arrowhead).
   - (A tutorial_window_test was written, then dropped by the user: the
