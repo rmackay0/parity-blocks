@@ -84,8 +84,28 @@ const { BASE, check, finish } = require('./lib');
     check(`${device} slide 3: no ▸▸ while the wrong grid is counted`, await shown(), false);
     await page.waitForFunction(() => !document.getElementById('ff-btn').hidden, null, { timeout: 15000 }).catch(() => {});
     check(`${device} slide 3: ▸▸ beside the grids while the right one is counted`, [await shown(), await beside('#pick-boards > :last-child')], [true, true]);
+    // (2026-11-19, user: after ▸▸ the success message popped in twice in
+    // Safari) watch its animations: none may start over, none sped up
+    await page.evaluate(() => {
+      window.__badge = { restarted: false, fast: false };
+      const last = new Map(), t0 = performance.now();
+      const tick = () => {
+        const b = document.querySelector('#pick-msg .win-badge');
+        if (b) [b, ...b.querySelectorAll('*')].flatMap(e => e.getAnimations()).forEach(a => {
+          // (Safari can read a little past the end, then settle on the end
+          // as it finishes: not a restart)
+          if (a.playState !== 'finished' && a.currentTime < (last.get(a) || 0) - 1) window.__badge.restarted = true;
+          if (a.playbackRate !== 1) window.__badge.fast = true;
+          last.set(a, a.currentTime);
+        });
+        if (performance.now() - t0 < 20000) requestAnimationFrame(tick);
+      };
+      tick();
+    });
     const s3 = await fastForward();
     steady('slide 3');
+    await page.waitForTimeout(1500);
+    check(`${device} slide 3: the success message pops in once, at normal speed`, await page.evaluate(() => window.__badge), { restarted: false, fast: false });
     check(`${device} slide 3: fast forward is quick (< 3 s)`, s3 < 3, true);
     check(`${device} slide 3: then Next ready, ▸▸ gone`, [await nextReady(), await shown()], [true, false]);
 

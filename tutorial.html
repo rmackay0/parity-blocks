@@ -1858,13 +1858,21 @@ function fastForward(){
     t.id = setTimeout(()=>runTagged(t), wait);
   });
   // speed up what's moving now, and anything that starts while it's on
+  // (2026-11-19, user: on slide 5 with ▸▸ the "Correct!" message popped in
+  // twice, in Safari. Two causes, both fixed: (1) during FF_GRACE_MS after
+  // the last step, the message that comes next was sped up too; now only
+  // while a fast-forwarded step is still waiting; (2) putting a FINISHED
+  // CSS animation back to normal speed makes Safari play it again; now
+  // finished animations are left alone.)
   const speed = ()=>{
-    if(ffRate === 1){ document.getAnimations().forEach(a=>{ if(a.playbackRate !== 1) a.playbackRate = 1; }); return; }
+    const fast = ffRate !== 1 && animationSoon();
     document.getAnimations().forEach(a=>{
+      if(a.playState === 'finished') return;
       const finite = a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().iterations !== Infinity;
-      if(finite && a.playbackRate !== ffRate) a.playbackRate = ffRate;
+      const want = fast && finite ? ffRate : 1;
+      if(a.playbackRate !== want) a.playbackRate = want;
     });
-    requestAnimationFrame(speed);
+    if(ffRate !== 1) requestAnimationFrame(speed);
   };
   speed();
   updateSkip();
