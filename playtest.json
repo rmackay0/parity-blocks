@@ -485,7 +485,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwpjrey9iiqx",
@@ -974,7 +976,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwpgj638b3v6",
@@ -1164,7 +1168,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwopr9guloxk",
@@ -1468,7 +1474,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwonudgw8dnr",
@@ -1832,7 +1840,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwodohg8aeqh",
@@ -1996,7 +2006,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn9zvk5ibba",
@@ -2253,7 +2265,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn9wcijamq9",
@@ -2526,7 +2540,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn9g4dxlvam",
@@ -2715,7 +2731,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn8qhovtg9y",
@@ -3077,7 +3095,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn895f1ev7f",
@@ -3419,7 +3439,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn81wdbdqmk",
@@ -3761,7 +3783,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn7wtqc6519",
@@ -4107,7 +4131,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn7mgugzuir",
@@ -4473,7 +4499,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn5k4we1tin",
@@ -4910,7 +4938,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn5chyufzdx",
@@ -5331,7 +5361,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwn57xhzlmwa",
@@ -5756,7 +5788,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwivti82gsbx",
@@ -6122,7 +6156,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amwbonr09qwo4",
@@ -6464,7 +6500,9 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
     },
     {
       "id": "amw9n1y93om76",
@@ -6734,7 +6772,19 @@
             ]
           }
         ]
-      }
+      },
+      "folder": "inbox",
+      "trashed": false
+    }
+  ],
+  "folders": [
+    {
+      "id": "inbox",
+      "name": "Inbox"
+    },
+    {
+      "id": "fmwpvf5ezz5x6e",
+      "name": "Charlie"
     }
   ]
 }
