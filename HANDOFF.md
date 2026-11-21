@@ -86,6 +86,12 @@ dotted lines** (user request)
   sandbox (analyze, solution view, publish check, export, copyPuzzle).
 - Test: `sandbox_lines_test` (laptop + phone). sandbox_dotted_test's
   button names updated.
+- WATCH OUT (2026-11-20): Save / cloud upload saves only the pieces ON THE
+  GRID when any are placed (save-note). hard_nov_19_v5 was uploaded
+  mid-play with 7 of 12 pieces, so it has no parity answer as saved. Its
+  loop + all 12 pieces (v3's) = 80 tilings, 1 parity answer. Tiniest hint
+  found for the user: straight line `v,5,2` → 79 tilings (user added it).
+  Maybe later: warn, or ask, when uploading with pieces still in the tray.
 - LATER (user, 2026-11-19, "skip for now"): schedule a Publish for a set
   date and time (Publish now must still work). Two ways offered, not yet
   chosen: a queue in published.js that players' browsers switch to at the
@@ -347,6 +353,13 @@ What came of it (2026-11-17):
     - progress_test waits for the calendar (flaky under load).
     - Full run: all 36 pass. Slide 4 checked with Large text on SE / mini /
       iPhone 14 (WebKit).
+    - FIXED (e075981, pushed; user: slide 5's success message popped up
+      twice, only after ▸▸): the grace period kept speeding up the badge,
+      then putting playbackRate back to 1 on a FINISHED animation replays
+      it in WebKit. `speed()` now speeds up only while a ▸▸ step waits and
+      never touches finished animations. ff_test watches the badge on
+      slide 3/5 (no restart, normal speed). Not re-run in full after this
+      one (ff, slide1, tutorial, smoke, glow_clip passed).
   - DONE 2026-11-19: (1) slide 4 phones: "36 squares" lights the grid +
     measuring lines only (`dims`), card ABOVE the grid; "30 blocks": the
     pieces' row drops the highlighter's room (`.explaining`) so the six sit
