@@ -2,6 +2,198 @@
   "about": "Puzzles uploaded from the sandbox for playtesting (playtest.html). Written by the sandbox's cloud button through the GitHub API.",
   "puzzles": [
     {
+      "id": "pmwpvkm39qanf8",
+      "title": "The Angelfish - Charlie",
+      "uploadedAt": "2026-11-21T03:55:29.109Z",
+      "puzzle": {
+        "title": "The Angelfish - Charlie",
+        "rows": 6,
+        "cols": 6,
+        "removed": [],
+        "blocked": [],
+        "hintOutline": [
+          [
+            2,
+            3
+          ]
+        ],
+        "dottedLines": [
+          "v,2,0",
+          "h,1,2",
+          "h,1,3",
+          "v,5,2",
+          "v,5,3",
+          "h,4,5",
+          "v,4,1",
+          "h,3,4",
+          "v,1,0",
+          "v,4,0",
+          "v,5,5"
+        ],
+        "hintText": "",
+        "pieces": [
+          {
+            "name": "L",
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                0
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "color": "#c9a877"
+          },
+          {
+            "name": "I",
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                4
+              ]
+            ],
+            "color": "#5f9e8f"
+          },
+          {
+            "name": "N",
+            "cells": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                0
+              ]
+            ],
+            "color": "#7d6aa8"
+          },
+          {
+            "name": "P",
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "color": "#b8923f"
+          },
+          {
+            "name": "F",
+            "cells": [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ]
+            ],
+            "color": "#9c7350"
+          },
+          {
+            "name": "W",
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "color": "#86AED6"
+          }
+        ]
+      },
+      "folder": "fmwpvf5ezz5x6e",
+      "trashed": false
+    },
+    {
       "id": "pmwpvj5lqn0v52",
       "title": "X-Bones - Charlie",
       "uploadedAt": "2026-11-21T03:54:21.086Z",
