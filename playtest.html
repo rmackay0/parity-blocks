@@ -7,12 +7,21 @@
   before they're published. Anyone with the address can open it; it isn't
   linked from the game and asks search engines not to list it.
 
-  One box per puzzle, newest upload in the top left: the puzzle's name,
-  its empty board (as it starts), and when it was uploaded. A box opens
-  the puzzle in the normal game (play.html?playtest=<id>).
+  FOLDERS (2026-11-20): a row of folder buttons at the top; the Inbox
+  always exists (new uploads land there unless another folder is chosen).
+  ONE Trash for everything (user: "a trash can in every folder, but that
+  trash is just a redirect to the main trash"): each folder's Trash button
+  opens it. Nothing is ever deleted by friends, only moved there; a
+  trashed puzzle remembers its folder, so "Put back" returns it there.
+  One box per puzzle, newest first: name, empty board, upload date. A box
+  opens the puzzle in the normal game (play.html?playtest=<id>); its ⋯
+  button moves it (another folder, the Trash, back out).
 
-  The puzzles come from playtest.json, which the sandbox writes to the
-  GitHub repo; the site updates about a minute after an upload.
+  Who can do what: playtest-ops.js. Anyone: make / rename folders, move
+  puzzles. The OWNER (this browser has the sandbox's GitHub token) can also
+  rename puzzles, delete them for good, and delete folders; their changes
+  go straight to GitHub. Everyone else's go through /api/playtest
+  (api/playtest.js). Reading and changing: playtest-cloud.js.
   ═══════════════════════════════════════════════════════════════════════
 -->
 <html lang="en">
@@ -33,14 +42,40 @@
 <style>
   body { overflow: auto; user-select: auto; -webkit-user-select: auto; }
   .page { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; }
-  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .head h1 { font-family: var(--font-display); font-weight: 400; font-size: 2rem; color: var(--color-text); flex: 1; }
-  .head .note { color: var(--color-text-dim); font-size: 0.95rem; }
-  .status-line { color: var(--color-text-dim); font-size: 1.05rem; padding: 20px 0; }
+  .status-line { color: var(--color-text-dim); font-size: 1.05rem; padding: 14px 0; }
+  .who { color: var(--color-text-dim); font-size: 0.95rem; margin-bottom: 12px; }
+  .warn { color: var(--color-status); }
+
+  /* [POSITIONING] Folder buttons: one row that wraps */
+  .folders { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip {
+    font: inherit; font-family: var(--font-display); font-size: 1.05rem;
+    padding: 6px 14px; border-radius: 999px; cursor: pointer;
+    background: var(--color-panel); color: var(--color-text);
+    border: 1.5px solid var(--color-cell-border);
+  }
+  .chip small { color: var(--color-text-dim); font-size: 0.85em; margin-left: 4px; }
+  .chip.on { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+  .chip.on small { color: inherit; opacity: 0.7; }
+  .chip.add { border-style: dashed; color: var(--color-text-dim); }
+
+  .folder-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .folder-head h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; color: var(--color-text); margin-right: auto; overflow-wrap: anywhere; }
+  .small-btn {
+    font: inherit; font-size: 0.95rem; padding: 5px 12px; border-radius: 4px; cursor: pointer;
+    background: var(--color-panel); color: var(--color-text); border: 1.5px solid var(--color-btn-line);
+  }
+  .small-btn.danger { color: var(--color-status); }
+  .small-btn:disabled { opacity: 0.45; cursor: default; }
+
   /* [POSITIONING] The boxes: as many across as fit, newest first */
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .card { position: relative; display: flex; }
   .box {
-    display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 12px 12px;
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 30px 12px 12px;   /* (room at the top for ⋯) */
     background: var(--color-panel); color: var(--color-text); text-decoration: none;
     border: 1.5px solid var(--color-cell-border); border-radius: 12px;
     transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
@@ -51,7 +86,41 @@
   .box .pic svg { max-width: 100%; height: auto; }
   .box b { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
   .box small { color: var(--color-text-dim); font-size: 0.85rem; text-align: center; }
-  @media (max-width: 480px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .box .pic { min-height: 110px; } }
+  .more {
+    position: absolute; top: 2px; right: 4px; width: 32px; height: 28px; border-radius: 8px;
+    border: none; background: transparent; color: var(--color-text-dim); font-size: 1.3rem; line-height: 1; cursor: pointer;
+  }
+  .more:hover { background: var(--color-bg); color: var(--color-text); }
+  .empty-note { color: var(--color-text-dim); font-size: 1rem; padding: 6px 0 4px; }
+
+  .trash-link { margin-top: 26px; }
+  .in-trash .box { opacity: 0.75; }
+
+  /* The popups (base look from game.css) */
+  .popup.dlg { max-width: 380px; text-align: left; }
+  .popup.dlg h2 { font-size: 1.6rem; overflow-wrap: anywhere; }
+  .dlg-label { font-size: 0.95rem; color: var(--color-text-dim); margin: 4px 0 6px; }
+  .dlg-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-height: 40vh; overflow-y: auto; }
+  .dlg-list button {
+    font: inherit; font-size: 1.05rem; text-align: left; padding: 8px 12px; border-radius: 8px; cursor: pointer;
+    background: var(--color-bg); color: var(--color-text); border: 1.5px solid var(--color-cell-border);
+    overflow-wrap: anywhere;
+  }
+  .dlg-list button:disabled { opacity: 0.55; cursor: default; }
+  .dlg-list button.danger { color: var(--color-status); }
+  .dlg input[type=text] {
+    width: 100%; font: inherit; font-size: 1.05rem; padding: 8px 10px; margin-bottom: 14px;
+    border-radius: 8px; border: 1.5px solid var(--color-cell-border); background: var(--color-bg); color: var(--color-text);
+  }
+  .dlg-msg { font-size: 0.95rem !important; margin-bottom: 12px !important; color: var(--color-text-dim); }
+  .dlg-msg.warn { color: var(--color-status); }
+  .dlg-msg:empty { display: none; }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .box .pic { min-height: 110px; }
+  }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
@@ -61,41 +130,265 @@
     <h1>Playtest</h1>
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
   </div>
+  <p class="who" id="who" hidden></p>
   <p class="status-line" id="status">Loading…</p>
-  <div class="grid" id="grid"></div>
+  <nav class="folders" id="folders" aria-label="Folders"></nav>
+  <div id="folder" hidden>
+    <div class="folder-head">
+      <h2 id="folder-name"></h2>
+      <button type="button" class="small-btn" id="rename-folder">Rename folder</button>
+      <button type="button" class="small-btn danger" id="delete-folder" hidden>Delete folder</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="empty-note" id="empty-note" hidden></p>
+    <!-- Every folder's Trash button opens the one Trash -->
+    <button type="button" class="small-btn trash-link" id="trash-link"></button>
+  </div>
+</div>
+
+<!-- One popup for every question (moving a puzzle, naming a folder…) -->
+<div class="popup-backdrop" id="dlg" hidden>
+  <div class="popup dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+    <h2 id="dlg-title"></h2>
+    <div id="dlg-body"></div>
+    <p class="dlg-msg" id="dlg-msg"></p>
+    <div class="popup-buttons" id="dlg-buttons"></div>
+  </div>
 </div>
 
 <script src="shapes.js"></script>
+<script src="playtest-ops.js"></script>
+<script src="playtest-cloud.js"></script>
 <script>
-const grid = document.getElementById('grid'), status = document.getElementById('status');
+const $ = id => document.getElementById(id);
 const fmt = iso => new Date(iso).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+const FOLDER_KEY = 'pb_playtestFolder';
+const owner = PlaytestCloud.isOwner();
 
-fetch('playtest.json?t=' + Date.now(), { cache: 'no-store' })
-  .then(r=>r.ok ? r.json() : { puzzles: [] })
-  .then(data=>{
-    // Newest upload first (top left)
-    const list = (data.puzzles || []).slice().sort((a, b)=>(b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
-    status.hidden = list.length > 0;
-    status.textContent = 'No puzzles uploaded yet.';
-    list.forEach(e=>{
-      const p = e.puzzle;
-      const a = document.createElement('a');
-      a.className = 'box';
-      a.href = 'play.html?playtest=' + encodeURIComponent(e.id);
-      // The empty board, as the puzzle starts (no pieces, so no answer)
-      const cell = Math.max(10, Math.floor(150 / Math.max(p.rows, p.cols)) - 3);
-      const pic = document.createElement('div');
-      pic.className = 'pic';
-      pic.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], removed:p.removed || [], dotted:p.hintOutline || [], lines:p.dottedLines || [] }));
-      const name = document.createElement('b');
-      name.textContent = e.title;
-      const when = document.createElement('small');
-      when.textContent = `${p.rows} × ${p.cols} · ${p.pieces.length} pieces · ${fmt(e.uploadedAt)}`;
-      a.append(pic, name, when);
-      grid.appendChild(a);
+const TRASH = '__trash';          // (the Trash view; not a real folder)
+let data = null, readOnly = false;
+let current = PlaytestOps.INBOX, lastFolder = PlaytestOps.INBOX;   // (lastFolder: where the Trash's Back goes)
+try { current = localStorage.getItem(FOLDER_KEY) || current; } catch(e){}
+const folderName = id => (data.folders.find(f=>f.id === id) || data.folders[0]).name;
+
+function load(){
+  PlaytestCloud.load().then(r=>{
+    data = r.data; readOnly = r.readOnly;
+    $('status').hidden = true;
+    if(owner){ $('who').hidden = false; $('who').textContent = 'Owner (this browser has your GitHub token): you can also rename and delete puzzles, and delete folders.'; }
+    else if(readOnly){ $('who').hidden = false; $('who').className = 'who warn'; $('who').textContent = 'View only for now: ' + r.why; }
+    render();
+  }).catch(e=>{ $('status').textContent = e.message || 'Couldn’t load the puzzles. Try refreshing.'; });
+}
+
+/* ── Drawing the page ── */
+const newestFirst = list => list.slice().sort((a, b)=>(b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
+
+function render(){
+  const inTrash = current === TRASH;
+  if(!inTrash && !data.folders.some(f=>f.id === current)) current = PlaytestOps.INBOX;
+  if(!data.folders.some(f=>f.id === lastFolder)) lastFolder = PlaytestOps.INBOX;
+  if(!inTrash) lastFolder = current;
+  try { localStorage.setItem(FOLDER_KEY, current); } catch(e){}
+  // Folder buttons, with how many puzzles each holds (not counting the Trash)
+  const bar = $('folders');
+  bar.innerHTML = '';
+  data.folders.forEach(f=>{
+    const n = data.puzzles.filter(p=>p.folder === f.id && !p.trashed).length;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip' + (f.id === current ? ' on' : '');
+    b.textContent = f.name;
+    const s = document.createElement('small'); s.textContent = n; b.appendChild(s);
+    b.onclick = ()=>{ current = f.id; render(); };
+    bar.appendChild(b);
+  });
+  if(!readOnly){
+    const add = document.createElement('button');
+    add.type = 'button'; add.className = 'chip add'; add.id = 'new-folder'; add.textContent = '+ New folder';
+    add.onclick = newFolder;
+    bar.appendChild(add);
+  }
+
+  $('folder').hidden = false;
+  const trashed = newestFirst(data.puzzles.filter(p=>p.trashed));
+  $('grid').classList.toggle('in-trash', inTrash);
+  if(inTrash){
+    // The one Trash: everything thrown away, from every folder
+    $('folder-name').textContent = 'Trash';
+    $('rename-folder').hidden = $('delete-folder').hidden = true;
+    fillGrid($('grid'), trashed, true);
+    $('empty-note').textContent = 'The Trash is empty.';
+    $('empty-note').hidden = trashed.length > 0;
+    $('trash-link').textContent = '← Back to ' + folderName(lastFolder);
+    $('trash-link').onclick = ()=>{ current = lastFolder; render(); };
+  } else {
+    const folder = data.folders.find(f=>f.id === current);
+    $('folder-name').textContent = folder.name;
+    $('rename-folder').hidden = readOnly;
+    $('delete-folder').hidden = !owner || folder.id === PlaytestOps.INBOX;
+    const live = newestFirst(data.puzzles.filter(p=>p.folder === current && !p.trashed));
+    fillGrid($('grid'), live, false);
+    $('empty-note').textContent = 'No puzzles in this folder.';
+    $('empty-note').hidden = live.length > 0;
+    $('trash-link').textContent = `🗑 Trash (${trashed.length}) →`;
+    $('trash-link').onclick = ()=>{ current = TRASH; render(); };
+  }
+}
+
+function fillGrid(grid, list, inTrash){
+  grid.innerHTML = '';
+  list.forEach(e=>{
+    const p = e.puzzle;
+    const card = document.createElement('div');
+    card.className = 'card';
+    const a = document.createElement('a');
+    a.className = 'box';
+    a.href = 'play.html?playtest=' + encodeURIComponent(e.id);
+    // The empty board, as the puzzle starts (no pieces, so no answer)
+    const cell = Math.max(10, Math.floor(150 / Math.max(p.rows, p.cols)) - 3);
+    const pic = document.createElement('div');
+    pic.className = 'pic';
+    pic.appendChild(miniBoard({ rows:p.rows, cols:p.cols, cell, gaps:p.blocked || [], removed:p.removed || [], dotted:p.hintOutline || [], lines:p.dottedLines || [] }));
+    const name = document.createElement('b');
+    name.textContent = e.title;
+    const when = document.createElement('small');
+    when.textContent = `${p.rows} × ${p.cols} · ${p.pieces.length} pieces · ${fmt(e.uploadedAt)}`
+      + (inTrash ? ` · from ${folderName(e.folder)}` : '');
+    a.append(pic, name, when);
+    card.appendChild(a);
+    if(!readOnly){
+      const more = document.createElement('button');
+      more.type = 'button'; more.className = 'more'; more.textContent = '⋯';
+      more.setAttribute('aria-label', 'Move or change ' + e.title);
+      more.onclick = ()=>puzzleMenu(e);
+      card.appendChild(more);
+    }
+    grid.appendChild(card);
+  });
+}
+
+/* ── The popup ── */
+let busy = false;
+function openDialog(title, build, buttons){
+  $('dlg-title').textContent = title;
+  $('dlg-body').innerHTML = '';
+  $('dlg-msg').textContent = ''; $('dlg-msg').className = 'dlg-msg';
+  build($('dlg-body'));
+  const row = $('dlg-buttons');
+  row.innerHTML = '';
+  buttons.forEach(([label, fn, cls])=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = label;
+    if(cls) b.className = cls;
+    b.onclick = fn;
+    row.appendChild(b);
+  });
+  $('dlg').hidden = false;
+  const input = $('dlg-body').querySelector('input');
+  (input || row.lastElementChild).focus();
+}
+const closeDialog = ()=>{ if(!busy) $('dlg').hidden = true; };
+function say(text, warn){ $('dlg-msg').textContent = text; $('dlg-msg').className = 'dlg-msg' + (warn ? ' warn' : ''); }
+
+// Make one change; on success the page redraws and the popup closes
+async function run(op, after){
+  if(busy) return;
+  busy = true;
+  document.querySelectorAll('#dlg button').forEach(b=>b.disabled = true);
+  say('Saving…');
+  try {
+    const out = await PlaytestCloud.change(op);
+    data = out.data;
+    if(after) after(out.result);
+    busy = false;
+    $('dlg').hidden = true;
+    render();
+  } catch(e){
+    busy = false;
+    document.querySelectorAll('#dlg button').forEach(b=>b.disabled = false);
+    say(e.message || String(e), true);
+  }
+}
+function textField(box, value, placeholder){
+  const input = document.createElement('input');
+  input.type = 'text'; input.value = value || ''; input.placeholder = placeholder || ''; input.maxLength = 80;
+  box.appendChild(input);
+  return input;
+}
+
+function newFolder(){
+  let input;
+  const go = ()=>run({ op:'newFolder', name: input.value }, r=>{ current = r.folder; });
+  openDialog('New folder', box=>{ input = textField(box, '', 'Folder name'); input.onkeydown = e=>{ if(e.key === 'Enter') go(); }; },
+    [['Cancel', closeDialog, 'secondary'], ['Create', go]]);
+}
+$('rename-folder').onclick = ()=>{
+  const f = data.folders.find(x=>x.id === current);
+  let input;
+  const go = ()=>run({ op:'renameFolder', folder: f.id, name: input.value });
+  openDialog('Rename folder', box=>{ input = textField(box, f.name, 'Folder name'); input.onkeydown = e=>{ if(e.key === 'Enter') go(); }; },
+    [['Cancel', closeDialog, 'secondary'], ['Save', go]]);
+};
+$('delete-folder').onclick = ()=>{
+  const f = data.folders.find(x=>x.id === current);
+  const n = data.puzzles.filter(p=>p.folder === f.id).length;
+  const inbox = data.folders.find(x=>x.id === PlaytestOps.INBOX).name;
+  openDialog(`Delete “${f.name}”?`, box=>{
+    const p = document.createElement('p');
+    p.textContent = n ? `Its ${n} puzzle${n === 1 ? '' : 's'} (Trash included) move to ${inbox}. Nothing else is deleted.` : 'It’s empty.';
+    box.appendChild(p);
+  }, [['Cancel', closeDialog, 'secondary'], ['Delete folder', ()=>run({ op:'deleteFolder', folder: f.id })]]);
+};
+
+// A puzzle's ⋯: move it (another folder, the Trash, back out); the owner can also rename or delete it
+function puzzleMenu(e){
+  openDialog(e.title, box=>{
+    const label = document.createElement('p');
+    label.className = 'dlg-label'; label.textContent = 'Move to:';
+    const list = document.createElement('div');
+    list.className = 'dlg-list';
+    data.folders.forEach(f=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = f.name + (f.id === e.folder ? ' (here now)' : '');
+      b.disabled = f.id === e.folder && !e.trashed;
+      b.onclick = ()=>run({ op:'move', id: e.id, folder: f.id, trashed: false });
+      list.appendChild(b);
     });
-  })
-  .catch(()=>{ status.textContent = 'Couldn’t load the puzzles. Try refreshing.'; });
+    box.append(label, list);
+    const more = document.createElement('div');
+    more.className = 'dlg-list';
+    const add = (text, fn, cls)=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = text; b.onclick = fn;
+      if(cls) b.className = cls;
+      more.appendChild(b);
+    };
+    if(e.trashed) add('Put back in ' + folderName(e.folder), ()=>run({ op:'move', id: e.id, trashed: false }));
+    else add('Move to the Trash', ()=>run({ op:'move', id: e.id, trashed: true }));
+    if(owner){
+      add('Rename…', ()=>renamePuzzle(e));
+      add('Delete forever…', ()=>deletePuzzle(e), 'danger');
+    }
+    box.appendChild(more);
+  }, [['Close', closeDialog, 'secondary']]);
+}
+function renamePuzzle(e){
+  let input;
+  const go = ()=>run({ op:'renamePuzzle', id: e.id, title: input.value });
+  openDialog('Rename puzzle', box=>{ input = textField(box, e.title, 'Puzzle name'); input.onkeydown = ev=>{ if(ev.key === 'Enter') go(); }; },
+    [['Cancel', closeDialog, 'secondary'], ['Save', go]]);
+}
+function deletePuzzle(e){
+  openDialog(`Delete “${e.title}” forever?`, box=>{
+    const p = document.createElement('p');
+    p.textContent = 'It disappears from the playtest page for everyone. (Your sandbox archive isn’t changed.)';
+    box.appendChild(p);
+  }, [['Cancel', closeDialog, 'secondary'], ['Delete forever', ()=>run({ op:'deletePuzzle', id: e.id })]]);
+}
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !$('dlg').hidden) closeDialog(); });
+
+load();
 </script>
 </body>
 </html>

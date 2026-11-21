@@ -33,6 +33,51 @@ text must be bigger in Large text, or already ≥ 24px; titles and buttons
 stay the same by design) and `piece_colors_test` (one color per letter
 in the sandbox while pieces are added / removed, each level, every slide).
 
+**2026-11-20 (committed, NOT pushed): playtest for friends, folders,
+Trash; Save keeps every piece; Analyze with any of the pieces** (user)
+- PLAYTEST, anyone can add / sort (user chose: no passwords, "curtain
+  only"; the repo is public so playtest.json is readable anyway).
+  Rules in ONE file, `playtest-ops.js` (browser + server): anyone uploads
+  (always a NEW puzzle, never overwrites), makes / renames folders, moves
+  puzzles between folders and into / out of the Trash; OWNER only:
+  re-upload replaces, rename puzzle, delete forever, delete folder (its
+  puzzles go to the Inbox; the Inbox can't be deleted). Puzzles have
+  `folder` + `trashed`; `normalize` upgrades old files (Inbox).
+  ONE Trash (user: every folder's Trash button "is just a redirect to the
+  main trash"); a trashed puzzle keeps its folder, "Put back in X".
+- Owner = this browser has the sandbox's GitHub token (`pb_github`): writes
+  straight to GitHub as before, no server needed. Friends go through
+  `api/playtest.js`, a Vercel function (GET = fresh file, POST = one change,
+  always as a friend). `playtest-cloud.js` picks the way; with no server
+  friends get the site's playtest.json, "View only".
+- **SETUP STILL NEEDED by the user (after the push):** Vercel → project →
+  Settings → Environment Variables → `PLAYTEST_GITHUB_TOKEN` = a
+  fine-grained token for parity-blocks, Contents: Read and write; then
+  redeploy. Until then friends see "Uploads from friends aren’t switched
+  on yet" and the page is view only for them. Check that Vercel picked up
+  `api/` (parity-blocks.vercel.app/api/playtest should answer JSON).
+- playtest.html: folder buttons (+ New folder), Rename folder, ⋯ per
+  puzzle (move / Trash / owner: Rename…, Delete forever…), "🗑 Trash (n) →"
+  under every folder → the Trash view ("from <folder>", ← Back to it).
+  Sandbox Cloud: "Upload to" folder picker (+ New folder… via prompt,
+  remembered `pb_cloudFolder`); ✕ now = to the Trash. play.html (playtest
+  only): asks /api/playtest if the site's copy lacks the puzzle yet.
+- Save keeps EVERY selected piece, whatever is on the grid (Analyze still
+  uses the pieces on the board, as before; not asked to change).
+- "Analyze with any of the pieces" (sandbox, under Analyze): popup with a
+  slider (1 … open squares ÷ 5; odd = warning, can't run), "Any number",
+  "Must include" over the 12 pieces (picking one turns it on). solver.js
+  `findPieceSets(board, {counts, mustInclude, part})`: every set with ≥ 1
+  parity answer, exact counts (parityTilings), unique first. One worker
+  per core (`part: [k, K]`), sets listed as found, Stop keeps them;
+  clicking a set makes it the puzzle's pieces and runs Analyze. Slow on
+  big boards: plain 6 × 6, 6 pieces ≈ 2.7 min on one core (plain squares
+  never give unique answers: 8 symmetries).
+- Tests: `playtest_ops_test` (QUICK; rules + server with a fake GitHub),
+  `cloud_test` rewritten (owner, friend, view only, folders, Trash, owner
+  delete), `sandbox_any_test`. highlighter_test FAILS, already before this
+  work: it taps square (0,0) on Medium, which the new Medium cuts out.
+
 **Later 2026-11-16 (committed, NOT pushed yet):**
 - Welcome popup (slide 2) and slide 3's ask / success: the user's wording;
   the "exit with the ×" line removed.
@@ -772,7 +817,8 @@ previous project; don't push there.
 | `tutorial.html` | Interactive 10-slide tutorial (parity first; real mini puzzles via game.js); slide list in the comment at its top, all wording/options in `SLIDES` (+ `FIND_GOOD`/`FIND_SUM`, `HL_POPUP`/`HL_NOTE`, the two grid pairs `PAIR_*` / `EMPTY_*`, slide 1's drags `SLIDE1_MOVES` / `dragOnto`); `?slide=N` opens slide N |
 | `tests/run.js` | The test runner (2026-11-16): `node tests/run.js` quick / `changed` / `full` / test names; `--list` shows which files each test covers |
 | `tests/browser/lib.js` | Shared test helpers: `BASE`, `solution(level)`, `check`, `finish` |
-| `playtest.html` / `playtest.json` | Unlinked playtest page + the cloud puzzles the sandbox uploads (2026-11-05) |
+| `playtest.html` / `playtest.json` | Unlinked playtest page + the cloud puzzles the sandbox uploads (2026-11-05); folders + Trash 2026-11-20 |
+| `playtest-ops.js` / `playtest-cloud.js` / `api/playtest.js` | Playtest rules (who can do what) / the pages' way in (owner = GitHub token, else the server) / the Vercel server function for friends (2026-11-20) |
 | `APP_REVIEW.md` | Whole-app review (2026-10-20): its "Done" and "Still to do" sections are the to-do list |
 | `tests/browser/` | Playwright checks (see Testing below); `tutorial_test.js` plays all 6 slides, `next_level_test.js` the Solved popup, `look_screens.js` screenshots of every page (laptop/phone × light/dark; `ONLY=phone-dark` for one), `feel_test.js` the piece animations, `share_test.js`, `theme_toggle_test.js` |
 | `published.js` | `PUBLISHED = {easy, medium, hard}` → full puzzle copies. Written by the sandbox's Publish button (GitHub API commit). Keep the `/*JSON*/…/*END*/` markers |

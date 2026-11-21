@@ -174,6 +174,31 @@
   .solution-board { display: flex; justify-content: center; margin: 4px 0 10px; min-height: 40px; }
   .solution-board svg { max-width: 100%; height: auto; }
 
+  /* Analyze with any of the pieces */
+  .any-popup { max-width: 480px; max-height: calc(100dvh - 32px); overflow-y: auto; }
+  .any-count { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 1.1rem; margin-bottom: 6px; }
+  .any-count input[type=range] { flex: 1; min-width: 120px; accent-color: var(--color-accent); }
+  .any-count input[type=range]:disabled { opacity: 0.4; }
+  .any-count b { min-width: 1.5em; text-align: center; font-weight: 400; font-size: 1.3rem; }
+  .toggle {
+    font: inherit; font-family: var(--font-display); font-size: 1rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+    background: var(--color-bg); color: var(--color-text); border: 1.5px solid var(--color-cell-border);
+  }
+  .toggle[aria-pressed="true"] { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+  .any-picker { margin: 8px 0 12px; }
+  .any-picker.off .pick { opacity: 0.35; }
+  .any-results { display: flex; flex-direction: column; gap: 5px; max-height: 240px; overflow-y: auto; margin-bottom: 14px; }
+  .any-results:empty { display: none; }
+  .any-set {
+    display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
+    font: inherit; font-size: 1.05rem; padding: 7px 10px; border-radius: 8px;
+    background: var(--color-bg); color: var(--color-text); border: 1.5px solid transparent;
+  }
+  .any-set:hover { border-color: var(--color-select); }
+  .any-set .names { flex: 1; letter-spacing: 0.08em; }
+  .any-set small { color: var(--color-text-dim); font-size: 0.9rem; }
+  .any-set.unique small { color: #8cc77a; }
+
   /* Counts button (top right) while the live counts are showing */
   #counts-btn[aria-pressed="true"] { background: var(--color-text); color: var(--color-bg); }
 
@@ -196,7 +221,7 @@
       <input type="text" id="save-name" placeholder="Name for this puzzle" style="flex:1; width:auto;">
       <button class="btn primary" id="save-btn">Save</button>
     </div>
-    <p class="note" id="save-note">Saves the pieces on the grid (or every selected piece if the grid is empty).</p>
+    <p class="note" id="save-note">Saves every selected piece, whether it's on the grid or not.</p>
     <p class="note">Click a saved puzzle to open a copy here; changes you make won't touch the saved one. &#9998; notes &middot; eye: reveal solution &middot; &#8593; publish &middot; &#9729; upload to the cloud &middot; &#10005; delete</p>
     <div class="archive" id="archive-list"></div>
     <div class="row">
@@ -212,7 +237,8 @@
        kept outside this browser and friends can try them on playtest.html -->
   <section>
     <h2>Cloud</h2>
-    <p class="note">&#9729; on a saved puzzle uploads it (again = replace). Uploads show on <a href="playtest.html" target="_blank" style="color:inherit">playtest.html</a>, newest first, about a minute later. Anyone with that address can see them. Notes stay in this browser.</p>
+    <p class="note">&#9729; on a saved puzzle uploads it to <a href="playtest.html" target="_blank" style="color:inherit">playtest.html</a>, into the folder below. Anyone with that address can see them. Notes stay in this browser. <span id="cloud-who"></span></p>
+    <div class="row">Upload to <select id="cloud-folder"></select></div>
     <div class="row"><button class="btn small" id="cloud-refresh">Refresh</button><span class="note" id="cloud-status" style="flex:1"></span></div>
     <div class="archive" id="cloud-list"></div>
   </section>
@@ -261,6 +287,7 @@
       <button class="btn" id="cancel-btn" hidden>Cancel</button>
     </div>
     <p class="note">Analyzes the pieces you've put on the board (positions don't matter). With an empty board, it uses every selected piece.</p>
+    <div class="row"><button class="btn" id="any-btn" title="Which sets of pentominoes can achieve parity on this grid?">Analyze with any of the pieces</button></div>
     <div class="progress" id="progress" hidden><div></div></div>
     <p class="note" id="progress-text"></p>
     <div id="results" hidden>
@@ -335,6 +362,30 @@
 and highlights (and any old dotted squares; keeps size and pieces)</small></div>
     </div>
     <div class="popup-buttons"><button type="button" class="secondary" id="clear-cancel">Cancel</button></div>
+  </div>
+</div>
+
+<!-- ═══ ANALYZE WITH ANY OF THE PIECES (2026-11-20) ═══ -->
+<div class="popup-backdrop" id="any-modal" hidden>
+  <div class="popup wide any-popup" role="dialog" aria-modal="true" aria-labelledby="any-title">
+    <h2 id="any-title">Analyze with any of the pieces</h2>
+    <p class="modal-note">Finds every set of pentominoes that can achieve parity on this grid as drawn (its shape, dotted loop and dotted lines).</p>
+    <div class="any-count">
+      <span>Pieces</span>
+      <input type="range" id="any-slider" min="1" max="12" value="6" aria-label="How many pieces">
+      <b id="any-n"></b>
+      <button type="button" class="toggle" id="any-all" aria-pressed="false" title="Try every number of pieces that fits">Any number</button>
+    </div>
+    <p class="modal-note" id="any-count-note"></p>
+    <button type="button" class="toggle" id="any-must" aria-pressed="false" title="Only sets that include the pieces picked below">Must include</button>
+    <div class="picker any-picker off" id="any-picker"></div>
+    <div class="progress" id="any-progress" hidden><div></div></div>
+    <p class="modal-note" id="any-status"></p>
+    <div class="any-results" id="any-results"></div>
+    <div class="popup-buttons">
+      <button type="button" class="secondary" id="any-close">Close</button>
+      <button type="button" id="any-go">Analyze</button>
+    </div>
   </div>
 </div>
 
@@ -418,6 +469,8 @@ and highlights (and any old dotted squares; keeps size and pieces)</small></div>
 <script src="rules.js"></script>
 <script src="solver.js"></script>
 <script src="published.js"></script>
+<script src="playtest-ops.js"></script>
+<script src="playtest-cloud.js"></script>
 <script src="game.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════════
@@ -836,6 +889,166 @@ $('copy-tiling-btn').onclick = ()=>{
 };
 
 /* ═══════════════════════════════════════════════════════════════════
+   ANALYZE WITH ANY OF THE PIECES  (user, 2026-11-20)
+   A popup: a slider for how many pieces (or "Any number": every size
+   that fits), "Must include" over the 12 pentominoes (pick the pieces
+   every set has to have), then Analyze. solver.js findPieceSets lists
+   every set that can achieve parity on the grid as drawn, unique answers
+   first. The search is shared by one worker per processor core (each
+   takes every K-th set); sets appear as they're found, and Stop keeps
+   what's found so far. Clicking a set makes it the puzzle's pieces and
+   runs the ordinary Analyze, so its answers show on the board.
+═══════════════════════════════════════════════════════════════════ */
+const anyState = { all: false, must: false, mustSet: new Set() };
+let anyWorkers = [], anyFound = [], anyTimer = null;
+
+const openSquares = ()=>draft.rows*draft.cols - draft.blocked.length - draft.removed.length;
+const anyMax = ()=>Math.max(1, Math.min(12, Math.floor(openSquares() / 5)));
+
+function anyRender(){
+  const max = anyMax(), slider = $('any-slider');
+  slider.max = max;
+  const mustN = anyState.must ? anyState.mustSet.size : 0;
+  if(+slider.value > max) slider.value = max;
+  if(+slider.value < mustN) slider.value = Math.min(max, mustN);
+  slider.disabled = anyState.all;
+  $('any-n').textContent = anyState.all ? '–' : slider.value;
+  $('any-all').setAttribute('aria-pressed', anyState.all);
+  $('any-must').setAttribute('aria-pressed', anyState.must);
+  $('any-picker').classList.toggle('off', !anyState.must);
+  const n = +slider.value;
+  // Every row and column even means an even number of blocks in all, so an odd number of pieces can't work
+  $('any-count-note').textContent = anyState.all
+    ? `Tries every even number of pieces up to ${max} (${openSquares()} open squares; an odd number of pieces has an odd number of blocks, which can never achieve parity).`
+    : n % 2 ? `${n} pieces = ${5*n} blocks, an odd number: no arrangement can achieve parity.` : '';
+  $('any-count-note').className = 'modal-note' + (!anyState.all && n % 2 ? ' warn-text' : '');
+  // The 12 pieces (the same drawing as the Pieces section, in their puzzle colors)
+  const box = $('any-picker');
+  box.innerHTML = '';
+  const colors = pieceColors({ pieces: ParitySolver.PENTOMINOES.map(p=>({ name: p.name })) });
+  ParitySolver.PENTOMINOES.forEach(p=>{
+    const on = anyState.must && anyState.mustSet.has(p.name);
+    const el = document.createElement('div');
+    el.className = 'pick' + (on ? ' on' : '');
+    el.dataset.piece = p.name;
+    el.title = on ? `Don't require ${p.name}` : `Require ${p.name}`;
+    el.appendChild(pickerIcon(p.cells, on ? colors[p.name] : PICKER_GREY));
+    el.appendChild(document.createTextNode(p.name));
+    el.onclick = ()=>{
+      if(!anyState.must){ anyState.must = true; anyState.mustSet.add(p.name); }   // (picking a piece turns Must include on)
+      else if(anyState.mustSet.has(p.name)) anyState.mustSet.delete(p.name);
+      else anyState.mustSet.add(p.name);
+      anyRender();
+    };
+    box.appendChild(el);
+  });
+  $('any-go').disabled = !anyState.all && n % 2 === 1 && !anyWorkers.length;
+}
+
+function anyStop(msg){
+  anyWorkers.forEach(w=>w.terminate());
+  anyWorkers = [];
+  clearInterval(anyTimer); anyTimer = null;
+  $('any-progress').hidden = true;
+  $('any-go').textContent = 'Analyze';
+  if(msg !== undefined) $('any-status').textContent = msg;
+  anyRender();
+}
+
+function anySortAndShow(){
+  const rank = s=>s.paritySolutions === 1 ? 0 : 1;
+  anyFound.sort((a,b)=>rank(a) - rank(b) || a.paritySolutions - b.paritySolutions || a.pieces.length - b.pieces.length || a.pieces.join('').localeCompare(b.pieces.join('')));
+  const list = $('any-results');
+  list.innerHTML = '';
+  anyFound.slice(0, 500).forEach(s=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'any-set' + (s.paritySolutions === 1 ? ' unique' : '');
+    b.title = 'Use these pieces and show their answers on the board';
+    b.innerHTML = '<span class="names"></span><small></small>';
+    b.querySelector('.names').textContent = s.pieces.join(' ');
+    b.querySelector('small').textContent = s.paritySolutions === 1 ? '✓ 1 answer (unique)' : `${s.paritySolutions.toLocaleString()} answers`;
+    b.onclick = ()=>anyUse(s);
+    list.appendChild(b);
+  });
+}
+function anySummary(prefix){
+  const unique = anyFound.filter(s=>s.paritySolutions === 1).length;
+  return `${prefix}${anyFound.length.toLocaleString()} set${anyFound.length === 1 ? '' : 's'} can achieve parity`
+    + (anyFound.length ? ` (${unique.toLocaleString()} with exactly one answer)` : '')
+    + (anyFound.length > 500 ? '; showing the first 500' : '') + '.';
+}
+
+function anyGo(){
+  if(anyWorkers.length){ anyStop(anySummary('Stopped. So far: ')); return; }
+  const max = anyMax();
+  const counts = anyState.all ? Array.from({ length: max }, (_, i)=>i + 1) : [+$('any-slider').value];
+  const mustInclude = anyState.must ? [...anyState.mustSet] : [];
+  const board = { rows: draft.rows, cols: draft.cols, blocked: draft.blocked, removed: draft.removed, dotted: draft.hintOutline, lines: draft.dottedLines };
+  anyFound = [];
+  anySortAndShow();
+  const K = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4)));
+  const parts = Array.from({ length: K }, ()=>({ fraction: 0, sets: 0, done: false }));
+  const t0 = Date.now();
+  $('any-progress').hidden = false; $('any-progress').firstElementChild.style.width = '0%';
+  $('any-status').textContent = 'Starting…';
+  $('any-go').textContent = 'Stop';
+  let dirty = false;
+  const finish = ()=>{
+    const secs = (Date.now() - t0) / 1000;
+    const total = parts.reduce((s, p)=>s + p.sets, 0);
+    anySortAndShow();
+    anyStop(total ? anySummary(`Checked ${total.toLocaleString()} sets in ${secs < 10 ? secs.toFixed(1) : Math.round(secs)} s: `)
+                  : 'No sets to check: too few squares, or the number of pieces is odd, or Must include has more pieces than that.');
+  };
+  for(let k = 0; k < K; k++){
+    const w = ParitySolver.createWorker();
+    w.onmessage = e=>{
+      const m = e.data;
+      if(m.type === 'found'){ anyFound.push(m.set); dirty = true; }
+      else if(m.type === 'progress'){ parts[k].fraction = m.fraction; parts[k].sets = m.sets; }
+      else if(m.type === 'result'){ parts[k].done = true; parts[k].fraction = 1; parts[k].sets = m.result.sets; if(parts.every(p=>p.done)) finish(); }
+      else if(m.type === 'error') anyStop('Error: ' + m.message);
+    };
+    w.postMessage({ type:'pieceSets', board, counts, mustInclude, part: [k, K] });
+    anyWorkers.push(w);
+  }
+  // The bar and the list, a few times a second (not on every message)
+  anyTimer = setInterval(()=>{
+    const f = parts.reduce((s, p)=>s + p.fraction, 0) / K;
+    $('any-progress').firstElementChild.style.width = Math.round(f*100) + '%';
+    $('any-status').textContent = anySummary(`${Math.round(f*100)}% · `);
+    if(dirty){ dirty = false; anySortAndShow(); }
+  }, 250);
+  anyRender();
+}
+
+// A set picked: it becomes the puzzle's pieces, then the ordinary Analyze shows its answers
+function anyUse(s){
+  anyStop();
+  $('any-modal').hidden = true;
+  draft.pieces = s.pieces.map(name=>pieceMemory[name] || catalogPiece(name));
+  draft.pieces.forEach(d=>{ pieceMemory[d.name] = d; });
+  clearPieces();
+  draftChanged();
+  $('analyze-btn').click();
+}
+
+$('any-btn').onclick = ()=>{
+  if(!anyWorkers.length){
+    $('any-slider').value = draft.pieces.length;
+    $('any-status').textContent = '';
+  }
+  anyRender();
+  $('any-modal').hidden = false;
+};
+$('any-slider').oninput = ()=>anyRender();
+$('any-all').onclick = ()=>{ anyState.all = !anyState.all; anyRender(); };
+$('any-must').onclick = ()=>{ anyState.must = !anyState.must; anyRender(); };
+$('any-go').onclick = anyGo;
+$('any-close').onclick = ()=>{ if(anyWorkers.length) anyStop(anySummary('Stopped. So far: ')); $('any-modal').hidden = true; };
+
+/* ═══════════════════════════════════════════════════════════════════
    EXPORT
 ═══════════════════════════════════════════════════════════════════ */
 $('export-btn').onclick = ()=>{
@@ -980,15 +1193,13 @@ function openFromArchive(entry){
 
 $('save-btn').onclick = ()=>{
   const title = $('save-name').value.trim() || draft.title || 'Untitled puzzle';
-  // Save only the pieces on the grid (same rule as Analyze); with an empty
-  // grid, every selected piece. Pieces keep their standard orientation, so
-  // the saved puzzle doesn't give away how they were placed.
-  const chosen = piecesToAnalyze();
-  const puzzle = copyPuzzle(Object.assign({}, draft, { pieces: chosen.pieces }));
+  // Every selected piece, whatever is on the grid (user, 2026-11-20: a
+  // puzzle uploaded mid-play had lost the pieces still in the tray).
+  // Pieces keep their standard orientation, so the saved puzzle doesn't
+  // give away how they were placed.
+  const puzzle = copyPuzzle(draft);
   puzzle.title = title;
-  $('save-note').textContent = chosen.fromBoard
-    ? `Saved “${title}” with the ${chosen.pieces.length} pieces on the grid: ${pieceSetKey(chosen.pieces)}.`
-    : `Saved “${title}” with all ${chosen.pieces.length} selected pieces (nothing was on the grid).`;
+  $('save-note').textContent = `Saved “${title}” with all ${draft.pieces.length} selected pieces: ${pieceSetKey(draft.pieces)}.`;
   const entry = { id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
                   title, savedAt: new Date().toISOString(), notes: '', puzzle, published: [] };
   archive.unshift(entry);
@@ -1238,79 +1449,96 @@ const publishGo = $('publish-go').onclick;
 /* ═══════════════════════════════════════════════════════════════════
    CLOUD  (playtest.json in the GitHub repo; user, 2026-11-05)
    Puzzles kept outside this browser, which also appear on the playtest
-   page (playtest.html) for friends to try before publishing. Uses the
-   same GitHub token as Publish. playtest.json is
-     { about, puzzles: [{ id, title, uploadedAt, puzzle }] }   newest first
-   id = the archive entry's id, so uploading it again replaces it. Notes
-   aren't uploaded (anyone can read the file).
+   page (playtest.html) for friends to try before publishing.
+   Since 2026-11-20 anyone can upload (playtest-cloud.js): with the GitHub
+   token (⚙ Publishing) straight to GitHub as the owner, as before;
+   without it through the server (/api/playtest). Uploads go into the
+   folder chosen under "Upload to" (remembered). The owner's upload uses
+   the archive entry's id, so uploading again replaces it; a friend's
+   always adds a new one. ✕ moves a puzzle to the playtest page's Trash
+   (only the owner deletes for good, on the playtest page). Notes aren't
+   uploaded (anyone can read the file). Rules: playtest-ops.js.
 ═══════════════════════════════════════════════════════════════════ */
-const CLOUD_FILE = 'playtest.json';
-let cloud = null;              // the puzzles in the cloud, once read
+const CLOUD_FOLDER_KEY = 'pb_cloudFolder';
+let cloud = null;              // the puzzles in the cloud (not the Trash), once read
+let cloudData = null;          // the whole of playtest.json (folders too)
+let cloudReadOnly = false;
 
-// Read playtest.json from GitHub (fresh, not the site's copy): { data, sha }
-async function readCloudFile(){
-  const s = ghSettings();
-  const res = await fetch(`https://api.github.com/repos/${s.repo}/contents/${CLOUD_FILE}?ref=${encodeURIComponent(s.branch)}&t=${Date.now()}`,
-    { headers: { Authorization: 'Bearer ' + s.token, Accept: 'application/vnd.github+json' }, cache:'no-store' });
-  if(res.status === 404) return { data: { puzzles: [] }, sha: null };     // (not made yet)
-  if(!res.ok) throw new Error(ghError(res, 'reading ' + CLOUD_FILE));
-  const file = await res.json();
-  return { data: JSON.parse(b64decode(file.content)), sha: file.sha };
-}
-// Change playtest.json: change(list) returns the new list. Tries again if
-// someone else saved it at the same moment.
-async function changeCloud(change, message){
-  const s = ghSettings();
-  for(let attempt = 0; attempt < 3; attempt++){
-    const { data, sha } = await readCloudFile();
-    data.about = data.about || 'Puzzles uploaded from the sandbox for playtesting (playtest.html).';
-    data.puzzles = change(data.puzzles || []);
-    const res = await fetch(`https://api.github.com/repos/${s.repo}/contents/${CLOUD_FILE}`, {
-      method:'PUT', headers: { Authorization: 'Bearer ' + s.token, Accept: 'application/vnd.github+json' },
-      body: JSON.stringify({ message, content: b64encode(JSON.stringify(data, null, 2) + '\n'), branch: s.branch, ...(sha ? { sha } : {}) }),
-    });
-    if(res.ok){ cloud = data.puzzles; return; }
-    if(res.status !== 409 && res.status !== 422) throw new Error(ghError(res, 'saving ' + CLOUD_FILE));
-  }
-  throw new Error('Someone else kept changing ' + CLOUD_FILE + '. Try again.');
-}
 function cloudStatus(text, kind){
   $('cloud-status').className = 'note' + (kind ? ' ' + kind : '');
   $('cloud-status').textContent = text;
 }
-function needToken(){
-  if(ghSettings().token) return false;
-  cloudStatus('Set up ⚙ Publishing first (the same GitHub token).', 'warn-text');
-  return true;
+function useCloudData(data){
+  cloudData = data;
+  cloud = data.puzzles.filter(p=>!p.trashed);
+  renderCloudFolders();
 }
+function cloudFolder(){
+  let f = null;
+  try { f = localStorage.getItem(CLOUD_FOLDER_KEY); } catch(e){}
+  return cloudData && cloudData.folders.some(x=>x.id === f) ? f : PlaytestOps.INBOX;
+}
+function renderCloudFolders(){
+  const sel = $('cloud-folder');
+  sel.innerHTML = '';
+  (cloudData ? cloudData.folders : [{ id: PlaytestOps.INBOX, name: 'Inbox' }]).forEach(f=>{
+    const o = document.createElement('option');
+    o.value = f.id; o.textContent = f.name;
+    sel.appendChild(o);
+  });
+  if(cloudData && !cloudReadOnly){
+    const o = document.createElement('option');
+    o.value = '__new'; o.textContent = '+ New folder…';
+    sel.appendChild(o);
+  }
+  sel.value = cloudFolder();
+}
+$('cloud-folder').onchange = async ()=>{
+  const sel = $('cloud-folder');
+  if(sel.value !== '__new'){ try { localStorage.setItem(CLOUD_FOLDER_KEY, sel.value); } catch(e){} return; }
+  const name = (prompt('Name for the new folder:') || '').trim();
+  if(!name){ sel.value = cloudFolder(); return; }
+  cloudStatus('Making the folder…');
+  try {
+    const out = await PlaytestCloud.change({ op:'newFolder', name });
+    try { localStorage.setItem(CLOUD_FOLDER_KEY, out.result.folder); } catch(e){}
+    useCloudData(out.data);
+    cloudStatus(`Made the folder “${name}”.`, 'ok-text');
+  } catch(e){ cloudStatus(e.message, 'warn-text'); sel.value = cloudFolder(); }
+};
 
 async function refreshCloud(){
-  if(needToken()) return;
+  $('cloud-who').textContent = PlaytestCloud.isOwner() ? '(You’re the owner here: your GitHub token is set.)' : '';
+  // Opened as a file (not from the site): without the token there's nothing to read from
+  if(location.protocol === 'file:' && !PlaytestCloud.isOwner()){ cloudStatus('The cloud needs the site (or ⚙ Publishing’s token).'); return; }
   cloudStatus('Reading the cloud…');
-  try { cloud = (await readCloudFile()).data.puzzles || []; cloudStatus(''); }
-  catch(e){ cloudStatus(e.message, 'warn-text'); }
+  try {
+    const r = await PlaytestCloud.load();
+    cloudReadOnly = r.readOnly;
+    useCloudData(r.data);
+    cloudStatus(r.readOnly ? 'View only: ' + r.why : '', r.readOnly ? 'warn-text' : '');
+  } catch(e){ cloudStatus(e.message, 'warn-text'); }
   renderCloud();
 }
 $('cloud-refresh').onclick = refreshCloud;
 
 async function uploadToCloud(entry){
-  if(needToken()) return;
   cloudStatus(`Uploading “${entry.title}”…`);
   try {
-    const item = { id: entry.id, title: entry.title, uploadedAt: new Date().toISOString(), puzzle: copyPuzzle(entry.puzzle) };
-    item.puzzle.title = entry.title;
-    await changeCloud(list=>[item].concat(list.filter(e=>e.id !== entry.id)), 'Playtest: upload a puzzle');
-    cloudStatus(`Uploaded “${entry.title}”. It shows on the playtest page in about a minute.`, 'ok-text');
+    const out = await PlaytestCloud.change({ op:'upload', id: entry.id, title: entry.title, puzzle: copyPuzzle(entry.puzzle), folder: cloudFolder() });
+    useCloudData(out.data);
+    const where = (cloudData.folders.find(f=>f.id === out.result.folder) || {}).name || 'the Inbox';
+    cloudStatus(`Uploaded “${entry.title}” to ${where}.`, 'ok-text');
   } catch(e){ cloudStatus(e.message, 'warn-text'); }
   renderCloud();
 }
 
 async function removeFromCloud(item){
-  if(!confirm(`Remove “${item.title}” from the cloud and the playtest page?\n\n(Your archive in this browser isn't changed.)`)) return;
-  cloudStatus(`Removing “${item.title}”…`);
+  if(!confirm(`Move “${item.title}” to the playtest page’s Trash?\n\n(It isn’t deleted, and your archive in this browser isn’t changed.)`)) return;
+  cloudStatus(`Moving “${item.title}” to the Trash…`);
   try {
-    await changeCloud(list=>list.filter(e=>e.id !== item.id), 'Playtest: remove a puzzle');
-    cloudStatus(`Removed “${item.title}”.`, 'ok-text');
+    useCloudData((await PlaytestCloud.change({ op:'move', id: item.id, trashed: true })).data);
+    cloudStatus(`Moved “${item.title}” to the Trash.`, 'ok-text');
   } catch(e){ cloudStatus(e.message, 'warn-text'); }
   renderCloud();
 }
@@ -1337,9 +1565,10 @@ function renderCloud(){
     const p = item.puzzle, el = document.createElement('div');
     el.className = 'arch-item cloud-item' + (item.id === loadedArchiveId ? ' loaded' : '');
     el.innerHTML = `<div class="arch-main" title="Open a copy in the sandbox"><b></b>`
-      + `<span class="note">Uploaded ${fmtDate(item.uploadedAt)} · ${p.rows}×${p.cols} · ${p.pieces.map(d=>d.name).join(' ')}</span></div>`
-      + `<div class="arch-actions"><button class="icon-btn" data-act="remove" title="Remove from the cloud">&#10005;</button></div>`;
+      + `<span class="note">Uploaded ${fmtDate(item.uploadedAt)} · ${p.rows}×${p.cols} · ${p.pieces.map(d=>d.name).join(' ')} · <span class="in-folder"></span></span></div>`
+      + `<div class="arch-actions"><button class="icon-btn" data-act="remove" title="Move to the playtest page’s Trash"${cloudReadOnly ? ' hidden' : ''}>&#10005;</button></div>`;
     el.querySelector('b').textContent = item.title;
+    el.querySelector('.in-folder').textContent = (cloudData.folders.find(f=>f.id === item.folder) || {}).name || '';
     el.querySelector('.arch-main').onclick = ()=>openFromCloud(item);
     el.querySelector('[data-act=remove]').onclick = ()=>removeFromCloud(item);
     list.appendChild(el);
@@ -1362,6 +1591,7 @@ $('settings-save').onclick = ()=>{
   $('settings-status').className = 'modal-note ok-text';
   $('settings-status').textContent = 'Saved in this browser.';
   updatePublishButton();
+  refreshCloud();                        // (owner or not may have changed)
 };
 $('settings-test').onclick = async ()=>{
   const s = readSettingsForm(), out = $('settings-status');
@@ -1380,7 +1610,8 @@ $('settings-test').onclick = async ()=>{
 ═══════════════════════════════════════════════════════════════════ */
 loadArchive();
 renderArchive();
-if(ghSettings().token) refreshCloud();   // (the cloud list, if publishing is set up)
+renderCloudFolders();
+refreshCloud();                          // (the cloud list: with the token or through the server)
 $('save-name').value = draft.title || '';
 renderStartSelect();
 try { gameSettings.liveCounts = localStorage.getItem(COUNTS_KEY) === '1'; } catch(e){}

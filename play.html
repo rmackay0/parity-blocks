@@ -366,10 +366,13 @@ if(playtestId){
   // A playtest puzzle (uploaded from the sandbox): read playtest.json first.
   // The back button returns to the playtest page.
   document.querySelector('.back-btn').href = 'playtest.html';
-  fetch('playtest.json?t=' + Date.now(), { cache: 'no-store' })
-    .then(r=>r.ok ? r.json() : null)
-    .then(data=>{
-      const entry = data && (data.puzzles || []).find(e=>e.id === playtestId);
+  // A puzzle uploaded in the last minute isn't in the site's copy yet, so
+  // then the server's fresh copy is asked (/api/playtest, 2026-11-20)
+  const findIn = data=>data && (data.puzzles || []).find(e=>e.id === playtestId);
+  const getJSON = url=>fetch(url + '?t=' + Date.now(), { cache: 'no-store' }).then(r=>r.ok ? r.json() : null).catch(()=>null);
+  getJSON('playtest.json')
+    .then(data=>findIn(data) || getJSON('/api/playtest').then(findIn))
+    .then(entry=>{
       if(!entry) return puzzleMissing();
       saveKey = 'playtest:' + entry.id + ':' + entry.uploadedAt;    // (a re-upload starts fresh)
       startPuzzle(entry.puzzle, 'Playtest');

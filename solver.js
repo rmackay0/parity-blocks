@@ -809,6 +809,79 @@ function findPuzzles(boardConfig, n, opts){
 }
 
 /* ───────────────────────────────────────────────────────────────────────
+   8b. WHICH PIECES CAN ACHIEVE PARITY HERE (the sandbox's "Analyze with
+   any of the pieces", user 2026-11-20)
+   For one board, every set of pentominoes out of the 12 with
+     • a size in opts.counts (e.g. [6], or every size for "any number")
+     • every piece in opts.mustInclude
+   that has at least one parity-passing tiling. Each set is counted with
+   parityTilings (the fast parity-first search), so paritySolutions is
+   exact: 1 = a puzzle with a unique answer.
+   Skipped without searching: sizes whose pieces need more squares than
+   the board has (tooBig), and sizes with an odd number of blocks in all
+   (odd: an odd total can never leave every row even), and sets with a
+   piece that fits nowhere on the board.
+   opts.onFound(set) is called as each set is found (so a page can list
+   them while the search goes on). Result:
+     { found: [{ pieces, paritySolutions }], setsChecked, sets,
+       skipped: { tooBig: [n…], odd: [n…] }, solveTimeMs }
+   sorted: unique answers first, then fewer answers, fewer pieces.
+   ─────────────────────────────────────────────────────────────────────── */
+function findPieceSets(boardConfig, opts){
+  opts = opts || {};
+  const t0 = Date.now();
+  const board = makeBoard(boardConfig);
+  const N = board.openCells.length;
+  const names = PENTOMINOES.map(p=>p.name);
+  const must = (opts.mustInclude || []).map(n=>names.indexOf(n)).filter(i=>i >= 0);
+  const fits = PENTOMINOES.map(p=>placementsFor(board, p.cells).length > 0);
+  const skipped = { tooBig: [], odd: [] };
+
+  // Every set to check, smallest sizes first
+  const sets = [];
+  const counts = Array.from(new Set(opts.counts || [])).filter(n=>n >= 1 && n <= 12).sort((a,b)=>a - b);
+  counts.forEach(n=>{
+    if(5*n > N){ skipped.tooBig.push(n); return; }
+    if((5*n + board.prefilled.length) % 2){ skipped.odd.push(n); return; }
+    if(must.length > n) return;
+    combinations(PENTOMINOES.length, n).forEach(combo=>{
+      if(must.some(i=>!combo.includes(i)) || combo.some(i=>!fits[i])) return;
+      sets.push(combo);
+    });
+  });
+  // opts.part = [k, K]: only every K-th set, starting at k, so K workers
+  // can share the search (the sandbox runs one per processor core)
+  if(opts.part){
+    const [k, K] = opts.part;
+    for(let i = sets.length - 1; i >= 0; i--) if(i % K !== k) sets.splice(i, 1);
+  }
+
+  const found = [];
+  let lastReport = 0;
+  sets.forEach((combo, si)=>{
+    const report = inner=>{
+      if(!opts.onProgress || Date.now() - lastReport < (opts.progressMs || 100)) return;
+      lastReport = Date.now();
+      opts.onProgress({ setsChecked: si, sets: sets.length, found: found.length, fraction: (si + (inner || 0)) / sets.length });
+    };
+    if(opts.shouldCancel && opts.shouldCancel()){ const e = new Error('Cancelled'); e.name = 'Cancelled'; throw e; }
+    report(0);
+    const config = Object.assign({}, boardConfig, { pieces: combo.map(i=>({ name: names[i], cells: PENTOMINOES[i].cells })) });
+    const r = parityTilings(config, { maxStored: 1, shouldCancel: opts.shouldCancel, onProgress: p=>report(p.fraction) });
+    if(r.count > 0){
+      const set = { pieces: combo.map(i=>names[i]), paritySolutions: r.count };
+      found.push(set);
+      if(opts.onFound) opts.onFound(set);
+    }
+  });
+
+  const rank = s=>s.paritySolutions === 1 ? 0 : 1;
+  found.sort((a,b)=>rank(a) - rank(b) || a.paritySolutions - b.paritySolutions || a.pieces.length - b.pieces.length || a.pieces.join('').localeCompare(b.pieces.join('')));
+  if(opts.onProgress) opts.onProgress({ setsChecked: sets.length, sets: sets.length, found: found.length, fraction: 1 });
+  return { found, setsChecked: sets.length, sets: sets.length, skipped, solveTimeMs: Date.now() - t0 };
+}
+
+/* ───────────────────────────────────────────────────────────────────────
    9. RUNNING IN A WEB WORKER
    A worker is a separate thread, so a long search can't freeze the page.
 
@@ -824,6 +897,9 @@ function findPuzzles(boardConfig, n, opts){
      → { type:'analyzeFast', config }    ← the same, from analyzeFast (progress
                                            has phase:'parity' once it switches)
      → { type:'find', board, n }         ← progress… then { type:'result', result }
+     → { type:'pieceSets', board, counts, mustInclude, part? }
+                                         ← progress and { type:'found', set } as
+                                           each set turns up… then { type:'result', result }
      ← { type:'error', message } if something throws
    ─────────────────────────────────────────────────────────────────────── */
 function createWorker(){
@@ -845,6 +921,8 @@ if(insideWorker){
       if(msg.type === 'analyze') result = analyzePuzzle(msg.config, { onProgress, maxStored: msg.maxStored });
       else if(msg.type === 'analyzeFast') result = analyzeFast(msg.config, { onProgress, maxStored: msg.maxStored });
       else if(msg.type === 'find') result = findPuzzles(msg.board, msg.n, { onProgress });
+      else if(msg.type === 'pieceSets') result = findPieceSets(msg.board, { counts: msg.counts, mustInclude: msg.mustInclude, part: msg.part, onProgress,
+        onFound: set=>root.postMessage({ type:'found', set }) });
       else throw new Error('Unknown job type: ' + msg.type);
       root.postMessage({ type:'result', result });
     } catch(err){
@@ -855,7 +933,7 @@ if(insideWorker){
 
 return {
   PENTOMINOES, pentomino, normalize, orientations, makeBoard, placementsFor,
-  DLX, checkParity, analyzePuzzle, parityTilings, parityTilingsScan, parityTilingsGaps, analyzeFast, combinations, findPuzzles, createWorker,
+  DLX, checkParity, analyzePuzzle, parityTilings, parityTilingsScan, parityTilingsGaps, analyzeFast, combinations, findPuzzles, findPieceSets, createWorker,
 };
 }
 
