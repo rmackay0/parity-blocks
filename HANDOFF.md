@@ -33,8 +33,12 @@ text must be bigger in Large text, or already ≥ 24px; titles and buttons
 stay the same by design) and `piece_colors_test` (one color per letter
 in the sandbox while pieces are added / removed, each level, every slide).
 
-**2026-11-20 (committed, NOT pushed): playtest for friends, folders,
-Trash; Save keeps every piece; Analyze with any of the pieces** (user)
+**2026-11-20 (PUSHED, dc84237, user's OK; `PLAYTEST_GITHUB_TOKEN` added in
+Vercel, Production only; /api/playtest answers live with folders; a live
+friend upload not tried yet): playtest for friends, folders, Trash; Save
+keeps every piece; Analyze with any of the pieces** (user)
+- Full run after the push: all 38 pass once highlighter_test was fixed
+  (it now taps the first open square, not (0,0)).
 - PLAYTEST, anyone can add / sort (user chose: no passwords, "curtain
   only"; the repo is public so playtest.json is readable anyway).
   Rules in ONE file, `playtest-ops.js` (browser + server): anyone uploads
@@ -50,12 +54,14 @@ Trash; Save keeps every piece; Analyze with any of the pieces** (user)
   `api/playtest.js`, a Vercel function (GET = fresh file, POST = one change,
   always as a friend). `playtest-cloud.js` picks the way; with no server
   friends get the site's playtest.json, "View only".
-- **SETUP STILL NEEDED by the user (after the push):** Vercel → project →
-  Settings → Environment Variables → `PLAYTEST_GITHUB_TOKEN` = a
-  fine-grained token for parity-blocks, Contents: Read and write; then
-  redeploy. Until then friends see "Uploads from friends aren’t switched
-  on yet" and the page is view only for them. Check that Vercel picked up
-  `api/` (parity-blocks.vercel.app/api/playtest should answer JSON).
+- Server setup (DONE 2026-11-20): Vercel → project → Settings →
+  Environment Variables → `PLAYTEST_GITHUB_TOKEN` = a fine-grained token
+  for parity-blocks, Contents: Read and write, Production only. Without
+  it friends see "Uploads from friends aren’t switched on yet" (view only).
+  Safety (explained to the user): the token never reaches browsers; the
+  server only does friend changes to playtest.json; a raw-token leak needs
+  someone in the user's Vercel or GitHub account. Stronger option offered,
+  not chosen: a separate private repo for playtest data.
 - playtest.html: folder buttons (+ New folder), Rename folder, ⋯ per
   puzzle (move / Trash / owner: Rename…, Delete forever…), "🗑 Trash (n) →"
   under every folder → the Trash view ("from <folder>", ← Back to it).
@@ -75,8 +81,7 @@ Trash; Save keeps every piece; Analyze with any of the pieces** (user)
   never give unique answers: 8 symmetries).
 - Tests: `playtest_ops_test` (QUICK; rules + server with a fake GitHub),
   `cloud_test` rewritten (owner, friend, view only, folders, Trash, owner
-  delete), `sandbox_any_test`. highlighter_test FAILS, already before this
-  work: it taps square (0,0) on Medium, which the new Medium cuts out.
+  delete), `sandbox_any_test`.
 
 **Later 2026-11-16 (committed, NOT pushed yet):**
 - Welcome popup (slide 2) and slide 3's ask / success: the user's wording;

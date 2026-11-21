@@ -77,11 +77,14 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       check(await page.locator('.hl-color').evaluate(e=>getComputedStyle(e).visibility === 'visible'), 'color dot shows when on');
       const cell = (r, c)=>page.locator(`#board .board-cell[data-r="${r}"][data-c="${c}"]`);
       const markOf = (r, c)=>cell(r, c).evaluate(e=>e.classList.contains('marked') ? e.style.getPropertyValue('--mark') : null);
-      await tap(cell(0, 0));
-      check(await markOf(0, 0) === 'var(--hl-0)', 'tap highlights in the first color');
-      await tap(cell(0, 0));
-      check(await markOf(0, 0) === null, 'tap again clears');
-      await tap(cell(0, 0));
+      // The first open square (not always the top-left: the Medium of 2026-11-20 cuts it out)
+      const [r0, c0] = await page.locator('#board .board-cell:not(.removed):not(.blocked)').first()
+        .evaluate(e=>[+e.dataset.r, +e.dataset.c]);
+      await tap(cell(r0, c0));
+      check(await markOf(r0, c0) === 'var(--hl-0)', 'tap highlights in the first color');
+      await tap(cell(r0, c0));
+      check(await markOf(r0, c0) === null, 'tap again clears');
+      await tap(cell(r0, c0));
       await tap(page.locator('.hl-color'));
       check(await page.locator('.hl-menu').isVisible(), 'menu opens');
       await page.screenshot({ path: `hl-${label}-menu.png` });
@@ -89,10 +92,10 @@ const overlap = (a, b)=>a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y 
       check(await swatches.count() === 4, 'four colors');
       await tap(swatches.nth(2));
       check(!(await page.locator('.hl-menu').isVisible()), 'menu closes after picking');
-      await tap(cell(0, 0));
-      check(await markOf(0, 0) === 'var(--hl-2)', 'tap with another color switches');
-      await tap(cell(0, 0));
-      check(await markOf(0, 0) === null, 'then tap again clears');
+      await tap(cell(r0, c0));
+      check(await markOf(r0, c0) === 'var(--hl-2)', 'tap with another color switches');
+      await tap(cell(r0, c0));
+      check(await markOf(r0, c0) === null, 'then tap again clears');
 
       // Drag across a row
       const a = await cell(2, 1).boundingBox(), b = await cell(2, 4).boundingBox();
